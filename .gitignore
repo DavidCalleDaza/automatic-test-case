@@ -1,0 +1,13 @@
+# Entornos Virtuales
+backend/venv/
+venv/ # Por si acaso queda uno en la raíz temporalmente
+
+# Archivos de Base de Datos
+backend/app.db
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Archivos de configuración local (¡para nuestras llaves!)
+.env
