@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Detalle de Plantilla</h1>
+        <a href="{{ url_for('core.dashboard') }}" class="btn btn-outline-secondary">← Volver al Dashboard</a>
+    </div>
+    
+    <h3>{{ plantilla.nombre_plantilla }}</h3>
+    <p class="text-muted">
+        Tipo: {{ plantilla.tipo_archivo }} | 
+        Subida: {{ plantilla.timestamp.strftime('%Y-%m-%d a las %H:%M') }}
+    </p>
+
+    <hr>
+
+    <h4>Etiquetas (Mapa) Aprendido del Archivo</h4>
+    <p>Esta es la estructura que el sistema ha escaneado y guardado en la base de datos.</p>
+
+    {% if mapas %}
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Etiqueta Encontrada</th>
+                    <th scope="col">Coordenada (Dónde se encontró)</th>
+                    <th scope="col">Tipo de Mapa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mapa in mapas %}
+                <tr>
+                    <td>
+                        <span class="badge bg-primary fs-6">{{ mapa.etiqueta }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ mapa.coordenada }}</strong>
+                    </td>
+                    <td>
+                        {{ mapa.tipo_mapa }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            No se encontraron etiquetas (ej. '{{ETIQUETA}}') en esta plantilla cuando fue escaneada.
+        </div>
+    {% endif %}
+
+{% endblock %}

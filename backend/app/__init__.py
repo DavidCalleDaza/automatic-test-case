@@ -22,17 +22,29 @@ def create_app(config_class=Config):
 
     # --- Registrar Blueprints (Módulos) ---
     
-    # 1. Blueprint de Autenticación (¡NUEVO!)
+    # 1. Blueprint de Autenticación
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
-    # 2. Blueprint Principal (¡NUEVO!)
-    # (Lo creamos aquí mismo para la ruta '/')
-    from flask import Blueprint
+    # 2. Blueprint Principal
+    from flask import Blueprint, redirect, url_for
+    from flask_login import current_user
+    
     main_bp = Blueprint('main', __name__)
     @main_bp.route('/')
     def index():
-        return "¡El esqueleto de la app funciona! <a href='/auth/login'>Login</a> <a href='/auth/register'>Registro</a>"
+        if current_user.is_authenticated:
+            return redirect(url_for('core.dashboard'))
+        return redirect(url_for('auth.login'))
+        
     app.register_blueprint(main_bp)
+
+    # 3. Blueprint del Core (Dashboard/Plantillas)
+    from app.core import bp as core_bp
+    app.register_blueprint(core_bp)
+
+    # 4. Blueprint de Análisis (¡NUEVO!)
+    from app.analysis import bp as analysis_bp
+    app.register_blueprint(analysis_bp, url_prefix='/analysis') # Opcional: prefijo de ruta
 
     return app

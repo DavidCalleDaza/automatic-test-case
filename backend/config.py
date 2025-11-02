@@ -18,3 +18,8 @@ class Config:
     
     # Desactiva una función de SQLAlchemy que no necesitamos.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # --- Configuración de Subida de Archivos ---
+    # Le dice a la app dónde guardar las plantillas que suban los usuarios.
+    # Creará una carpeta 'uploads' dentro de 'backend'
+    UPLOAD_FOLDER = os.path.join(basedir, 'uploads')

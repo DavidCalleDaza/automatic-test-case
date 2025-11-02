@@ -28,6 +28,12 @@
             </li>
             {% else %}
             <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('analysis.analysis_index') }}">Análisis IA</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('core.dashboard') }}">Dashboard (Plantillas)</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="#">¡Hola, {{ current_user.email.split('@')[0] }}!</a>
             </li>
             <li class="nav-item">
