@@ -3,71 +3,145 @@
 {% block content %}
 <div class="row">
     <div class="col-md-5">
-        <h2>Subir Nueva Plantilla</h2>
-        <p>Sube tu archivo .xlsx o .docx etiquetado (ej. {{TITULO}}) para que el sistema lo aprenda.</p>
-        
-        <form action="{{ url_for('core.upload_plantilla') }}" method="post" enctype="multipart/form-data" novalidate>
-            {{ form.hidden_tag() }}
-            
-            <div class="mb-3">
-                {{ form.nombre_plantilla.label(class="form-label") }}
-                {{ form.nombre_plantilla(class="form-control", size=32) }}
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">Subir Nueva Plantilla</h2>
+                <p class="text-muted small">Sube tu archivo .xlsx o .docx. El sistema te guiará para mapear las columnas.</p>
+                
+                <form action="{{ url_for('core.dashboard') }}" method="post" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.nombre_plantilla.label(class="form-label") }}
+                        {{ form.nombre_plantilla(class="form-control", size=32) }}
+                        {% for error in form.nombre_plantilla.errors %}
+                        <span class="text-danger small">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.archivo_plantilla.label(class="form-label") }}
+                        {{ form.archivo_plantilla(class="form-control") }}
+                        {% for error in form.archivo_plantilla.errors %}
+                        <span class="text-danger small">[{{ error }}]</span>
+                        {% endfor %}
+                    </div>
+                    
+                    {{ form.submit(value="Subir y Continuar al Asistente", class="btn btn-primary w-100") }}
+                </form>
             </div>
-
-            <div class="mb-3">
-                {{ form.tipo_escaneo.label(class="form-label") }}
-                {% for subfield in form.tipo_escaneo %}
-                <div class="form-check">
-                    {{ subfield(class="form-check-input") }}
-                    {{ subfield.label(class="form-check-label") }}
-                </div>
-                {% endfor %}
-                {% for error in form.tipo_escaneo.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-                {% endfor %}
-            </div>
-            
-            <div class="mb-3">
-                {{ form.archivo_plantilla.label(class="form-label") }}
-                {{ form.archivo_plantilla(class="form-control") }}
-            </div>
-            
-            {{ form.submit(class="btn btn-primary") }}
-        </form>
+        </div>
     </div>
     
-    <div class="col-md-6 offset-md-1">
-        <h2>Mis Plantillas Guardadas</h2>
+    <div class="col-md-7">
+        <h2 class="h4 mb-3">Mis Plantillas Mapeadas</h2>
         
         {% if plantillas %}
-            <ul class="list-group">
+            <div class="list-group">
                 {% for plantilla in plantillas %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1">
-                                <a href="{{ url_for('core.ver_plantilla', plantilla_id=plantilla.id) }}">
-                                    {{ plantilla.nombre_plantilla }}
+                    <div class="card mb-2">
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <h5 class="mb-1">
+                                    <a href="{{ url_for('core.ver_plantilla', plantilla_id=plantilla.id) }}">
+                                        {{ plantilla.nombre_plantilla }}
+                                    </a>
+                                    {% if plantilla.tipo_archivo == 'Excel' and (not plantilla.sheet_name or not plantilla.header_row) %}
+                                        <span class="badge bg-warning text-dark ms-2">Mapeo Incompleto</span>
+                                    {% else %}
+                                        <span class="badge bg-success ms-2">Mapeado</span>
+                                    {% endif %}
+                                </h5>
+                                <small class="text-muted">
+                                    Tipo: {{ plantilla.tipo_archivo }} | 
+                                    Subida: {{ plantilla.timestamp.strftime('%Y-%m-%d') }}
+                                </small>
+                            </div>
+                            <div class="ms-3">
+                                <a href="{{ url_for('core.ver_plantilla', plantilla_id=plantilla.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    Ver
                                 </a>
-                            </h5>
-                            <small class="text-muted">Tipo: {{ plantilla.tipo_archivo }} | Subida: {{ plantilla.timestamp.strftime('%Y-%m-%d') }}</small>
+                                {% if plantilla.tipo_archivo == 'Excel' %}
+                                <a href="{{ url_for('core.map_step_1_sheet', plantilla_id=plantilla.id) }}" class="btn btn-sm btn-outline-primary"> {% if plantilla.sheet_name %}Re-Mapear{% else %}Mapear{% endif %}
+                                </a>
+                                {% endif %}
+                                
+                                <form id="form-delete-{{ plantilla.id }}" action="{{ url_for('core.delete_plantilla', plantilla_id=plantilla.id) }}" method="POST" style="display: inline-block;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteConfirmModal"
+                                            data-form-id="form-delete-{{ plantilla.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                </div>
                         </div>
-                        <div>
-                            <a href="{{ url_for('core.ver_plantilla', plantilla_id=plantilla.id) }}" class="btn btn-sm btn-outline-secondary">
-                                Ver Detalles
-                            </a>
-                            <form action="{{ url_for('core.delete_plantilla', plantilla_id=plantilla.id) }}" method="POST" style="display: inline-block;">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                        onclick="return confirm('¿Estás seguro de que quieres eliminar esta plantilla? Esta acción no se puede deshacer.')">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </div>
-                    </li>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% else %}
-            <p>Aún no has subido ninguna plantilla. ¡Empieza subiendo la primera!</p>
+            <div class="card">
+                <div class="card-body text-center p-5">
+                    Aún no has subido ninguna plantilla. ¡Empieza subiendo la primera!
+                </div>
+            </div>
         {% endif %}
     </div>
 </div>
+
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-left: 6px solid var(--bs-danger); border-radius: .75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15); background-color: white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar esta plantilla?</p>
+                <p class="text-danger small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var deleteModal = document.getElementById('deleteConfirmModal');
+    var confirmButton = document.getElementById('confirmDeleteButton');
+    var formToSubmit; // Variable para guardar el formulario que debemos enviar
+
+    // Cuando el modal está a punto de mostrarse...
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        
+        // 1. Obtener el botón que disparó el modal
+        var button = event.relatedTarget;
+        
+        // 2. Extraer el ID del formulario del atributo 'data-form-id' del botón
+        var formId = button.getAttribute('data-form-id');
+        
+        // 3. Guardar el formulario en nuestra variable
+        formToSubmit = document.getElementById(formId);
+    });
+
+    // Cuando el usuario hace clic en el botón "Eliminar" (el rojo)...
+    confirmButton.addEventListener('click', function () {
+        if (formToSubmit) {
+            // 4. ...enviar el formulario guardado.
+            formToSubmit.submit();
+        }
+    });
+});
+</script>
 {% endblock %}

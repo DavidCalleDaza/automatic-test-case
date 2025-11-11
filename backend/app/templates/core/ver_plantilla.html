@@ -1,51 +1,62 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Detalle de Plantilla</h1>
-        <a href="{{ url_for('core.dashboard') }}" class="btn btn-outline-secondary">← Volver al Dashboard</a>
-    </div>
-    
-    <h3>{{ plantilla.nombre_plantilla }}</h3>
-    <p class="text-muted">
-        Tipo: {{ plantilla.tipo_archivo }} | 
-        Subida: {{ plantilla.timestamp.strftime('%Y-%m-%d a las %H:%M') }}
-    </p>
-
-    <hr>
-
-    <h4>Etiquetas (Mapa) Aprendido del Archivo</h4>
-    <p>Esta es la estructura que el sistema ha escaneado y guardado en la base de datos.</p>
-
-    {% if mapas %}
-        <table class="table table-striped table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">Etiqueta Encontrada</th>
-                    <th scope="col">Coordenada (Dónde se encontró)</th>
-                    <th scope="col">Tipo de Mapa</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mapa in mapas %}
-                <tr>
-                    <td>
-                        <span class="badge bg-primary fs-6">{{ mapa.etiqueta }}</span>
-                    </td>
-                    <td>
-                        <strong>{{ mapa.coordenada }}</strong>
-                    </td>
-                    <td>
-                        {{ mapa.tipo_mapa }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-warning" role="alert">
-            No se encontraron etiquetas (ej. '{{ETIQUETA}}') en esta plantilla cuando fue escaneada.
+<div class="card">
+    <div class="card-body p-4">
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">Detalle de Plantilla</h2>
+            <a href="{{ url_for('core.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+            </a>
         </div>
-    {% endif %}
+        
+        <h3 class="h5">{{ plantilla.nombre_plantilla }}</h3>
+        <p class="text-muted small">
+            Tipo: <strong>{{ plantilla.tipo_archivo }}</strong> | 
+            Subida: <strong>{{ plantilla.timestamp.strftime('%Y-%m-%d') }}</strong> |
+            Hoja: <strong>{{ plantilla.sheet_name or 'N/A' }}</strong> |
+            Fila: <strong>{{ plantilla.header_row or 'N/A' }}</strong>
+        </p>
+        <hr>
 
+        <h4 class="h5">Etiquetas (Mapa) Aprendido</h4>
+        <p class="text-muted">Esta es la estructura que el sistema ha guardado en la base de datos.</p>
+
+        {% if mapas %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    
+                    <thead style="background-color: var(--bs-dark); color: white;">
+                        <tr>
+                            <th scope="col" style="padding-left: 1.5rem;">Etiqueta Encontrada</th>
+                            <th scope="col">Coordenada (Columna)</th>
+                            <th scope="col">Tipo de Mapa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mapa in mapas %}
+                        <tr>
+                            <td style="padding-left: 1.5rem;">
+                                <span class="badge bg-primary fs-6 rounded-pill">{{ mapa.etiqueta }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ mapa.coordenada }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ mapa.tipo_mapa }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                No se encontraron etiquetas mapeadas para esta plantilla.
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

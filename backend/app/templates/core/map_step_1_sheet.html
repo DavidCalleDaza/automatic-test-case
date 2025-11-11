@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">Asistente de Mapeo (Paso 1 de 3)</h2>
+                <h3 class="h5">Seleccionar Hoja de Trabajo</h3>
+                <hr>
+                <p class="mb-3">Estás mapeando la plantilla: <strong>{{ plantilla.nombre_plantilla }}</strong></p>
+                <p class="text-muted">Hemos detectado las siguientes hojas en tu archivo. Por favor, selecciona la hoja que contiene los casos de prueba.</p>
+                
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {% for subfield in form.sheet_name %}
+                        <div class="form-check fs-5">
+                            {{ subfield(class="form-check-input") }}
+                            {{ subfield.label(class="form-check-label") }}
+                        </div>
+                        {% endfor %}
+                        
+                        {% for error in form.sheet_name.errors %}
+                        <div class="text-danger small mt-2">
+                            {{ error }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="text-end">
+                        {{ form.submit(class="btn btn-primary px-4") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

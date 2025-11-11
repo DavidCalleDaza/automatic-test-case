@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">Asistente de Mapeo (Paso 3 de 3)</h2>
+                <h3 class="h5">Seleccionar Columnas (Encabezados)</h3>
+                <hr>
+                
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Plantilla:</strong>
+                        <span>{{ plantilla.nombre_plantilla }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Hoja:</strong>
+                        <span>{{ plantilla.sheet_name }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Fila de Encabezados:</strong>
+                        <span>{{ plantilla.header_row }}</span>
+                    </li>
+                </ul>
+                
+                <p class="text-muted">Hemos leído los encabezados de la fila {{ plantilla.header_row }}. Selecciona los campos que deseas que la IA rellene.</p>
+
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-bold">Encabezados encontrados:</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="selectAllCheckbox">
+                                <label class="form-check-label" for="selectAllCheckbox">Seleccionar Todo</label>
+                            </div>
+                        </div>
+                        <ul class="list-group" id="checkbox-list">
+                            {% for subfield in form.headers %}
+                            <li class="list-group-item">
+                                <div class="form-check fs-5">
+                                    {{ subfield(class="form-check-input") }}
+                                    {{ subfield.label(class="form-check-label") }}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        {% for error in form.headers.errors %}
+                        <div class="text-danger small mt-2">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('core.map_step_2_row', plantilla_id=plantilla.id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Volver (Fila)
+                        </a>
+                        {{ form.submit(value="Finalizar Mapeo", class="btn btn-primary px-4") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #checkbox-list .list-group-item {
+        border-radius: .5rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    #checkbox-list .list-group-item:hover {
+        background-color: var(--bs-light);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .form-check-input:checked {
+        /* (Esto usa tu estilo naranja de base.html) */
+    }
+    .form-check-input:checked + .form-check-label {
+        /* (Esto usa tu estilo naranja de base.html) */
+    }
+    .form-check-input, .form-check-label {
+        cursor: pointer;
+    }
+    /* (Estilo para el nuevo 'switch') */
+    .form-switch .form-check-input {
+        width: 3.5em; /* Un poco más grande */
+        height: 1.75em;
+    }
+</style>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // 1. Obtener los checkboxes
+    const masterCheckbox = document.getElementById('selectAllCheckbox');
+    const childCheckboxes = document.querySelectorAll('#checkbox-list .form-check-input');
+    
+    if (masterCheckbox) {
+        
+        // 2. Función para actualizar el "master" basado en los "hijos"
+        function updateMasterCheckbox() {
+            // Comprueba si TODOS los hijos están marcados
+            const allChecked = Array.from(childCheckboxes).every(c => c.checked);
+            masterCheckbox.checked = allChecked;
+        }
+
+        // 3. Cuando se hace clic en "Seleccionar Todo"...
+        masterCheckbox.addEventListener('change', function() {
+            // ...marcar todos los hijos igual que el master.
+            childCheckboxes.forEach(function(child) {
+                child.checked = masterCheckbox.checked;
+            });
+        });
+
+        // 4. Cuando se hace clic en CUALQUIER hijo...
+        childCheckboxes.forEach(function(child) {
+            child.addEventListener('change', function() {
+                // ...revisar si todos están marcados para actualizar el master.
+                updateMasterCheckbox();
+            });
+        });
+
+        // 5. Comprobar el estado al cargar la página
+        updateMasterCheckbox();
+    }
+});
+</script>
+{% endblock %}

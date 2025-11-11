@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10"> <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3">Asistente de Mapeo (Paso 2 de 3)</h2>
+                <h3 class="h5">Seleccionar Fila de Encabezados</h3>
+                <hr>
+                
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Plantilla:</strong>
+                        <span>{{ plantilla.nombre_plantilla }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Hoja Seleccionada:</strong>
+                        <span>{{ plantilla.sheet_name }}</span>
+                    </li>
+                </ul>
+
+                <p class="text-muted">A continuación, se muestra una vista previa de tu hoja. Por favor, selecciona la fila que contiene los encabezados (ej. "ID del caso de prueba", "Descripción", etc.).</p>
+
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6;">
+                        <table class="table table-bordered table-hover table-sm" style="min-width: 1000px;">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width: 5%;" scope="col">#</th>
+                                    {% for header in column_headers %}
+                                        <th scope="col">{{ header }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subfield in form.header_row %}
+                                    {% set row_num = loop.index %}
+                                    {% set row_data = preview_data[loop.index0] %}
+                                    
+                                    <tr>
+                                        <td class="text-center bg-light">
+                                            <div class="form-check">
+                                                {{ subfield(class="form-check-input") }}
+                                                {{ subfield.label(class="form-check-label", text=row_num) }}
+                                            </div>
+                                        </td>
+                                        
+                                        {% for cell_value in row_data %}
+                                            <td>
+                                                {{ cell_value if cell_value is not none else '' }}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    {% for error in form.header_row.errors %}
+                    <div class="text-danger small mt-2">
+                        {{ error }}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('core.map_step_1_sheet', plantilla_id=plantilla.id) }}" class="btn btn-outline-secondary">
+                            ← Volver (Hoja)
+                        </a>
+                        {{ form.submit(class="btn btn-primary px-4") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-bordered td, .table-bordered th {
+        border: 1px solid #dee2e6;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+        white-space: nowrap; 
+    }
+    .table-sm th {
+        background-color: #f8f9fa; 
+    }
+    .form-check-input {
+        cursor: pointer;
+    }
+    /* ¡Corrección de Estilo! 
+       La versión anterior tenía un error de posicionamiento. 
+       Esta es más simple y robusta. */
+    .form-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+    .form-check .form-check-label {
+        margin-left: 0.5em; /* Espacio entre el botón y el número */
+    }
+</style>
+{% endblock %}

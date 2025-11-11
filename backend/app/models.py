@@ -31,8 +31,14 @@ class Plantilla(db.Model):
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id'))
     filename_seguro = db.Column(db.String(255)) 
     
-    # --- ¡CAMBIO AQUÍ! ---
-    # 'cascade' le dice a la BD que borre los 'mapas' hijos si se borra la 'plantilla' padre.
+    # --- ¡NUEVOS CAMPOS! ---
+    # Guardará el nombre de la hoja de Excel seleccionada por el usuario (ej. "Casos de Prueba")
+    sheet_name = db.Column(db.String(100), nullable=True)
+    # Guardará el número de fila donde están los encabezados (ej. 10)
+    header_row = db.Column(db.Integer, nullable=True)
+    
+    # ---
+    
     mapas = db.relationship('MapaPlantilla', backref='plantilla_padre', lazy='dynamic', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -40,16 +46,14 @@ class Plantilla(db.Model):
 
 class MapaPlantilla(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    etiqueta = db.Column(db.String(140), index=True)
     
-    # Para Excel (Tabular): 'A', 'B'
-    # Para Excel (Formulario): 'B5', 'C10'
-    # Para Word (Tabla): '0', '1' (índice de columna)
-    # Para Word (Párrafo): 'parrafo'
+    # Ahora 'etiqueta' guardará el nombre del encabezado (ej. "ID del caso de prueba")
+    etiqueta = db.Column(db.String(140), index=True) 
+    
+    # 'coordenada' guardará la columna (ej. "A", "B")
     coordenada = db.Column(db.String(140))
     
-    # 'fila_tabla' (para Excel/Word tabular)
-    # 'celda_simple' (para Excel/Word formulario)
+    # 'tipo_mapa' seguirá siendo 'fila_tabla' o 'celda_simple'
     tipo_mapa = db.Column(db.String(50), default='simple') 
     
     id_plantilla = db.Column(db.Integer, db.ForeignKey('plantilla.id'))

@@ -5,17 +5,38 @@ from app.models import Usuario
 
 class LoginForm(FlaskForm):
     """Formulario para el inicio de sesión de usuarios."""
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Contraseña', validators=[DataRequired()])
+    
+    # --- ¡MEJORA! Mensajes amigables añadidos ---
+    email = StringField('Email', validators=[
+        DataRequired(message='Por favor, ingresa tu email.'),
+        Email(message='Por favor, ingresa un email válido.')
+    ])
+    password = PasswordField('Contraseña', validators=[
+        DataRequired(message='Por favor, ingresa tu contraseña.')
+    ])
+    # ---
+    
     remember_me = BooleanField('Recuérdame')
     submit = SubmitField('Iniciar Sesión')
 
 class RegistrationForm(FlaskForm):
     """Formulario para el registro de nuevos usuarios."""
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Contraseña', validators=[DataRequired()])
+    
+    # --- ¡MEJORA! Mensajes amigables añadidos ---
+    email = StringField('Email', validators=[
+        DataRequired(message='Por favor, ingresa tu email.'),
+        Email(message='Por favor, ingresa un email válido.')
+    ])
+    password = PasswordField('Contraseña', validators=[
+        DataRequired(message='Por favor, crea una contraseña.')
+    ])
     password2 = PasswordField(
-        'Repetir Contraseña', validators=[DataRequired(), EqualTo('password', message='Las contraseñas no coinciden.')])
+        'Repetir Contraseña', validators=[
+        DataRequired(message='Por favor, repite la contraseña.'),
+        EqualTo('password', message='Las contraseñas no coinciden.')
+    ])
+    # ---
+    
     submit = SubmitField('Registrarse')
 
     def validate_email(self, email):
