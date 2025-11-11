@@ -1,7 +1,7 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, session # <--- ¡AÑADIDO: 'session'!
 from flask_login import login_user, logout_user, current_user, login_required
 from app import db
-from app.auth import bp  # Importamos el blueprint que crearemos en el siguiente archivo
+from app.auth import bp
 from app.auth.forms import LoginForm, RegistrationForm
 from app.models import Usuario
 
@@ -52,10 +52,17 @@ def register():
         
     return render_template('auth/register.html', title='Registro', form=form)
 
+# --- ¡RUTA DE LOGOUT ACTUALIZADA! ---
 @bp.route('/logout')
 @login_required
 def logout():
     """Maneja el cierre de sesión del usuario."""
-    logout_user()
+    
+    # --- ¡FIX! Limpiamos nuestros datos de la sesión ANTES de cerrar ---
+    session.pop('ai_result_raw', None)
+    session.pop('plantilla_seleccionada_id', None)
+    # --- FIN DEL FIX ---
+    
+    logout_user() # Esto borra el login del usuario
     flash('Has cerrado sesión.', 'info')
     return redirect(url_for('main.index'))
