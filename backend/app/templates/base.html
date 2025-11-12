@@ -35,6 +35,13 @@
         --bs-warning-dark: #B68F3E;
         --bs-body-bg: #F5F7FA;
         --bs-body-color: #2F3237;
+
+        /* Variables RGB para transparencia */
+        --bs-success-rgb: 163, 228, 215;
+        --bs-danger-rgb: 232, 92, 112;
+        --bs-warning-rgb: 244, 198, 112;
+        --bs-info-rgb: 143, 183, 214;
+        --bs-secondary-rgb: 74, 111, 165;
       }
       
       /* Estilos de Navbar, Botones, Tarjetas, etc. */
@@ -45,20 +52,9 @@
       .btn-secondary:hover { background-color: var(--bs-secondary-dark) !important; border-color: var(--bs-secondary-dark) !important; box-shadow: 0 4px 14px rgba(45, 67, 102, 0.35); }
       .card { border: none; border-radius: 0.75rem; box-shadow: none; background-color: transparent; }
       
-      .alert-success {
-          background-color: var(--bs-success) !important;
-          border-color: var(--bs-success-dark) !important;
-          color: var(--bs-dark) !important;
-      }
-      .badge.bg-success {
-          background-color: var(--bs-success) !important;
-          color: var(--bs-dark) !important;
-          font-weight: 600;
-          border: 1px solid var(--bs-success-dark);
-      }
+      .alert-success { background-color: var(--bs-success) !important; border-color: var(--bs-success-dark) !important; color: var(--bs-dark) !important; }
+      .badge.bg-success { background-color: var(--bs-success) !important; color: var(--bs-dark) !important; font-weight: 600; border: 1px solid var(--bs-success-dark); }
       
-      .alert-primary { /* ... */ }
-      .alert-secondary { /* ... */ }
       .badge.bg-primary { background-color: var(--bs-primary) !important; color: #fff !important; font-weight: 500; }
       .form-check-input:checked { background-color: var(--bs-primary) !important; border-color: var(--bs-primary-dark) !important; }
       .form-check-input:checked + .form-check-label { color: var(--bs-primary); font-weight: 600; }
@@ -69,7 +65,6 @@
       .dropdown-item .bi { opacity: 0.6; }
       .dropdown-item.text-danger .bi { color: var(--bs-danger); }
 
-      /* Hover naranja para Dropdown */
       .dropdown-menu .dropdown-item:active,
       .dropdown-menu .dropdown-item:hover {
           background-color: var(--bs-primary) !important;
@@ -80,6 +75,130 @@
           opacity: 1.0;
           color: #fff !important;
       }
+
+      /* ========================================
+         GLASSMORPHISM TOAST NOTIFICATIONS
+         ======================================== */
+      .toast {
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        background-color: rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                    0 2px 8px rgba(255, 255, 255, 0.1) inset;
+        overflow: hidden;
+        min-width: 320px;
+        animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      
+      @keyframes slideInRight {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      /* Colores específicos para cada tipo con gradientes */
+      .toast.glass-success {
+        background: linear-gradient(135deg, 
+          rgba(var(--bs-success-rgb), 0.85) 0%,
+          rgba(var(--bs-success-rgb), 0.65) 100%);
+        border: 1px solid rgba(88, 167, 126, 0.4);
+      }
+      
+      .toast.glass-danger {
+        background: linear-gradient(135deg, 
+          rgba(var(--bs-danger-rgb), 0.9) 0%,
+          rgba(var(--bs-danger-rgb), 0.75) 100%);
+        border: 1px solid rgba(177, 60, 77, 0.5);
+        color: white;
+      }
+      
+      .toast.glass-warning {
+        background: linear-gradient(135deg, 
+          rgba(var(--bs-warning-rgb), 0.85) 0%,
+          rgba(var(--bs-warning-rgb), 0.65) 100%);
+        border: 1px solid rgba(182, 143, 62, 0.4);
+      }
+      
+      .toast.glass-info {
+        background: linear-gradient(135deg, 
+          rgba(var(--bs-info-rgb), 0.85) 0%,
+          rgba(var(--bs-info-rgb), 0.65) 100%);
+        border: 1px solid rgba(90, 127, 153, 0.4);
+      }
+      
+      .toast.glass-secondary {
+        background: linear-gradient(135deg, 
+          rgba(var(--bs-secondary-rgb), 0.9) 0%,
+          rgba(var(--bs-secondary-rgb), 0.75) 100%);
+        border: 1px solid rgba(45, 67, 102, 0.5);
+        color: white;
+      }
+      
+      /* Header del Toast con efecto glassmorphism */
+      .toast .toast-header {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 12px 16px;
+        font-weight: 600;
+      }
+      
+      .toast.glass-success .toast-header,
+      .toast.glass-warning .toast-header,
+      .toast.glass-info .toast-header {
+        color: var(--bs-dark);
+      }
+      
+      .toast.glass-danger .toast-header,
+      .toast.glass-secondary .toast-header {
+        color: white;
+      }
+      
+      /* Body del Toast */
+      .toast .toast-body {
+        padding: 16px;
+        font-size: 14px;
+        line-height: 1.5;
+        font-weight: 500;
+      }
+      
+      .toast.glass-success .toast-body,
+      .toast.glass-warning .toast-body,
+      .toast.glass-info .toast-body {
+        color: var(--bs-dark);
+      }
+      
+      .toast.glass-danger .toast-body,
+      .toast.glass-secondary .toast-body {
+        color: white;
+      }
+      
+      /* Iconos más grandes y llamativos */
+      .toast-header .bi {
+        font-size: 20px;
+        margin-right: 8px;
+      }
+      
+      /* Botón de cierre mejorado con efecto hover */
+      .toast .btn-close {
+        font-size: 12px;
+        opacity: 0.8;
+        transition: opacity 0.2s, transform 0.2s;
+      }
+      
+      .toast .btn-close:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+      /* ======================================== */
+
     </style>
   </head>
   
@@ -140,41 +259,61 @@
     function showToast(message, category) {
         const toastContainer = document.querySelector('.toast-container');
         if (!toastContainer) return;
-        let toastClass = 'text-bg-secondary';
+        
+        // Configuración de estilos según categoría
+        let toastClass = 'glass-secondary';
         let iconClass = 'bi-info-circle-fill';
+        let closeButtonClass = 'btn-close-white';
+        let title = 'Notificación';
+
         if (category === 'success') {
-            toastClass = 'text-bg-success';
+            toastClass = 'glass-success';
             iconClass = 'bi-check-circle-fill';
+            closeButtonClass = '';
+            title = 'Éxito';
         } else if (category === 'danger') {
-            toastClass = 'text-bg-danger';
+            toastClass = 'glass-danger';
             iconClass = 'bi-exclamation-triangle-fill';
+            closeButtonClass = 'btn-close-white';
+            title = 'Error';
         } else if (category === 'warning') {
-            toastClass = 'text-bg-warning';
-            iconClass = 'bi-exclamation-triangle-fill';
+            toastClass = 'glass-warning';
+            iconClass = 'bi-exclamation-circle-fill';
+            closeButtonClass = '';
+            title = 'Advertencia';
         } else if (category === 'info') {
-            toastClass = 'text-bg-info';
+            toastClass = 'glass-info';
+            iconClass = 'bi-info-circle-fill';
+            closeButtonClass = '';
+            title = 'Información';
+        } else if (category === 'secondary') {
+            closeButtonClass = 'btn-close-white';
+            title = 'Procesando';
         }
+
         const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
         const toastHTML = `
             <div id="${toastId}" class="toast ${toastClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
-                <div class="toast-header ${toastClass} border-0">
-                    <i class="bi ${iconClass} me-2"></i>
-                    <strong class="me-auto">Notificación</strong>
+                <div class="toast-header">
+                    <i class="bi ${iconClass}"></i>
+                    <strong class="me-auto">${title}</strong>
                     <small>Ahora</small>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    <button type="button" class="btn-close ${closeButtonClass}" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
                 <div class="toast-body">
                     ${message}
                 </div>
             </div>
         `;
+        
         toastContainer.insertAdjacentHTML('beforeend', toastHTML);
         const toastElement = document.getElementById(toastId);
         const toast = new bootstrap.Toast(toastElement);
         toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
         toast.show();
     }
-    // Lógica para leer los mensajes de Flask (limpia)
+    
+    // Lógica para leer los mensajes de Flask y mostrarlos automáticamente
     document.addEventListener('DOMContentLoaded', function() {
         const flashData = document.getElementById('flash-data');
         if (flashData) {

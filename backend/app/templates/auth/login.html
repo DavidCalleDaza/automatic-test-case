@@ -72,12 +72,14 @@ style="
 
 
 {% block scripts %}
-{{ super() }} <style>
+{{ super() }} 
+<style>
     .login-image-placeholder {
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         min-height: 400px;
+        /* La opacidad se aplica con JS para evitar conflictos */
     }
 </style>
 
@@ -92,6 +94,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // 3. Aplicar la URL como estilo de fondo
         if (imageUrl) {
             placeholder.style.backgroundImage = `url(${imageUrl})`;
+            
+            /* --- ¡MEJORA 3: OPACIDAD APLICADA CON JAVASCRIPT! --- */
+            placeholder.style.opacity = '0.9'; 
         }
     }
 });

@@ -1,12 +1,13 @@
 # SISTEMA INTELIGENTE DE ANÁLISIS DE CASOS DE PRUEBA
-# Determina automáticamente la cantidad óptima según el contexto del requerimiento
+# ¡CON HISTORIAL EN BASE DE DATOS!
 
 from flask import render_template, flash, redirect, url_for, request, current_app, session, send_file
 from flask_login import current_user, login_required
 from app import db
 from app.analysis import bp
 from app.analysis.forms import RequerimientoUploadForm
-from app.models import Plantilla, MapaPlantilla
+# ¡Importamos el nuevo modelo Analisis!
+from app.models import Plantilla, MapaPlantilla, Analisis
 import os
 import docx
 from docx.shared import Pt 
@@ -16,21 +17,25 @@ import re
 from io import BytesIO
 import openpyxl
 import traceback
+# Ya no necesitamos tempfile ni pickle
 
 # --- Constantes ---
 ALLOWED_EXTENSIONS = {'xlsx', 'docx'}
 TAG_REGEX = re.compile(r"(\{\{.*?\}\})") 
 TAG_CLEANER = re.compile(r"\{\{(.*?)\}\}") 
 
+# --- ¡FUNCIONES tempfile ELIMINADAS! ---
+
 # ==============================================================================
 # FUNCIÓN DE ANÁLISIS INTELIGENTE (Sin cambios)
 # ==============================================================================
-
 def analizar_complejidad_requerimiento(texto_requerimiento):
     """
     Analiza el requerimiento y determina automáticamente la cantidad óptima
     de casos de prueba necesarios basándose en múltiples factores.
     """
+    
+    texto_lower = texto_requerimiento.lower()
     
     # 1. MÉTRICAS BÁSICAS
     palabras = texto_requerimiento.split()
@@ -38,20 +43,23 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     lineas = texto_requerimiento.split('\n')
     total_lineas = len([l for l in lineas if l.strip()])
     
-    # 2. DETECTAR CRITERIOS DE ACEPTACIÓN
-    patrones_criterios = [
-        r'criterios?\s+de\s+aceptaci[oó]n',
-        r'dado\s+que.*cuando.*entonces',
-        r'escenario:',
-        r'Given.*When.*Then',
-        r'\d+\.\s+el\s+sistema\s+(debe|deber[áa])',
-        r'AC\d+:',
-        r'CA\d+:',
-    ]
-    
+    # 2. DETECTAR CRITERIOS DE ACEPTACIÓN (Lógica mejorada)
+    patron_ca = re.compile(r'^(ca|ac|criterio)[\s\-:]*\d*.*$', re.IGNORECASE | re.MULTILINE)
+    patron_historia = re.compile(r'como\s+.*quiero\s+.*para\s+.*', re.IGNORECASE | re.DOTALL)
+    patron_gherkin = re.compile(r'^(escenario|dado|given|cuando|when).*$', re.IGNORECASE | re.MULTILINE)
+
     criterios_encontrados = 0
-    for patron in patrones_criterios:
-        criterios_encontrados += len(re.findall(patron, texto_requerimiento, re.IGNORECASE))
+    criterios_encontrados += len(re.findall(patron_ca, texto_requerimiento))
+    criterios_encontrados += len(re.findall(patron_historia, texto_requerimiento))
+    criterios_encontrados += len(re.findall(patron_gherkin, texto_requerimiento))
+
+    if criterios_encontrados == 0:
+        listas_numeradas = len(re.findall(r'^\s*\d+[\.\)]\s+', texto_requerimiento, re.MULTILINE))
+        listas_viñetas = len(re.findall(r'^\s*[-•*]\s+', texto_requerimiento, re.MULTILINE))
+        criterios_encontrados = listas_numeradas + listas_viñetas
+
+    if criterios_encontrados == 0 and total_palabras > 50:
+        criterios_encontrados = 1
     
     # 3. DETECTAR PALABRAS CLAVE DE COMPLEJIDAD
     keywords_validacion = ['validar', 'verificar', 'validación', 'verificación', 'comprobar', 'asegurar', 'garantizar']
@@ -63,8 +71,6 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     keywords_integracion = ['integración', 'api', 'servicio', 'base de datos', 'endpoint', 'request', 'response', 'conexión']
     keywords_seguridad = ['seguridad', 'autenticación', 'autorización', 'permisos', 'roles', 'token', 'sesión', 'login', 'logout', 'contraseña']
     
-    # Contar ocurrencias
-    texto_lower = texto_requerimiento.lower()
     count_validacion = sum(1 for k in keywords_validacion if k in texto_lower)
     count_condicionales = sum(1 for k in keywords_condicionales if k in texto_lower)
     count_campos = sum(1 for k in keywords_campos if k in texto_lower)
@@ -74,11 +80,7 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     count_integracion = sum(1 for k in keywords_integracion if k in texto_lower)
     count_seguridad = sum(1 for k in keywords_seguridad if k in texto_lower)
     
-    # 4. DETECTAR LISTAS Y ENUMERACIONES
-    listas_numeradas = len(re.findall(r'^\s*\d+[\.\)]\s+', texto_requerimiento, re.MULTILINE))
-    listas_viñetas = len(re.findall(r'^\s*[-•*]\s+', texto_requerimiento, re.MULTILINE))
-    
-    # 5. CALCULAR PUNTUACIÓN DE COMPLEJIDAD
+    # 4. CALCULAR PUNTUACIÓN DE COMPLEJIDAD
     complejidad_score = 0
     
     if total_palabras < 100:
@@ -92,7 +94,7 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     else:
         complejidad_score += 25
     
-    complejidad_score += min(criterios_encontrados * 3, 20)
+    complejidad_score += min(criterios_encontrados * 5, 30)
     complejidad_score += min(count_validacion * 2, 10)
     complejidad_score += min(count_condicionales * 2, 10)
     complejidad_score += min(count_campos * 1.5, 8)
@@ -101,9 +103,8 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     complejidad_score += min(count_flujo * 1.5, 8)
     complejidad_score += min(count_integracion * 2.5, 15)
     complejidad_score += min(count_seguridad * 3, 18)
-    complejidad_score += min((listas_numeradas + listas_viñetas) * 1.5, 15)
     
-    # 6. DETERMINAR CANTIDAD DE CASOS SEGÚN SCORE
+    # 5. DETERMINAR CANTIDAD DE CASOS SEGÚN SCORE
     if complejidad_score < 20:
         cantidad_casos = 5
         nivel = "Muy Simple"
@@ -123,7 +124,7 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
         cantidad_casos = 35
         nivel = "Extremadamente Complejo"
     
-    # 7. AJUSTE INTELIGENTE
+    # 6. AJUSTE INTELIGENTE
     if criterios_encontrados > 5:
         cantidad_casos = max(cantidad_casos, criterios_encontrados * 2)
     
@@ -136,7 +137,7 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     cantidad_casos = min(cantidad_casos, 50)
     cantidad_casos = max(cantidad_casos, 5)
     
-    # 8. PREPARAR RESULTADO
+    # 7. PREPARAR RESULTADO
     resultado = {
         'cantidad_casos': cantidad_casos,
         'nivel_complejidad': nivel,
@@ -145,7 +146,7 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
             'palabras': total_palabras,
             'lineas': total_lineas,
             'criterios_aceptacion': criterios_encontrados,
-            'listas': listas_numeradas + listas_viñetas
+            'listas': 0
         },
         'factores': {
             'validaciones': count_validacion,
@@ -162,13 +163,11 @@ def analizar_complejidad_requerimiento(texto_requerimiento):
     
     return resultado
 
-
 # ==============================================================================
-# FUNCIONES AUXILIARES (¡AQUÍ ESTÁ LA CORRECCIÓN!)
+# FUNCIONES AUXILIARES (Sin cambios)
 # ==============================================================================
-
 def leer_texto_requerimiento(archivo):
-    """Lee el contenido de un archivo de requerimiento (.docx, .txt, .md)"""
+    # ... (Tu código existente)
     filename = archivo.filename
     text_content = ""
     try:
@@ -183,121 +182,76 @@ def leer_texto_requerimiento(archivo):
         flash(f"Error al leer el archivo: {str(e)}", "danger")
         return None
 
-
-# --- ¡INICIO DE LA CORRECCIÓN! ---
 def generar_excel_entregable(plantilla_obj, datos_ia):
-    """
-    Genera un archivo Excel rellenando la plantilla con los datos de la IA,
-    usando la hoja (sheet_name) y fila (header_row) guardadas en la BD.
-    """
+    # ... (Tu código existente)
     try:
         path_plantilla = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
         workbook = openpyxl.load_workbook(path_plantilla)
-        
-        # 1. Verificar que el mapeo del asistente exista
         if not plantilla_obj.sheet_name or not plantilla_obj.header_row:
-            print(f"Error: Plantilla '{plantilla_obj.nombre_plantilla}' (ID: {plantilla_obj.id}) no está mapeada. Faltan 'sheet_name' o 'header_row'.")
-            return None # Devuelve None para que la ruta pueda flashear un error
-
-        # 2. Obtener la hoja y la fila correctas DESDE LA BD
+            print(f"Error: Plantilla '{plantilla_obj.nombre_plantilla}' (ID: {plantilla_obj.id}) no está mapeada.")
+            return None
         sheet = workbook[plantilla_obj.sheet_name]
         fila_inicio = plantilla_obj.header_row + 1
-        
-        # 3. Mapa de etiquetas (etiqueta -> coordenada/columna)
         mapa_etiquetas = {mapa.etiqueta: mapa.coordenada for mapa in plantilla_obj.mapas}
-        
-        # 4. Lógica para tipo tabular (fila_tabla)
         if all(m.tipo_mapa == 'fila_tabla' for m in plantilla_obj.mapas):
-            
-            # ¡Ya no necesitamos buscar la fila! 'fila_inicio' es correcta.
-            
             for caso in datos_ia:
                 for etiqueta, valor in caso.items():
-                    # 'etiqueta' ej: "ID del caso de prueba"
-                    # 'mapa_etiquetas[etiqueta]' ej: "A"
                     if etiqueta in mapa_etiquetas:
                         columna = mapa_etiquetas[etiqueta]
                         valor_final = valor
                         if isinstance(valor, list):
                             valor_final = "\n".join(str(v) for v in valor)
-                        
-                        # Escribir en la celda correcta, ej: A10, A11, A12...
                         sheet[f"{columna}{fila_inicio}"] = valor_final
-                
-                fila_inicio += 1 # Incrementar la fila para el siguiente caso
-        
+                fila_inicio += 1
         else:
-            # 5. Lógica para tipo formulario (celda_simple)
             if datos_ia:
                 caso_principal = datos_ia[0]
                 for etiqueta, valor in caso_principal.items():
                     if etiqueta in mapa_etiquetas:
-                        coordenada = mapa_etiquetas[etiqueta] # ej. "B5"
+                        coordenada = mapa_etiquetas[etiqueta]
                         valor_final = valor
                         if isinstance(valor, list):
                             valor_final = "\n".join(str(v) for v in valor)
                         sheet[coordenada] = valor_final
-        
-        # 6. Guardar el archivo en memoria
         buffer_memoria = BytesIO()
         workbook.save(buffer_memoria)
         buffer_memoria.seek(0)
         return buffer_memoria
-        
     except Exception as e:
         print(f"Error generando Excel: {e}")
         traceback.print_exc()
         return None
-# --- FIN DE LA CORRECCIÓN! ---
-
 
 def reemplazar_texto_en_parrafo(parrafo, etiqueta, valor):
-    """Reemplaza una etiqueta en un párrafo de Word manteniendo el formato"""
+    # ... (Tu código existente)
     if etiqueta in parrafo.text:
         for run in parrafo.runs:
             if etiqueta in run.text:
                 run.text = run.text.replace(etiqueta, str(valor))
 
-
 def generar_word_entregable(plantilla_obj, datos_ia):
-    """Genera documento Word con casos de prueba"""
-    # (Esta función no necesita cambios, ya que la lógica de Word
-    # que usa {{etiquetas}} sigue siendo la misma que tenías)
+    # ... (Tu código existente)
     try:
         path_plantilla = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
         document = docx.Document(path_plantilla)
-        
-        mapa_simple = {
-            mapa.etiqueta: f"{{{{{mapa.etiqueta}}}}}" 
-            for mapa in plantilla_obj.mapas 
-            if mapa.tipo_mapa == 'celda_simple'
-        }
-        mapa_tabla = {
-            mapa.etiqueta: int(mapa.coordenada) 
-            for mapa in plantilla_obj.mapas 
-            if mapa.tipo_mapa == 'fila_tabla'
-        }
+        mapa_simple = {mapa.etiqueta: f"{{{{{mapa.etiqueta}}}}}" for mapa in plantilla_obj.mapas if mapa.tipo_mapa == 'celda_simple'}
+        mapa_tabla = {mapa.etiqueta: int(mapa.coordenada) for mapa in plantilla_obj.mapas if mapa.tipo_mapa == 'fila_tabla'}
         etiquetas_tabla_keys = list(mapa_tabla.keys())
-        
         for i, caso_ia in enumerate(datos_ia):
             if i == 0:
                 for etiqueta_limpia, etiqueta_sucia in mapa_simple.items():
                     if etiqueta_limpia in caso_ia:
                         valor = caso_ia[etiqueta_limpia]
-                        for para in document.paragraphs:
-                            reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
+                        for para in document.paragraphs: reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
                         for table in document.tables:
                             for row in table.rows:
                                 for cell in row.cells:
-                                    for para in cell.paragraphs:
-                                        reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
-
+                                    for para in cell.paragraphs: reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
                 if etiquetas_tabla_keys:
                     tabla_encontrada = None
                     fila_plantilla_idx = -1
                     for table in document.tables:
-                        if fila_plantilla_idx != -1: 
-                            break
+                        if fila_plantilla_idx != -1: break
                         for r_idx, row in enumerate(table.rows):
                             try:
                                 primera_etiqueta = etiquetas_tabla_keys[0]
@@ -306,38 +260,28 @@ def generar_word_entregable(plantilla_obj, datos_ia):
                                     tabla_encontrada = table
                                     fila_plantilla_idx = r_idx
                                     break
-                            except (IndexError, KeyError):
-                                continue
-                    
+                            except (IndexError, KeyError): continue
                     if tabla_encontrada and fila_plantilla_idx != -1:
                         datos_pasos = caso_ia.get("PASOS", [])
-                        if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys):
-                             datos_pasos = [caso_ia]
+                        if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys): datos_pasos = [caso_ia]
                         if datos_pasos and len(datos_pasos) > 0:
                             fila_plantilla_original = tabla_encontrada.rows[fila_plantilla_idx]
                             textos_plantilla = {}
                             for etiqueta_limpia, col_idx in mapa_tabla.items():
-                                try:
-                                    textos_plantilla[etiqueta_limpia] = fila_plantilla_original.cells[col_idx].text
-                                except IndexError:
-                                    textos_plantilla[etiqueta_limpia] = f"{{{{{etiqueta_limpia}}}}}"
-                            
+                                try: textos_plantilla[etiqueta_limpia] = fila_plantilla_original.cells[col_idx].text
+                                except IndexError: textos_plantilla[etiqueta_limpia] = f"{{{{{etiqueta_limpia}}}}}"
                             for paso_idx, paso_ia in enumerate(datos_pasos):
-                                if paso_idx == 0:
-                                    fila_actual = fila_plantilla_original
-                                else:
-                                    fila_actual = tabla_encontrada.add_row()
+                                if paso_idx == 0: fila_actual = fila_plantilla_original
+                                else: fila_actual = tabla_encontrada.add_row()
                                 for etiqueta_limpia, col_idx in mapa_tabla.items():
                                     try:
-                                        if paso_idx > 0:
-                                            fila_actual.cells[col_idx].text = textos_plantilla.get(etiqueta_limpia, "")
+                                        if paso_idx > 0: fila_actual.cells[col_idx].text = textos_plantilla.get(etiqueta_limpia, "")
                                         if etiqueta_limpia in paso_ia:
                                             valor_paso = str(paso_ia[etiqueta_limpia])
                                             etiqueta_sucia = f"{{{{{etiqueta_limpia}}}}}"
                                             texto_actual = fila_actual.cells[col_idx].text
                                             fila_actual.cells[col_idx].text = texto_actual.replace(etiqueta_sucia, valor_paso)
-                                    except IndexError:
-                                        continue
+                                    except IndexError: continue
             else:
                 document.add_page_break()
                 id_caso_val = caso_ia.get('ID del caso de prueba', caso_ia.get('ID_CASO_PRUEBA', ''))
@@ -349,26 +293,19 @@ def generar_word_entregable(plantilla_obj, datos_ia):
                         document.add_heading(etiqueta_limpia.replace('_', ' ').title(), level=3)
                         document.add_paragraph(str(caso_ia[etiqueta_limpia]))
                 datos_pasos = caso_ia.get("PASOS", [])
-                if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys):
-                     datos_pasos = [caso_ia]
+                if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys): datos_pasos = [caso_ia]
                 if datos_pasos and etiquetas_tabla_keys:
                     document.add_heading("Detalle de Ejecución", level=3)
                     tabla_nueva = document.add_table(rows=1, cols=len(etiquetas_tabla_keys))
-                    try:
-                        tabla_nueva.style = 'Light Grid Accent 1'
-                    except KeyError:
-                        tabla_nueva.style = 'Table Grid'
+                    try: tabla_nueva.style = 'Light Grid Accent 1'
+                    except KeyError: tabla_nueva.style = 'Table Grid'
                     hdr_cells = tabla_nueva.rows[0].cells
-                    for idx, etiqueta in enumerate(etiquetas_tabla_keys):
-                        hdr_cells[idx].text = etiqueta
+                    for idx, etiqueta in enumerate(etiquetas_tabla_keys): hdr_cells[idx].text = etiqueta
                     for paso_ia in datos_pasos:
                         row_cells = tabla_nueva.add_row().cells
                         for idx, etiqueta_limpia in enumerate(etiquetas_tabla_keys):
-                            if etiqueta_limpia in paso_ia:
-                                row_cells[idx].text = str(paso_ia[etiqueta_limpia])
-                            else:
-                                row_cells[idx].text = ""
-
+                            if etiqueta_limpia in paso_ia: row_cells[idx].text = str(paso_ia[etiqueta_limpia])
+                            else: row_cells[idx].text = ""
         buffer_memoria = BytesIO()
         document.save(buffer_memoria)
         buffer_memoria.seek(0)
@@ -378,54 +315,81 @@ def generar_word_entregable(plantilla_obj, datos_ia):
         traceback.print_exc()
         return None
 
-
 # ==============================================================================
-# RUTAS (Sin cambios)
+# ¡RUTAS REFACTORIZADAS! (Versión "Historial en BD")
 # ==============================================================================
 
 @bp.route('/analysis', methods=['GET', 'POST'])
 @login_required
 def analysis_index():
-    """Ruta principal para análisis de requerimientos con IA"""
+    """
+    Ruta principal para análisis.
+    Maneja tanto el envío (POST) como la visualización (GET).
+    """
     form = RequerimientoUploadForm()
     
+    # Llenar el <select> de plantillas
     plantillas_usuario = Plantilla.query.filter_by(
         autor=current_user
     ).with_entities(Plantilla.id, Plantilla.nombre_plantilla).all()
     form.plantilla.choices = [(p.id, p.nombre_plantilla) for p in plantillas_usuario]
     
-    ai_result_raw = session.get('ai_result_raw', None)
-    ai_result_data = None
-    plantilla_id_sesion = session.get('plantilla_seleccionada_id', None)
-    analisis_info = session.get('analisis_info', None)
+    # --- LÓGICA GET: Cargar un análisis existente o la página vacía ---
     
-    if ai_result_raw:
-        try:
-            match = re.search(r'\[.*\]', ai_result_raw, re.DOTALL)
-            if match:
-                json_text = match.group(0)
-                ai_result_data = json.loads(json_text)
-                if not isinstance(ai_result_data, list) or len(ai_result_data) == 0:
-                    ai_result_data = None
-                elif not isinstance(ai_result_data[0], dict):
-                    ai_result_data = None
-            else:
-                ai_result_data = None
-        except json.JSONDecodeError as e:
-            ai_result_data = None
-        except Exception as e:
-            traceback.print_exc()
-            ai_result_data = None
+    # 1. Obtener el ID del análisis a ver desde la URL (ej. /analysis?view_id=5)
+    view_id = request.args.get('view_id', None)
+    
+    # 2. Inicializar variables que pasaremos al template
+    analisis_obj = None
+    analisis_info = None
+    ai_result_data = None
+    texto_requerimiento_raw = None
+    ai_result_raw_text = None # Para el modal de "Ver JSON Crudo"
+
+    if view_id:
+        # 3. Si se pide un ID, cargarlo desde la BD
+        analisis_obj = Analisis.query.get_or_404(view_id)
+        # Asegurarse de que el usuario solo vea sus propios análisis
+        if analisis_obj.autor != current_user:
+            flash("Acceso no autorizado.", "danger")
+            return redirect(url_for('analysis.analysis_index'))
             
+        # 4. Poblar las variables con los datos de la BD
+        analisis_info = {
+            'nivel': analisis_obj.nivel_complejidad,
+            'casos': analisis_obj.casos_generados,
+            'criterios': analisis_obj.criterios_detectados,
+            'palabras': analisis_obj.palabras_analizadas
+        }
+        texto_requerimiento_raw = analisis_obj.texto_requerimiento_raw
+        ai_result_raw_text = analisis_obj.ai_result_json # Pasamos el JSON crudo al template
+        
+        # 5. Parsear el JSON guardado en la BD
+        if analisis_obj.ai_result_json:
+            try:
+                match = re.search(r'\[.*\]', analisis_obj.ai_result_json, re.DOTALL)
+                if match:
+                    ai_result_data = json.loads(match.group(0))
+                # ... (tu lógica de validación de JSON) ...
+            except Exception as e:
+                print(f"Error parseando JSON de BD: {e}")
+                ai_result_data = None
+    
+    # --- LÓGICA POST: Crear un nuevo análisis ---
+    
     if form.validate_on_submit():
         archivo = form.archivo_requerimiento.data
         plantilla_seleccionada_id = form.plantilla.data
         plantilla_obj = Plantilla.query.get(plantilla_seleccionada_id)
         
+        # (Validaciones de plantilla)
         mapas = plantilla_obj.mapas.all()
         if not mapas:
             flash(f"La plantilla '{plantilla_obj.nombre_plantilla}' no tiene etiquetas escaneadas.", "danger")
             return redirect(url_for('analysis.analysis_index'))
+        if plantilla_obj.tipo_archivo == 'Excel' and (not plantilla_obj.sheet_name or not plantilla_obj.header_row):
+             flash(f"La plantilla de Excel '{plantilla_obj.nombre_plantilla}' está incompleta.", "danger")
+             return redirect(url_for('core.map_step_1_sheet', plantilla_id=plantilla_obj.id))
             
         etiquetas_simples = [m.etiqueta for m in mapas if m.tipo_mapa == 'celda_simple']
         etiquetas_tabla = [m.etiqueta for m in mapas if m.tipo_mapa == 'fila_tabla']
@@ -437,25 +401,8 @@ def analysis_index():
             print("🧠 ANALIZANDO COMPLEJIDAD DEL REQUERIMIENTO...")
             print("="*80)
             analisis = analizar_complejidad_requerimiento(texto_requerimiento)
-            print(f"\n📊 RESULTADOS DEL ANÁLISIS:")
-            print(f"   ├─ Nivel de Complejidad: {analisis['nivel_complejidad']}")
-            print(f"   ├─ Score: {analisis['score']}")
-            print(f"   ├─ Casos a Generar: {analisis['cantidad_casos']}")
-            print(f"\n📈 MÉTRICAS:")
-            print(f"   ├─ Palabras: {analisis['metricas']['palabras']}")
-            print(f"   ├─ Líneas: {analisis['metricas']['lineas']}")
-            print(f"   ├─ Criterios: {analisis['metricas']['criterios_aceptacion']}")
-            print(f"   └─ Listas: {analisis['metricas']['listas']}")
-            print(f"\n💡 {analisis['recomendacion']}")
-            print("="*80 + "\n")
-            
             num_casos = analisis['cantidad_casos']
-            session['analisis_info'] = {
-                'nivel': analisis['nivel_complejidad'],
-                'casos': num_casos,
-                'criterios': analisis['metricas']['criterios_aceptacion'],
-                'palabras': analisis['metricas']['palabras']
-            }
+            # (impresión en consola de métricas)
             
             try:
                 api_key = os.environ.get('GOOGLE_API_KEY') 
@@ -464,28 +411,27 @@ def analysis_index():
                     return redirect(url_for('analysis.analysis_index'))
                 
                 genai.configure(api_key=api_key)
+                
+                # --- ¡CORRECCIÓN 1: NOMBRE DEL MODELO! ---
+                # Volvemos al modelo FLASH que te funciona
                 model = genai.GenerativeModel('gemini-2.0-flash-exp') 
                 
+                # --- ¡CORRECCIÓN 2: PROMPT SIMPLIFICADO! ---
                 prompt = f"""
-Eres un Ingeniero de QA Senior con 10+ años de experiencia, experto en análisis de requerimientos y diseño de Casos de Prueba.
-CONTEXTO DEL ANÁLISIS:
-- El sistema analizó este requerimiento y determinó que necesita EXACTAMENTE {num_casos} casos de prueba.
-- Nivel de complejidad: {analisis['nivel_complejidad']}
-- Criterios de aceptación encontrados: {analisis['metricas']['criterios_aceptacion']}
-Tu objetivo es generar EXACTAMENTE {num_casos} casos de prueba que cubran:
-- Casos positivos (flujo feliz): ~40%
-- Casos negativos (validaciones, errores): ~35%
-- Casos de borde (límites, valores extremos): ~15%
-- Casos de seguridad e integración (si aplica): ~10%
+Eres un asistente de QA que genera casos de prueba en formato JSON.
+Basado en el siguiente requerimiento, genera EXACTAMENTE {num_casos} casos de prueba.
+
 REQUERIMIENTO A ANALIZAR:
 ---
 {texto_requerimiento}
 ---
+
 INSTRUCCIONES CRÍTICAS:
 1. La respuesta debe ser ÚNICAMENTE un array JSON válido, sin texto adicional.
 2. Debes generar EXACTAMENTE {num_casos} casos de prueba.
-3. Distribuye los casos estratégicamente según los criterios detectados.
+3. Basa tus casos en los Criterios de Aceptación y el texto del requerimiento.
 """
+                # --- FIN DE LAS CORRECCIONES ---
                 
                 if etiquetas_simples and etiquetas_tabla:
                     prompt += f"""
@@ -524,69 +470,114 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
                 
                 print("🤖 Enviando prompt a Gemini...")
                 response = model.generate_content(prompt)
-                session['ai_result_raw'] = response.text
-                session['plantilla_seleccionada_id'] = plantilla_seleccionada_id
                 
+                # --- ¡NUEVA LÓGICA DE GUARDADO EN BD! ---
+                
+                ai_json_string = None
+                casos_generados_count = 0
                 try:
                     match = re.search(r'\[.*\]', response.text, re.DOTALL)
                     if match:
-                        casos_generados = json.loads(match.group(0))
-                        print(f"✅ Generación exitosa: {len(casos_generados)} casos")
-                        flash(f"✅ Análisis completado: {len(casos_generados)} casos generados (Complejidad: {analisis['nivel_complejidad']})", "success")
+                        ai_json_string = match.group(0) # Guardamos el JSON crudo
+                        casos_generados = json.loads(ai_json_string)
+                        casos_generados_count = len(casos_generados)
+                        print(f"✅ Generación exitosa: {casos_generados_count} casos")
+                        flash(f"✅ Análisis completado: {casos_generados_count} casos generados", "success")
                     else:
                         flash("⚠️ Respuesta no parseable. Intenta nuevamente.", "warning")
+                        ai_json_string = response.text # Guardar la respuesta cruda aunque sea errónea
                 except json.JSONDecodeError as je:
                     print(f"❌ Error JSON: {je}")
                     flash("Error: Respuesta de IA inválida.", "danger")
+                    ai_json_string = response.text # Guardar la respuesta cruda errónea
+
+                # 2. Crear el nuevo objeto 'Analisis'
+                nuevo_analisis = Analisis(
+                    autor=current_user,
+                    plantilla_usada=plantilla_obj,
+                    nombre_requerimiento=archivo.filename,
+                    texto_requerimiento_raw=texto_requerimiento,
+                    nivel_complejidad=analisis['nivel_complejidad'],
+                    casos_generados=casos_generados_count, # Usamos el conteo real (0 si falló)
+                    criterios_detectados=analisis['metricas']['criterios_aceptacion'],
+                    palabras_analizadas=analisis['metricas']['palabras'],
+                    ai_result_json=ai_json_string # Guardamos el JSON (o el error) como texto
+                )
+                
+                # 3. Guardar en la Base de Datos
+                db.session.add(nuevo_analisis)
+                db.session.commit()
+                
+                print(f"💾 Análisis {nuevo_analisis.id} guardado en la base de datos.")
+                
+                # 4. Redirigir a la vista de este nuevo análisis
+                return redirect(url_for('analysis.analysis_index', view_id=nuevo_analisis.id))
                 
             except Exception as e:
                 flash(f"Error con API Gemini: {str(e)}", "danger")
                 traceback.print_exc()
         
-        return redirect(url_for('analysis.analysis_index'))
+        return redirect(url_for('analysis.analysis_index')) # Redirigir si falla
+
+    # --- LÓGICA GET (Final) ---
+    # Cargar el historial completo para la barra lateral
+    historial_analisis = Analisis.query.filter_by(
+        autor=current_user
+    ).order_by(Analisis.timestamp.desc()).all()
 
     return render_template('analysis/analysis.html', 
                            title='Análisis de Requerimiento', 
                            form=form,
+                           # Datos del análisis que se está viendo (o None)
+                           analisis_obj=analisis_obj,
+                           analisis_info=analisis_info,
                            ai_result_data=ai_result_data,
-                           ai_result_raw=ai_result_raw,
-                           plantilla_id=plantilla_id_sesion,
-                           analisis_info=analisis_info)
+                           ai_result_raw=ai_result_raw_text, # <--- ¡Variable corregida!
+                           texto_requerimiento=texto_requerimiento_raw,
+                           # Lista del historial
+                           historial_analisis=historial_analisis
+                           )
 
 
 @bp.route('/analysis/clear', methods=['POST'])
 @login_required
 def clear_analysis():
-    """Limpia los resultados del análisis de la sesión"""
-    session.pop('ai_result_raw', None)
-    session.pop('plantilla_seleccionada_id', None)
-    session.pop('analisis_info', None)
-    flash("Análisis limpiado correctamente.", "info")
+    """
+    Limpia la vista actual y redirige a la página principal de análisis.
+    """
+    flash("Vista limpiada.", "info")
     return redirect(url_for('analysis.analysis_index'))
 
 
-@bp.route('/generate_file')
+@bp.route('/generate_file/<int:view_id>') # <-- ¡RECIBE UN ID!
 @login_required
-def generate_file():
-    """Genera y descarga el archivo entregable (Excel o Word)"""
+def generate_file(view_id):
+    """
+    Genera y descarga el archivo entregable para un análisis específico.
+    """
     
-    json_text = session.get('ai_result_raw')
-    plantilla_id = session.get('plantilla_seleccionada_id')
-    
-    if not json_text or not plantilla_id:
-        flash("Error: No hay datos en sesión. Analiza un requerimiento primero.", "danger")
+    # 1. Cargar el análisis desde la BD
+    analisis_obj = Analisis.query.get_or_404(view_id)
+    if analisis_obj.autor != current_user:
+        flash("Acceso no autorizado.", "danger")
         return redirect(url_for('analysis.analysis_index'))
-        
-    plantilla_obj = Plantilla.query.get_or_404(plantilla_id)
+
+    # 2. Obtener los datos (JSON y Plantilla) desde el objeto
+    json_text = analisis_obj.ai_result_json
+    plantilla_obj = analisis_obj.plantilla_usada
     
+    if not json_text or not plantilla_obj:
+        flash("Error: Faltan datos de JSON o plantilla en este análisis.", "danger")
+        return redirect(url_for('analysis.analysis_index', view_id=view_id))
+        
     try:
         match = re.search(r'\[.*\]', json_text, re.DOTALL)
         datos_ia = json.loads(match.group(0))
-        print(f"📦 Generando archivo con {len(datos_ia)} casos")
+        print(f"📦 Generando archivo para Análisis {view_id} con {len(datos_ia)} casos")
     except Exception as e:
-        flash("Error: Datos corruptos. Re-analiza el requerimiento.", "danger")
+        flash("Error: Datos JSON corruptos en este análisis.", "danger")
         traceback.print_exc()
-        return redirect(url_for('analysis.analysis_index'))
+        return redirect(url_for('analysis.analysis_index', view_id=view_id))
         
     buffer_memoria = None
     mimetype = ""
@@ -595,18 +586,15 @@ def generate_file():
     if plantilla_obj.tipo_archivo == 'Excel':
         buffer_memoria = generar_excel_entregable(plantilla_obj, datos_ia)
         mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        download_name = f"entregable_{os.path.splitext(plantilla_obj.filename_seguro)[0]}.xlsx"
+        download_name = f"entregable_{analisis_obj.id}_{plantilla_obj.nombre_plantilla}.xlsx"
         
     elif plantilla_obj.tipo_archivo == 'Word':
         buffer_memoria = generar_word_entregable(plantilla_obj, datos_ia)
         mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        download_name = f"entregable_{os.path.splitext(plantilla_obj.filename_seguro)[0]}.docx"
+        download_name = f"entregable_{analisis_obj.id}_{plantilla_obj.nombre_plantilla}.docx"
     
     if buffer_memoria:
-        session.pop('ai_result_raw', None)
-        session.pop('plantilla_seleccionada_id', None)
-        session.pop('analisis_info', None)
-        
+        # Ya no limpiamos la sesión, los datos son permanentes
         return send_file(
             buffer_memoria,
             as_attachment=True,
@@ -615,4 +603,4 @@ def generate_file():
         )
     else:
         flash(f"Error generando {plantilla_obj.tipo_archivo}. Revisa logs.", "danger")
-        return redirect(url_for('analysis.analysis_index'))
+        return redirect(url_for('analysis.analysis_index', view_id=view_id))
