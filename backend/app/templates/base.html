@@ -61,10 +61,36 @@
       .btn-outline-primary { color: var(--bs-primary) !important; border-color: var(--bs-primary) !important; font-weight: 600; }
       .btn-outline-primary:hover { background-color: var(--bs-primary-dark) !important; border-color: var(--bs-primary-dark) !important; color: #fff !important; }
     
-      .dropdown-menu { border-radius: 0.5rem; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); }
-      .dropdown-item .bi { opacity: 0.6; }
-      .dropdown-item.text-danger .bi { color: var(--bs-danger); }
+      /* --- ¡MEJORA: ESTILO GLASSMORPHISM PARA DROPDOWN! --- */
+      .dropdown-menu {
+          background-color: rgba(255, 255, 255, 0.7) !important; /* Vidrio Blanco */
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+          border-radius: 0.5rem;
+          padding: 0.5rem 0;
+      }
+      
+      .dropdown-menu .dropdown-item {
+          background-color: transparent !important;
+          color: var(--bs-dark); /* Texto oscuro sobre vidrio claro */
+          padding: 0.5rem 1rem;
+      }
 
+      .dropdown-item .bi { 
+          opacity: 0.6; 
+          color: var(--bs-dark); /* Iconos oscuros */
+      }
+      .dropdown-item.text-danger { 
+          color: var(--bs-danger) !important; 
+      }
+      .dropdown-item.text-danger .bi { 
+          color: var(--bs-danger) !important; 
+          opacity: 0.8;
+      }
+
+      /* Hover Naranja (primary) */
       .dropdown-menu .dropdown-item:active,
       .dropdown-menu .dropdown-item:hover {
           background-color: var(--bs-primary) !important;
@@ -75,6 +101,19 @@
           opacity: 1.0;
           color: #fff !important;
       }
+      
+      /* Hover Rojo (danger) for Logout */
+      .dropdown-menu .dropdown-item.text-danger:active,
+      .dropdown-menu .dropdown-item.text-danger:hover {
+          background-color: var(--bs-danger) !important;
+          color: #fff !important;
+      }
+      .dropdown-menu .dropdown-item.text-danger:active .bi,
+      .dropdown-menu .dropdown-item.text-danger:hover .bi {
+          color: #fff !important;
+          opacity: 1.0;
+      }
+      /* --- FIN DE LA MEJORA --- */
 
       /* ========================================
          GLASSMORPHISM TOAST NOTIFICATIONS
@@ -199,6 +238,26 @@
       }
       /* ======================================== */
 
+      /* Color de Item Activo (para Historial) */
+      .list-group-item.active {
+          background-color: var(--bs-secondary-dark) !important;
+          border-color: var(--bs-secondary-dark) !important;
+          color: #fff !important;
+      }
+      .list-group-item.active a,
+      .list-group-item.active a strong {
+          color: #fff !important;
+      }
+      .list-group-item:not(.active) a,
+      .list-group-item:not(.active) a strong {
+          color: var(--bs-dark) !important;
+          text-decoration: none;
+      }
+      .list-group-item:not(.active):hover a strong {
+          color: var(--bs-primary) !important;
+      }
+      /* ---------------------------------- */
+
     </style>
   </head>
   
@@ -260,7 +319,6 @@
         const toastContainer = document.querySelector('.toast-container');
         if (!toastContainer) return;
         
-        // Configuración de estilos según categoría
         let toastClass = 'glass-secondary';
         let iconClass = 'bi-info-circle-fill';
         let closeButtonClass = 'btn-close-white';

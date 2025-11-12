@@ -1,66 +1,89 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        
-        <div class="col-lg-3">
-            <div class="card" style="border-left: none;">
-                <div class="card-body bg-light rounded-3 shadow-sm p-3" style="max-height: 80vh; overflow-y: auto;">
-                    <h5 class="mb-3">
-                        <i class="bi bi-clock-history me-2"></i>Historial de Análisis
-                    </h5>
-                    
-                    <a href="{{ url_for('analysis.analysis_index') }}" class="btn btn-outline-secondary btn-sm w-100 mb-3">
-                        <i class="bi bi-plus-circle me-1"></i>Nuevo Análisis
-                    </a>
 
-                    {% if historial_analisis %}
-                    <div class="list-group">
-                        {% for item in historial_analisis %}
-                        <a href="{{ url_for('analysis.analysis_index', view_id=item.id) }}" 
-                           class="list-group-item list-group-item-action 
-                                  {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}">
-                            
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 text-truncate" style="max-width: 200px;" 
-                                    title="{{ item.nombre_requerimiento or 'Análisis' }}">
-                                    {{ item.nombre_requerimiento or 'Análisis' }}
-                                </h6>
-                                <small>{{ item.timestamp.strftime('%Y-%m-%d') }}</small>
-                            </div>
-                            <small class="mb-1 text-muted">
-                                {{ item.casos_generados }} casos ({{ item.nivel_complejidad }})
-                            </small>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-center text-muted small mt-4">No tienes análisis guardados.</p>
-                    {% endif %}
-                </div>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="historialOffcanvas" aria-labelledby="historialOffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="historialOffcanvasLabel">
+        <i class="bi bi-clock-history me-2"></i>Historial de Análisis
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    
+    <a href="{{ url_for('analysis.analysis_index') }}" class="btn btn-outline-secondary btn-sm w-100 mb-3">
+        <i class="bi bi-plus-circle me-1"></i>Nuevo Análisis
+    </a>
+
+    {% if historial_analisis %}
+    <div class="list-group">
+        {% for item in historial_analisis %}
+        <div class="list-group-item list-group-item-action p-2 
+                    {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}" 
+             style="border-radius: .5rem; margin-bottom: 5px; position: relative;">
+            
+            <div class="d-flex w-100 justify-content-between align-items-center">
+                <a href="{{ url_for('analysis.analysis_index', view_id=item.id) }}" 
+                   class="text-decoration-none p-2 flex-grow-1 stretched-link">
+                    <strong class="mb-1 text-truncate d-block" style="max-width: 200px;" 
+                        title="{{ item.nombre_requerimiento or 'Análisis' }}">
+                        {{ item.nombre_requerimiento or 'Análisis' }}
+                    </strong>
+                    <small class="mb-1 d-block 
+                                {% if analisis_obj and analisis_obj.id == item.id %}text-white-50{% else %}text-muted{% endif %}">
+                        {{ item.casos_generados }} casos ({{ item.nivel_complejidad }})
+                    </small>
+                </a>
+                
+                <form id="form-delete-{{ item.id }}" 
+                      action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}" 
+                      method="POST" class="ms-2" style="position: relative; z-index: 5;">
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteConfirmModal"
+                            data-form-id="form-delete-{{ item.id }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </div>
         </div>
-        
-        <div class="col-lg-9">
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-muted small mt-4">No tienes análisis guardados.</p>
+    {% endif %}
+  </div>
+</div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
             
-            <div class="card mb-4" style="border-left: none; background-color: var(--bs-secondary-dark); position: relative;">
+            <div class="card mb-4" style="border-left: none; background-color: var(--bs-secondary-dark);">
                 <div class="card-body p-4">
-                    <h2 class="h4 card-title text-white mb-3">
-                        <i class="bi bi-robot me-2"></i>Análisis Inteligente de Requerimientos
-                    </h2>
-                    <p class="card-text text-white-50">
-                        El sistema analizará automáticamente la complejidad y generará la cantidad óptima de casos de prueba.
-                    </p>
-                    
-                    {% if texto_requerimiento %}
-                    <div class="position-absolute top-0 end-0 p-3" style="margin-top: 1rem; margin-right: 1rem;">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-outline-light btn-sm" 
+                                type="button" data-bs-toggle="offcanvas" 
+                                data-bs-target="#historialOffcanvas" 
+                                aria-controls="historialOffcanvas">
+                            <i class="bi bi-clock-history me-1"></i> Historial
+                        </button>
+                        
+                        {% if texto_requerimiento %}
                         <button class="btn btn-light btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#requerimientoModal">
                             <i class="bi bi-file-text-fill me-1"></i>
                             Ver Requerimiento
                         </button>
+                        {% endif %}
                     </div>
-                    {% endif %}
+                    
+                    <h2 class="h4 card-title text-white mb-3">
+                        <i class="bi bi-robot me-2"></i>Análisis Inteligente de Requerimientos
+                    </h2>
+
+                    <p class="card-text text-white-50">
+                        El sistema analizará automáticamente la complejidad y generará la cantidad óptima de casos de prueba.
+                    </p>
                     
                     <form action="{{ url_for('analysis.analysis_index') }}" method="post" enctype="multipart/form-data" novalidate>
                         {{ form.hidden_tag() }}
@@ -222,8 +245,7 @@
                 <p class="mb-2"><strong>Posibles causas:</strong></p>
                 <ul>
                     <li>La IA incluyó texto explicativo antes o después del JSON.</li>
-                    <li>El JSON está malformado o incompleto (esto puede pasar con análisis muy complejos).</li>
-                    <li>El modelo `flash` no pudo seguir la instrucción del prompt.</li>
+                    <li>El JSON está malformado o incompleto.</li>
                 </ul>
                 <button class="btn btn-sm btn-outline-danger mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#errorDetails">
                     Ver respuesta completa de la IA
@@ -280,7 +302,68 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-left: 6px solid var(--bs-danger); border-radius: .75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15); background-color: white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar este análisis?</p>
+                <p class="text-danger small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
 <style>
+    /* --- ¡INICIO DE LA MEJORA! --- */
+    /* Estilo "Glassmorphism" para el Sidebar (Offcanvas) */
+    
+    /* 1. El contenedor principal del Offcanvas */
+    .offcanvas {
+        /* Fondo blanco semi-transparente */
+        background-color: rgba(255, 255, 255, 0.7) !important; 
+        
+        /* Desenfoque de fondo */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        
+        /* Borde sutil */
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        
+        /* Sombra suave */
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 2. El encabezado (título "Historial") */
+    .offcanvas-header {
+        /* ¡IMPORTANTE! Debe ser transparente para ver el "vidrio" */
+        background-color: transparent; 
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 3. El cuerpo (donde va la lista) */
+    .offcanvas-body {
+        /* ¡IMPORTANTE! También debe ser transparente */
+        background-color: transparent; 
+        /* El 'bg-light' de la versión anterior tapaba el efecto */
+    }
+    
+    /* 4. Hacemos que los items del historial (no activos)
+          tengan un fondo blanco sutil para flotar */
+    .offcanvas-body .list-group-item:not(.active) {
+        background-color: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    /* --- FIN DE LA MEJORA --- */
+
     /* ... (Tus estilos existentes para tabla, drag-drop, etc.) ... */
     .table-sm td { padding: 0.5rem; font-size: 0.875rem; max-width: 200px; vertical-align: middle; }
     .cell-content { max-height: 100px; overflow: visible; }
@@ -306,6 +389,7 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
     // ... (Tu script existente para 'Ver más' y 'Drag-Drop') ...
     document.querySelectorAll('.btn-toggle-text').forEach(button => {
         button.addEventListener('click', function() {
@@ -355,6 +439,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         dropZoneText.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${file.name} <small class="ms-2">(${sizeMB} MB)</small>`;
         dropZoneText.classList.add('file-selected');
+    }
+
+    // Script del Modal de Borrado (Sin cambios)
+    var deleteModal = document.getElementById('deleteConfirmModal');
+    var confirmButton = document.getElementById('confirmDeleteButton');
+    var formToSubmit; 
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var formId = button.getAttribute('data-form-id');
+            formToSubmit = document.getElementById(formId);
+        });
+        confirmButton.addEventListener('click', function () {
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        });
     }
 });
 </script>

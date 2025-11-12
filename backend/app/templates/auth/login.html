@@ -17,16 +17,16 @@ style="
     <div class="col-12 col-lg-10">
         <div class="row g-0 rounded-4 overflow-hidden shadow-lg">
             
-            <div class="col-md-6 bg-white p-4 p-md-5 d-flex align-items-center">
+            <div class="col-md-6 p-4 p-md-5 d-flex align-items-center login-glass-card">
                 
                 <div> 
-                    <h1 class="h2 mb-4">Iniciar Sesión</h1>
+                    <h1 class="h2 mb-4 text-dark">Iniciar Sesión</h1>
                     
                     <form action="" method="post" novalidate>
                         {{ form.hidden_tag() }}
                         
                         <div class="mb-3">
-                            {{ form.email.label(class="form-label") }}
+                            {{ form.email.label(class="form-label text-dark") }}
                             {{ form.email(class="form-control form-control-lg", size=32) }}
                             {% for error in form.email.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
@@ -34,7 +34,7 @@ style="
                         </div>
                         
                         <div class="mb-3">
-                            {{ form.password.label(class="form-label") }}
+                            {{ form.password.label(class="form-label text-dark") }}
                             {{ form.password(class="form-control form-control-lg", size=32) }}
                             {% for error in form.password.errors %}
                             <div class="text-danger small mt-1">{{ error }}</div>
@@ -43,7 +43,7 @@ style="
                         
                         <div class="mb-3 form-check">
                             {{ form.remember_me(class="form-check-input") }}
-                            {{ form.remember_me.label(class="form-check-label") }}
+                            {{ form.remember_me.label(class="form-check-label text-dark") }}
                         </div>
                         
                         <div class="d-grid">
@@ -53,7 +53,7 @@ style="
                     
                     <hr class="my-4">
                     
-                    <p class="mb-0">¿Usuario nuevo? 
+                    <p class="mb-0 text-dark">¿Usuario nuevo? 
                         <a href="{{ url_for('auth.register') }}" class="fw-bold">Haz clic para registrarte</a>
                     </p>
                 </div>
@@ -74,12 +74,26 @@ style="
 {% block scripts %}
 {{ super() }} 
 <style>
+    /* --- ¡CORRECCIÓN 3: CSS DE GLASSMORPHISM AÑADIDO! --- */
+    .login-glass-card {
+        /* 1. Fondo blanco semi-transparente */
+        background-color: rgba(255, 255, 255, 0.7) !important;
+        
+        /* 2. Desenfoque de fondo */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        
+        /* 3. Borde sutil */
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    /* -------------------------------------------------- */
+
     .login-image-placeholder {
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         min-height: 400px;
-        /* La opacidad se aplica con JS para evitar conflictos */
+        opacity: 0.7; /* Opacidad agregada */
     }
 </style>
 
@@ -94,9 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 3. Aplicar la URL como estilo de fondo
         if (imageUrl) {
             placeholder.style.backgroundImage = `url(${imageUrl})`;
-            
-            /* --- ¡MEJORA 3: OPACIDAD APLICADA CON JAVASCRIPT! --- */
-            placeholder.style.opacity = '0.9'; 
         }
     }
 });

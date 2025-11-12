@@ -328,33 +328,25 @@ def analysis_index():
     """
     form = RequerimientoUploadForm()
     
-    # Llenar el <select> de plantillas
     plantillas_usuario = Plantilla.query.filter_by(
         autor=current_user
     ).with_entities(Plantilla.id, Plantilla.nombre_plantilla).all()
     form.plantilla.choices = [(p.id, p.nombre_plantilla) for p in plantillas_usuario]
     
-    # --- LÓGICA GET: Cargar un análisis existente o la página vacía ---
-    
-    # 1. Obtener el ID del análisis a ver desde la URL (ej. /analysis?view_id=5)
     view_id = request.args.get('view_id', None)
     
-    # 2. Inicializar variables que pasaremos al template
     analisis_obj = None
     analisis_info = None
     ai_result_data = None
     texto_requerimiento_raw = None
-    ai_result_raw_text = None # Para el modal de "Ver JSON Crudo"
+    ai_result_raw_text = None 
 
     if view_id:
-        # 3. Si se pide un ID, cargarlo desde la BD
         analisis_obj = Analisis.query.get_or_404(view_id)
-        # Asegurarse de que el usuario solo vea sus propios análisis
         if analisis_obj.autor != current_user:
             flash("Acceso no autorizado.", "danger")
             return redirect(url_for('analysis.analysis_index'))
             
-        # 4. Poblar las variables con los datos de la BD
         analisis_info = {
             'nivel': analisis_obj.nivel_complejidad,
             'casos': analisis_obj.casos_generados,
@@ -362,27 +354,22 @@ def analysis_index():
             'palabras': analisis_obj.palabras_analizadas
         }
         texto_requerimiento_raw = analisis_obj.texto_requerimiento_raw
-        ai_result_raw_text = analisis_obj.ai_result_json # Pasamos el JSON crudo al template
+        ai_result_raw_text = analisis_obj.ai_result_json
         
-        # 5. Parsear el JSON guardado en la BD
         if analisis_obj.ai_result_json:
             try:
                 match = re.search(r'\[.*\]', analisis_obj.ai_result_json, re.DOTALL)
                 if match:
                     ai_result_data = json.loads(match.group(0))
-                # ... (tu lógica de validación de JSON) ...
             except Exception as e:
                 print(f"Error parseando JSON de BD: {e}")
                 ai_result_data = None
-    
-    # --- LÓGICA POST: Crear un nuevo análisis ---
     
     if form.validate_on_submit():
         archivo = form.archivo_requerimiento.data
         plantilla_seleccionada_id = form.plantilla.data
         plantilla_obj = Plantilla.query.get(plantilla_seleccionada_id)
         
-        # (Validaciones de plantilla)
         mapas = plantilla_obj.mapas.all()
         if not mapas:
             flash(f"La plantilla '{plantilla_obj.nombre_plantilla}' no tiene etiquetas escaneadas.", "danger")
@@ -520,7 +507,6 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
         return redirect(url_for('analysis.analysis_index')) # Redirigir si falla
 
     # --- LÓGICA GET (Final) ---
-    # Cargar el historial completo para la barra lateral
     historial_analisis = Analisis.query.filter_by(
         autor=current_user
     ).order_by(Analisis.timestamp.desc()).all()
@@ -528,13 +514,11 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
     return render_template('analysis/analysis.html', 
                            title='Análisis de Requerimiento', 
                            form=form,
-                           # Datos del análisis que se está viendo (o None)
                            analisis_obj=analisis_obj,
                            analisis_info=analisis_info,
                            ai_result_data=ai_result_data,
-                           ai_result_raw=ai_result_raw_text, # <--- ¡Variable corregida!
+                           ai_result_raw=ai_result_raw_text, # ¡Variable corregida!
                            texto_requerimiento=texto_requerimiento_raw,
-                           # Lista del historial
                            historial_analisis=historial_analisis
                            )
 
@@ -549,6 +533,29 @@ def clear_analysis():
     return redirect(url_for('analysis.analysis_index'))
 
 
+# --- ¡NUEVA RUTA PARA ELIMINAR! ---
+@bp.route('/analysis/delete/<int:view_id>', methods=['POST'])
+@login_required
+def delete_analysis(view_id):
+    """Elimina un registro de análisis del historial."""
+    
+    analisis = Analisis.query.get_or_404(view_id)
+    if analisis.autor != current_user:
+        flash("Acceso no autorizado.", "danger")
+        return redirect(url_for('analysis.analysis_index'))
+    
+    try:
+        db.session.delete(analisis)
+        db.session.commit()
+        flash(f"Análisis '{analisis.nombre_requerimiento}' eliminado.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al eliminar el análisis: {str(e)}", "danger")
+    
+    return redirect(url_for('analysis.analysis_index'))
+# --- FIN DE LA NUEVA RUTA ---
+
+
 @bp.route('/generate_file/<int:view_id>') # <-- ¡RECIBE UN ID!
 @login_required
 def generate_file(view_id):
@@ -556,13 +563,11 @@ def generate_file(view_id):
     Genera y descarga el archivo entregable para un análisis específico.
     """
     
-    # 1. Cargar el análisis desde la BD
     analisis_obj = Analisis.query.get_or_404(view_id)
     if analisis_obj.autor != current_user:
         flash("Acceso no autorizado.", "danger")
         return redirect(url_for('analysis.analysis_index'))
 
-    # 2. Obtener los datos (JSON y Plantilla) desde el objeto
     json_text = analisis_obj.ai_result_json
     plantilla_obj = analisis_obj.plantilla_usada
     
