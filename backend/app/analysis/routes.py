@@ -316,7 +316,7 @@ def generar_word_entregable(plantilla_obj, datos_ia):
         return None
 
 # ==============================================================================
-# ¡RUTAS REFACTORIZADAS! (Versión "Historial en BD")
+# RUTAS REFACTORIZADAS (Versión "Historial en BD" + Fix de IA)
 # ==============================================================================
 
 @bp.route('/analysis', methods=['GET', 'POST'])
@@ -399,11 +399,10 @@ def analysis_index():
                 
                 genai.configure(api_key=api_key)
                 
-                # --- ¡CORRECCIÓN 1: NOMBRE DEL MODELO! ---
                 # Volvemos al modelo FLASH que te funciona
                 model = genai.GenerativeModel('gemini-2.0-flash-exp') 
                 
-                # --- ¡CORRECCIÓN 2: PROMPT SIMPLIFICADO! ---
+                # Prompt SIMPLIFICADO para el modelo FLASH
                 prompt = f"""
 Eres un asistente de QA que genera casos de prueba en formato JSON.
 Basado en el siguiente requerimiento, genera EXACTAMENTE {num_casos} casos de prueba.
@@ -418,7 +417,6 @@ INSTRUCCIONES CRÍTICAS:
 2. Debes generar EXACTAMENTE {num_casos} casos de prueba.
 3. Basa tus casos en los Criterios de Aceptación y el texto del requerimiento.
 """
-                # --- FIN DE LAS CORRECCIONES ---
                 
                 if etiquetas_simples and etiquetas_tabla:
                     prompt += f"""
@@ -458,55 +456,49 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
                 print("🤖 Enviando prompt a Gemini...")
                 response = model.generate_content(prompt)
                 
-                # --- ¡NUEVA LÓGICA DE GUARDADO EN BD! ---
-                
                 ai_json_string = None
                 casos_generados_count = 0
                 try:
                     match = re.search(r'\[.*\]', response.text, re.DOTALL)
                     if match:
-                        ai_json_string = match.group(0) # Guardamos el JSON crudo
+                        ai_json_string = match.group(0) 
                         casos_generados = json.loads(ai_json_string)
                         casos_generados_count = len(casos_generados)
                         print(f"✅ Generación exitosa: {casos_generados_count} casos")
                         flash(f"✅ Análisis completado: {casos_generados_count} casos generados", "success")
                     else:
                         flash("⚠️ Respuesta no parseable. Intenta nuevamente.", "warning")
-                        ai_json_string = response.text # Guardar la respuesta cruda aunque sea errónea
+                        ai_json_string = response.text 
                 except json.JSONDecodeError as je:
                     print(f"❌ Error JSON: {je}")
                     flash("Error: Respuesta de IA inválida.", "danger")
-                    ai_json_string = response.text # Guardar la respuesta cruda errónea
+                    ai_json_string = response.text 
 
-                # 2. Crear el nuevo objeto 'Analisis'
                 nuevo_analisis = Analisis(
                     autor=current_user,
                     plantilla_usada=plantilla_obj,
                     nombre_requerimiento=archivo.filename,
                     texto_requerimiento_raw=texto_requerimiento,
                     nivel_complejidad=analisis['nivel_complejidad'],
-                    casos_generados=casos_generados_count, # Usamos el conteo real (0 si falló)
+                    casos_generados=casos_generados_count,
                     criterios_detectados=analisis['metricas']['criterios_aceptacion'],
                     palabras_analizadas=analisis['metricas']['palabras'],
-                    ai_result_json=ai_json_string # Guardamos el JSON (o el error) como texto
+                    ai_result_json=ai_json_string 
                 )
                 
-                # 3. Guardar en la Base de Datos
                 db.session.add(nuevo_analisis)
                 db.session.commit()
                 
                 print(f"💾 Análisis {nuevo_analisis.id} guardado en la base de datos.")
                 
-                # 4. Redirigir a la vista de este nuevo análisis
                 return redirect(url_for('analysis.analysis_index', view_id=nuevo_analisis.id))
                 
             except Exception as e:
                 flash(f"Error con API Gemini: {str(e)}", "danger")
                 traceback.print_exc()
         
-        return redirect(url_for('analysis.analysis_index')) # Redirigir si falla
+        return redirect(url_for('analysis.analysis_index')) 
 
-    # --- LÓGICA GET (Final) ---
     historial_analisis = Analisis.query.filter_by(
         autor=current_user
     ).order_by(Analisis.timestamp.desc()).all()
@@ -517,7 +509,7 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
                            analisis_obj=analisis_obj,
                            analisis_info=analisis_info,
                            ai_result_data=ai_result_data,
-                           ai_result_raw=ai_result_raw_text, # ¡Variable corregida!
+                           ai_result_raw=ai_result_raw_text, 
                            texto_requerimiento=texto_requerimiento_raw,
                            historial_analisis=historial_analisis
                            )
@@ -526,14 +518,10 @@ Responde ÚNICAMENTE con el array JSON: [ ... ]
 @bp.route('/analysis/clear', methods=['POST'])
 @login_required
 def clear_analysis():
-    """
-    Limpia la vista actual y redirige a la página principal de análisis.
-    """
     flash("Vista limpiada.", "info")
     return redirect(url_for('analysis.analysis_index'))
 
 
-# --- ¡NUEVA RUTA PARA ELIMINAR! ---
 @bp.route('/analysis/delete/<int:view_id>', methods=['POST'])
 @login_required
 def delete_analysis(view_id):
@@ -553,14 +541,148 @@ def delete_analysis(view_id):
         flash(f"Error al eliminar el análisis: {str(e)}", "danger")
     
     return redirect(url_for('analysis.analysis_index'))
-# --- FIN DE LA NUEVA RUTA ---
 
 
-@bp.route('/generate_file/<int:view_id>') # <-- ¡RECIBE UN ID!
+# --- ¡NUEVA RUTA PARA RE-ANALIZAR! ---
+@bp.route('/analysis/re-analyze/<int:view_id>', methods=['POST'])
+@login_required
+def re_analyze(view_id):
+    """
+    Toma el texto editado del modal, lo re-analiza,
+    y actualiza el registro en la base de datos.
+    """
+    
+    # 1. Cargar el análisis existente
+    analisis_obj = Analisis.query.get_or_404(view_id)
+    if analisis_obj.autor != current_user:
+        flash("Acceso no autorizado.", "danger")
+        return redirect(url_for('analysis.analysis_index'))
+    
+    # 2. Obtener el texto editado del formulario del modal
+    nuevo_texto = request.form.get('texto_requerimiento')
+    
+    if not nuevo_texto:
+        flash("El texto del requerimiento no puede estar vacío.", "danger")
+        return redirect(url_for('analysis.analysis_index', view_id=view_id))
+    
+    print("\n" + "="*80)
+    print(f"🧠 RE-ANALIZANDO REQUERIMIENTO (ID: {view_id})...")
+    print("="*80)
+    
+    # 3. Volver a ejecutar el motor de complejidad
+    analisis = analizar_complejidad_requerimiento(nuevo_texto)
+    num_casos = analisis['cantidad_casos']
+    
+    try:
+        # 4. Volver a llamar a la API de Gemini (con el modelo y prompt correctos)
+        api_key = os.environ.get('GOOGLE_API_KEY') 
+        if not api_key:
+            flash("Error: GOOGLE_API_KEY no está configurada.", "danger")
+            return redirect(url_for('analysis.analysis_index'))
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.0-flash-exp') # El modelo que te funciona
+        
+        # El mismo prompt simplificado
+        prompt = f"""
+Eres un asistente de QA que genera casos de prueba en formato JSON.
+Basado en el siguiente requerimiento, genera EXACTAMENTE {num_casos} casos de prueba.
+
+REQUERIMIENTO A ANALIZAR:
+---
+{nuevo_texto}
+---
+
+INSTRUCCIONES CRÍTICAS:
+1. La respuesta debe ser ÚNICAMENTE un array JSON válido, sin texto adicional.
+2. Debes generar EXACTAMENTE {num_casos} casos de prueba.
+3. Basa tus casos en los Criterios de Aceptación y el texto del requerimiento.
+"""
+        
+        # (Obtener etiquetas de la plantilla)
+        plantilla_obj = analisis_obj.plantilla_usada
+        mapas = plantilla_obj.mapas.all()
+        etiquetas_simples = [m.etiqueta for m in mapas if m.tipo_mapa == 'celda_simple']
+        etiquetas_tabla = [m.etiqueta for m in mapas if m.tipo_mapa == 'fila_tabla']
+
+        if etiquetas_simples and etiquetas_tabla:
+            prompt += f"""
+4. Cada caso debe tener estos campos principales:
+   {json.dumps(etiquetas_simples, ensure_ascii=False)}
+5. ADICIONALMENTE, cada caso debe tener "PASOS" (array de objetos):
+   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
+6. Campos principales = strings. "PASOS" = array con 2-10 pasos.
+"""
+        elif not etiquetas_simples and etiquetas_tabla:
+            prompt += f"""
+4. Cada caso debe tener estos campos:
+   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
+5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
+"""
+        elif etiquetas_simples and not etiquetas_tabla:
+            prompt += f"""
+4. Cada caso debe tener estos campos:
+   {json.dumps(etiquetas_simples, ensure_ascii=False)}
+5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
+"""
+
+        prompt += f"""
+IMPORTANTE: 
+- Genera TODOS los campos exactamente como están escritos
+- NO inventes campos adicionales
+- Asegura que el JSON sea válido y parseable
+- EXACTAMENTE {num_casos} casos, ni más ni menos
+Responde ÚNICAMENTE con el array JSON: [ ... ]
+"""
+        
+        print("🤖 Enviando (nuevo) prompt a Gemini...")
+        response = model.generate_content(prompt)
+        
+        # 5. Parsear la nueva respuesta
+        ai_json_string = None
+        casos_generados_count = 0
+        try:
+            match = re.search(r'\[.*\]', response.text, re.DOTALL)
+            if match:
+                ai_json_string = match.group(0)
+                casos_generados = json.loads(ai_json_string)
+                casos_generados_count = len(casos_generados)
+                print(f"✅ Re-generación exitosa: {casos_generados_count} casos")
+                flash(f"✅ Análisis actualizado: {casos_generados_count} casos generados", "success")
+            else:
+                flash("⚠️ Respuesta no parseable. Intenta nuevamente.", "warning")
+                ai_json_string = response.text
+        except json.JSONDecodeError as je:
+            print(f"❌ Error JSON: {je}")
+            flash("Error: Respuesta de IA inválida.", "danger")
+            ai_json_string = response.text
+
+        # 6. ¡ACTUALIZAR (UPDATE) el registro en la BD!
+        analisis_obj.texto_requerimiento_raw = nuevo_texto
+        analisis_obj.nivel_complejidad = analisis['nivel_complejidad']
+        analisis_obj.casos_generados = casos_generados_count
+        analisis_obj.criterios_detectados = analisis['metricas']['criterios_aceptacion']
+        analisis_obj.palabras_analizadas = analisis['metricas']['palabras']
+        analisis_obj.ai_result_json = ai_json_string
+        
+        db.session.commit() # Guardar los cambios en el objeto existente
+        
+        print(f"💾 Análisis {analisis_obj.id} actualizado en la base de datos.")
+        
+    except Exception as e:
+        flash(f"Error con API Gemini: {str(e)}", "danger")
+        traceback.print_exc()
+    
+    # 7. Redirigir de vuelta a la vista del análisis
+    return redirect(url_for('analysis.analysis_index', view_id=view_id))
+
+
+@bp.route('/generate_file/<int:view_id>')
 @login_required
 def generate_file(view_id):
     """
     Genera y descarga el archivo entregable para un análisis específico.
+    (Sin cambios)
     """
     
     analisis_obj = Analisis.query.get_or_404(view_id)
@@ -599,7 +721,6 @@ def generate_file(view_id):
         download_name = f"entregable_{analisis_obj.id}_{plantilla_obj.nombre_plantilla}.docx"
     
     if buffer_memoria:
-        # Ya no limpiamos la sesión, los datos son permanentes
         return send_file(
             buffer_memoria,
             as_attachment=True,
