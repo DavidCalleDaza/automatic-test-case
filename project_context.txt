@@ -1,0 +1,48 @@
+## CONTEXTO DEL PROYECTO: automatic-test-case V4 (Funcional)
+
+**1. ROL Y OBJETIVO:**
+* **Usuario (David Calle):** Dev Full Stack (Python/Web) en Q-Vision, actuando como líder técnico.
+* **IA (Gemini):** Actúa como Senior Python Dev y Experto en Automatización de QA.
+* **Objetivo:** Refinar "automatic-test-case", una herramienta Flask que automatiza el diseño de casos de prueba.
+* **Repositorio:** https://github.com/DavidCalleDaza/automatic-test-case.git
+
+**2. STACK TECNOLÓGICO (ESTABLE):**
+* **Backend:** Python 3, Flask, Patrón Application Factory (`create_app`).
+* **Base de Datos:** SQLAlchemy con SQLite (`app.db`), gestionada por Flask-Migrate.
+* **Autenticación:** Flask-Login, Flask-WTF.
+* **Frontend:** Jinja2, Bootstrap 5, JS vainilla.
+* **Dependencias Clave (Python):** `openpyxl`, `python-docx`, `google-generativeai`.
+
+**3. ARQUITECTURA (BLUEPRINTS):**
+* **`app/auth`:** Gestión de usuarios (login, register, logout).
+* **`app/core`:** Gestión de Plantillas (dashboard, asistente de 3 pasos).
+* **`app/analysis`:** Módulo de IA.
+
+**4. FUNCIONALIDAD CLAVE (Módulo de Análisis):**
+* **Lectura de Requerimientos:** Acepta `.txt`, `.docx`, y `.xlsx`.
+* **Análisis de Complejidad (`routes.py`):**
+    * Detecta Complejidad ("Baja", "Media", "Alta").
+    * Cuenta Criterios Funcionales (CA) usando Regex (ej. `CA-XX`).
+    * Cuenta Criterios No Funcionales (CNF) usando Regex (ej. `CNF-XX`).
+    * Estima horas de diseño y ejecución (modelo heurístico).
+* **Generación de Entregables (`routes.py`):**
+    * **Prompt 1:1:** Instruye a Gemini (`gemini-2.0-flash-exp`) para generar 1 resultado por cada paso (`\n`).
+    * **Excel:** Genera un `.xlsx` que crea **filas separadas** para cada paso (sin celdas combinadas), listo para TestLink.
+    * **XML:** Genera un `.xml` básico compatible con TestLink.
+* **UI de Resultados (`analysis.html`):**
+    * Muestra métricas (CA, CNF, Horas Estimadas) en tarjetas.
+    * Muestra un modal de justificación para la estimación.
+    * Muestra los resultados en una tabla.
+    * Permite ver el JSON (indentado) y el XML crudo.
+* **UI Modal "Ver/Editar Requerimiento" (`analysis.html`):**
+    * **¡NUEVA MEJORA!** El modal ahora tiene un interruptor (toggle) "Ver/Editar".
+    * Si el requerimiento es `.txt` o `.docx`, muestra el editor de texto (`<textarea>`).
+    * Si el requerimiento es `.xlsx` (detecta `--- INICIO HOJA: ---`):
+        * **Modo Ver (Default):** Muestra pestañas por cada hoja, y el contenido de cada una es una **cuadrícula `<table>` de solo lectura** (simulando Excel).
+        * **Modo Editar:** Al activar el interruptor, oculta la cuadrícula y muestra los `<textarea>` para edición.
+* **Bugs Corregidos:**
+    * Los botones de "Eliminar" y "Scroll" son funcionales.
+    * El modal de `.txt` ahora usa el 100% del tamaño disponible.
+
+**5. PRÓXIMOS PASOS (Pendiente):**
+* Recibir la plantilla de Excel de Estimaciones (de Lina o Maria) para construir el módulo de estimación avanzado.

@@ -1,732 +1,594 @@
-# SISTEMA INTELIGENTE DE ANÁLISIS DE CASOS DE PRUEBA
-# ¡CON HISTORIAL EN BASE DE DATOS!
-
-from flask import render_template, flash, redirect, url_for, request, current_app, session, send_file
+import os
+import io
+import openpyxl
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+from flask import (
+    render_template, flash, redirect, url_for, request,
+    current_app, session, jsonify, send_file
+)
 from flask_login import current_user, login_required
 from app import db
 from app.analysis import bp
-from app.analysis.forms import RequerimientoUploadForm
-# ¡Importamos el nuevo modelo Analisis!
-from app.models import Plantilla, MapaPlantilla, Analisis
-import os
+from app.analysis.forms import AnalysisForm
+from app.models import Plantilla, Analisis
+from werkzeug.utils import secure_filename
 import docx
-from docx.shared import Pt 
-import google.generativeai as genai
 import json
+import google.generativeai as genai
 import re
-from io import BytesIO
-import openpyxl
-import traceback
-# Ya no necesitamos tempfile ni pickle
 
-# --- Constantes ---
-ALLOWED_EXTENSIONS = {'xlsx', 'docx'}
-TAG_REGEX = re.compile(r"(\{\{.*?\}\})") 
-TAG_CLEANER = re.compile(r"\{\{(.*?)\}\}") 
+# --- CONFIGURACIÓN DE IA ---
+try:
+    genai.configure(api_key=os.environ.get('GOOGLE_API_KEY'))
+    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+except Exception as e:
+    print(f"Error configurando Gemini: {e}")
+    model = None
 
-# --- ¡FUNCIONES tempfile ELIMINADAS! ---
+# --- FUNCIONES HELPERS ---
+ALLOWED_EXTENSIONS = {'txt', 'docx', 'md', 'xlsx'}
 
-# ==============================================================================
-# FUNCIÓN DE ANÁLISIS INTELIGENTE (Sin cambios)
-# ==============================================================================
-def analizar_complejidad_requerimiento(texto_requerimiento):
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def leer_requerimiento(filepath):
     """
-    Analiza el requerimiento y determina automáticamente la cantidad óptima
-    de casos de prueba necesarios basándose en múltiples factores.
+    Lee el contenido de un archivo .txt, .docx, o .xlsx.
+    Para Excel, extrae texto de todas las hojas y celdas.
     """
-    
-    texto_lower = texto_requerimiento.lower()
-    
-    # 1. MÉTRICAS BÁSICAS
-    palabras = texto_requerimiento.split()
-    total_palabras = len(palabras)
-    lineas = texto_requerimiento.split('\n')
-    total_lineas = len([l for l in lineas if l.strip()])
-    
-    # 2. DETECTAR CRITERIOS DE ACEPTACIÓN (Lógica mejorada)
-    patron_ca = re.compile(r'^(ca|ac|criterio)[\s\-:]*\d*.*$', re.IGNORECASE | re.MULTILINE)
-    patron_historia = re.compile(r'como\s+.*quiero\s+.*para\s+.*', re.IGNORECASE | re.DOTALL)
-    patron_gherkin = re.compile(r'^(escenario|dado|given|cuando|when).*$', re.IGNORECASE | re.MULTILINE)
+    extension = filepath.rsplit('.', 1)[1].lower()
+    full_text = []
 
-    criterios_encontrados = 0
-    criterios_encontrados += len(re.findall(patron_ca, texto_requerimiento))
-    criterios_encontrados += len(re.findall(patron_historia, texto_requerimiento))
-    criterios_encontrados += len(re.findall(patron_gherkin, texto_requerimiento))
-
-    if criterios_encontrados == 0:
-        listas_numeradas = len(re.findall(r'^\s*\d+[\.\)]\s+', texto_requerimiento, re.MULTILINE))
-        listas_viñetas = len(re.findall(r'^\s*[-•*]\s+', texto_requerimiento, re.MULTILINE))
-        criterios_encontrados = listas_numeradas + listas_viñetas
-
-    if criterios_encontrados == 0 and total_palabras > 50:
-        criterios_encontrados = 1
-    
-    # 3. DETECTAR PALABRAS CLAVE DE COMPLEJIDAD
-    keywords_validacion = ['validar', 'verificar', 'validación', 'verificación', 'comprobar', 'asegurar', 'garantizar']
-    keywords_condicionales = ['si', 'cuando', 'entonces', 'caso contrario', 'de lo contrario', 'if', 'when', 'then', 'else', 'otherwise']
-    keywords_campos = ['campo', 'formulario', 'input', 'entrada', 'dato', 'textbox', 'checkbox', 'dropdown', 'select', 'botón', 'button']
-    keywords_estados = ['estado', 'status', 'activo', 'inactivo', 'pendiente', 'aprobado', 'rechazado', 'completado']
-    keywords_errores = ['error', 'excepción', 'fallo', 'incorrecto', 'inválido', 'mensaje de error', 'alerta', 'warning']
-    keywords_flujo = ['flujo', 'proceso', 'paso', 'secuencia', 'etapa', 'workflow', 'navigation']
-    keywords_integracion = ['integración', 'api', 'servicio', 'base de datos', 'endpoint', 'request', 'response', 'conexión']
-    keywords_seguridad = ['seguridad', 'autenticación', 'autorización', 'permisos', 'roles', 'token', 'sesión', 'login', 'logout', 'contraseña']
-    
-    count_validacion = sum(1 for k in keywords_validacion if k in texto_lower)
-    count_condicionales = sum(1 for k in keywords_condicionales if k in texto_lower)
-    count_campos = sum(1 for k in keywords_campos if k in texto_lower)
-    count_estados = sum(1 for k in keywords_estados if k in texto_lower)
-    count_errores = sum(1 for k in keywords_errores if k in texto_lower)
-    count_flujo = sum(1 for k in keywords_flujo if k in texto_lower)
-    count_integracion = sum(1 for k in keywords_integracion if k in texto_lower)
-    count_seguridad = sum(1 for k in keywords_seguridad if k in texto_lower)
-    
-    # 4. CALCULAR PUNTUACIÓN DE COMPLEJIDAD
-    complejidad_score = 0
-    
-    if total_palabras < 100:
-        complejidad_score += 5
-    elif total_palabras < 300:
-        complejidad_score += 10
-    elif total_palabras < 600:
-        complejidad_score += 15
-    elif total_palabras < 1000:
-        complejidad_score += 20
-    else:
-        complejidad_score += 25
-    
-    complejidad_score += min(criterios_encontrados * 5, 30)
-    complejidad_score += min(count_validacion * 2, 10)
-    complejidad_score += min(count_condicionales * 2, 10)
-    complejidad_score += min(count_campos * 1.5, 8)
-    complejidad_score += min(count_estados * 1.5, 8)
-    complejidad_score += min(count_errores * 2, 12)
-    complejidad_score += min(count_flujo * 1.5, 8)
-    complejidad_score += min(count_integracion * 2.5, 15)
-    complejidad_score += min(count_seguridad * 3, 18)
-    
-    # 5. DETERMINAR CANTIDAD DE CASOS SEGÚN SCORE
-    if complejidad_score < 20:
-        cantidad_casos = 5
-        nivel = "Muy Simple"
-    elif complejidad_score < 35:
-        cantidad_casos = 8
-        nivel = "Simple"
-    elif complejidad_score < 50:
-        cantidad_casos = 12
-        nivel = "Estándar"
-    elif complejidad_score < 70:
-        cantidad_casos = 18
-        nivel = "Complejo"
-    elif complejidad_score < 90:
-        cantidad_casos = 25
-        nivel = "Muy Complejo"
-    else:
-        cantidad_casos = 35
-        nivel = "Extremadamente Complejo"
-    
-    # 6. AJUSTE INTELIGENTE
-    if criterios_encontrados > 5:
-        cantidad_casos = max(cantidad_casos, criterios_encontrados * 2)
-    
-    if count_integracion > 2 or count_seguridad > 2:
-        cantidad_casos = int(cantidad_casos * 1.3)
-    
-    if count_estados > 3 or count_flujo > 3:
-        cantidad_casos = int(cantidad_casos * 1.2)
-    
-    cantidad_casos = min(cantidad_casos, 50)
-    cantidad_casos = max(cantidad_casos, 5)
-    
-    # 7. PREPARAR RESULTADO
-    resultado = {
-        'cantidad_casos': cantidad_casos,
-        'nivel_complejidad': nivel,
-        'score': round(complejidad_score, 2),
-        'metricas': {
-            'palabras': total_palabras,
-            'lineas': total_lineas,
-            'criterios_aceptacion': criterios_encontrados,
-            'listas': 0
-        },
-        'factores': {
-            'validaciones': count_validacion,
-            'condicionales': count_condicionales,
-            'campos_formulario': count_campos,
-            'estados': count_estados,
-            'manejo_errores': count_errores,
-            'flujos': count_flujo,
-            'integracion': count_integracion,
-            'seguridad': count_seguridad
-        },
-        'recomendacion': f"Se generarán {cantidad_casos} casos de prueba para una cobertura óptima."
-    }
-    
-    return resultado
-
-# ==============================================================================
-# FUNCIONES AUXILIARES (Sin cambios)
-# ==============================================================================
-def leer_texto_requerimiento(archivo):
-    # ... (Tu código existente)
-    filename = archivo.filename
-    text_content = ""
     try:
-        if filename.endswith('.docx'):
-            doc = docx.Document(archivo)
+        if extension == 'docx':
+            doc = docx.Document(filepath)
             for para in doc.paragraphs:
-                text_content += para.text + "\n"
-        elif filename.endswith('.txt') or filename.endswith('.md'):
-            text_content = archivo.read().decode('utf-8')
-        return text_content
+                full_text.append(para.text)
+
+        elif extension == 'xlsx':
+            workbook = openpyxl.load_workbook(filepath, data_only=True)
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+                full_text.append(f"\n--- INICIO HOJA: {sheet_name} ---\n")
+                for row in sheet.iter_rows():
+                    row_text = []
+                    for cell in row:
+                        if cell.value is not None:
+                            row_text.append(str(cell.value))
+                    if row_text:
+                        full_text.append(" | ".join(row_text))
+            workbook.close()
+
+        else: # 'txt', 'md', o default
+            with open(filepath, 'r', encoding='utf-8') as f:
+                full_text.append(f.read())
+                
     except Exception as e:
-        flash(f"Error al leer el archivo: {str(e)}", "danger")
+        print(f"Error al leer el archivo {filepath}: {str(e)}")
+        return f"Error al procesar el archivo: {str(e)}"
+
+    return '\n'.join(full_text)
+
+
+def limpiar_json_string(s):
+    """Limpia el string de respuesta de la IA."""
+    try:
+        start = s.index('[')
+        end = s.rindex(']') + 1
+        json_str = s[start:end]
+        json_str = json_str.replace('\n', '')
+        json_str = json_str.replace('\\n', '\\n')
+        return json_str
+    except ValueError:
+        print("Error: No se encontró '[' o ']' en la respuesta de la IA.")
+        return s
+
+def analizar_complejidad_requerimiento(texto):
+    """
+    Analiza el texto y devuelve métricas.
+    Añadido contador para Criterios No Funcionales (CNF).
+    """
+    palabras = texto.split()
+    num_palabras = len(palabras)
+    texto_lower = texto.lower()
+    
+    # --- Conteo de Criterios Funcionales (CA) ---
+    criterios_keywords = texto_lower.count('criterio de aceptac')
+    criterios_keywords += texto_lower.count('regla de negocio')
+    criterios_keywords += texto_lower.count('posibles errores')
+    criterios_keywords += texto_lower.count('escenario:')
+    
+    gherkin_count = 0
+    gherkin_keywords = ['dado', 'cuando', 'entonces']
+    for p in palabras:
+        if p.lower().strip().rstrip(':') in gherkin_keywords:
+            gherkin_count += 1
+    
+    criterios_patron = re.findall(r'ca[\s_-]?\d+', texto_lower, re.IGNORECASE)
+    patron_count_ca = len(criterios_patron)
+    criterios_funcionales = max(patron_count_ca, (criterios_keywords + gherkin_count))
+
+    # --- Conteo de Criterios No Funcionales (CNF) ---
+    cnf_patron = re.findall(r'cnf[\s_-]?\d+', texto_lower, re.IGNORECASE)
+    patron_count_cnf = len(cnf_patron)
+    cnf_keywords = texto_lower.count('criterio no funcional')
+    criterios_no_funcionales = max(patron_count_cnf, cnf_keywords)
+    
+    # --- Conteo General ---
+    criterios_totales = criterios_funcionales + criterios_no_funcionales
+    num_hojas = texto_lower.count('--- inicio hoja:')
+    
+    num_casos = 5
+    complejidad = "Baja"
+    horas_diseño = 2
+    horas_ejecucion = 2
+
+    if num_palabras > 800 or criterios_totales > 15 or num_hojas > 3:
+        complejidad = "Alta"
+        num_casos = 25
+        horas_diseño = 8
+        horas_ejecucion = 8
+    elif num_palabras > 300 or criterios_totales > 7 or num_hojas > 1:
+        complejidad = "Media"
+        num_casos = 12
+        horas_diseño = 4
+        horas_ejecucion = 4
+    
+    if criterios_funcionales == 0 and num_palabras > 50:
+         criterios_funcionales = 1 # Asumir al menos 1
+
+    return {
+        "nivel": complejidad,
+        "casos_sugeridos": num_casos,
+        "criterios": criterios_funcionales,
+        "criterios_no_funcionales": criterios_no_funcionales,
+        "palabras": num_palabras,
+        "horas_diseño_estimadas": horas_diseño,
+        "horas_ejecucion_estimadas": horas_ejecucion
+    }
+
+# --- FUNCIÓN (PROMPT 1:1) ---
+def generar_prompt_dinamico(texto_req, plantilla_obj, metricas):
+    """Construye el prompt para la IA basado en la plantilla."""
+    
+    mapas = plantilla_obj.mapas.all()
+    etiquetas = [m.etiqueta for m in mapas]
+    
+    if not etiquetas:
         return None
 
-def generar_excel_entregable(plantilla_obj, datos_ia):
-    # ... (Tu código existente)
+    etiquetas_str = ", ".join([f'"{e}"' for e in etiquetas])
+
+    pasos_field = None
+    resultado_field = None
+    
+    for e in etiquetas:
+        if 'paso' in e.lower():
+            pasos_field = e
+        if 'resultado' in e.lower():
+            resultado_field = e
+            
+    prompt_base = f"""
+    Eres un experto QA Senior especializado en diseño de casos de prueba.
+    Analiza el siguiente requerimiento y genera EXACTAMENTE {metricas['casos_sugeridos']} casos de prueba.
+    Enfócate en los Criterios de Aceptación Funcionales (CA).
+
+    REQUERIMIENTO:
+    ---
+    {texto_req}
+    ---
+
+    RESPONDE ÚNICAMENTE con un array JSON. Cada objeto debe tener las siguientes llaves: {etiquetas_str}.
+    """
+    
+    if pasos_field and resultado_field:
+        prompt_especifico = f"""
+        MUY IMPORTANTE: Para los campos "{pasos_field}" y "{resultado_field}":
+        1.  Genera múltiples pasos y resultados.
+        2.  Ambos campos deben ser un solo string.
+        3.  Usa el caracter de salto de línea (\\n) para separar cada paso y cada resultado.
+        4.  DEBE haber exactamente la misma cantidad de saltos de línea en "{pasos_field}" que en "{resultado_field}".
+        5.  Cada línea en "{pasos_field}" debe corresponder 1:1 con su línea en "{resultado_field}".
+
+        Ejemplo de formato para esos campos:
+        "{pasos_field}": "1. Hacer clic en Login\\n2. Ingresar 'user'\\n3. Ingresar 'pass'\\n4. Hacer clic en 'Entrar'",
+        "{resultado_field}": "1. El sistema muestra la modal de login\\n2. El campo 'usuario' se rellena\\n3. El campo 'password' se rellena\\n4. El sistema redirige al dashboard"
+        """
+        prompt = prompt_base + prompt_especifico
+    else:
+        prompt = prompt_base + "\nGenera los casos de prueba."
+
+    return prompt
+
+# --- FUNCIÓN (Excel sin Merge) ---
+def generar_excel_entregable(analisis_obj):
+    """
+    Genera el archivo Excel basado en el análisis y su plantilla.
+    ¡ACTUALIZADO para manejar el desglose de TestLink (sin merge)!
+    """
+    plantilla_obj = analisis_obj.plantilla_usada
+    mapas = plantilla_obj.mapas.all()
+    
     try:
-        path_plantilla = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
+        casos_ia = json.loads(analisis_obj.ai_result_json)
+        if not isinstance(casos_ia, list):
+            raise ValueError("El JSON no es una lista")
+    except Exception as e:
+        print(f"Error al parsear JSON para Excel: {e}")
+        return None
+
+    try:
+        path_plantilla = os.path.join(
+            current_app.config['UPLOAD_FOLDER'], 
+            plantilla_obj.filename_seguro
+        )
         workbook = openpyxl.load_workbook(path_plantilla)
-        if not plantilla_obj.sheet_name or not plantilla_obj.header_row:
-            print(f"Error: Plantilla '{plantilla_obj.nombre_plantilla}' (ID: {plantilla_obj.id}) no está mapeada.")
-            return None
         sheet = workbook[plantilla_obj.sheet_name]
-        fila_inicio = plantilla_obj.header_row + 1
-        mapa_etiquetas = {mapa.etiqueta: mapa.coordenada for mapa in plantilla_obj.mapas}
-        if all(m.tipo_mapa == 'fila_tabla' for m in plantilla_obj.mapas):
-            for caso in datos_ia:
-                for etiqueta, valor in caso.items():
-                    if etiqueta in mapa_etiquetas:
-                        columna = mapa_etiquetas[etiqueta]
-                        valor_final = valor
-                        if isinstance(valor, list):
-                            valor_final = "\n".join(str(v) for v in valor)
-                        sheet[f"{columna}{fila_inicio}"] = valor_final
-                fila_inicio += 1
+    except Exception as e:
+        print(f"Error al cargar la plantilla Excel: {e}")
+        return None
+
+    fila_actual = plantilla_obj.header_row + 1
+
+    pasos_field = None
+    resultado_field = None
+    mapa_coordenadas = {}
+    
+    for m in mapas:
+        mapa_coordenadas[m.etiqueta] = m.coordenada
+        if 'paso' in m.etiqueta.lower():
+            pasos_field = m.etiqueta
+        if 'resultado' in m.etiqueta.lower():
+            resultado_field = m.etiqueta
+
+    desglosar_para_testlink = plantilla_obj.desglosar_pasos and pasos_field and resultado_field
+
+    for caso in casos_ia:
+        
+        if desglosar_para_testlink:
+            try:
+                pasos_list = caso.get(pasos_field, "").split('\n')
+                resultados_list = caso.get(resultado_field, "").split('\n')
+                
+                num_pasos = max(len(pasos_list), len(resultados_list))
+                
+                pasos_list.extend([''] * (num_pasos - len(pasos_list)))
+                resultados_list.extend([''] * (num_pasos - len(resultados_list)))
+
+                for i in range(num_pasos):
+                    paso_actual = pasos_list[i]
+                    resultado_actual = resultados_list[i]
+
+                    for etiqueta, col in mapa_coordenadas.items():
+                        celda = f"{col}{fila_actual}"
+                        
+                        if etiqueta == pasos_field:
+                            sheet[celda] = paso_actual
+                        elif etiqueta == resultado_field:
+                            sheet[celda] = resultado_actual
+                        else:
+                            sheet[celda] = caso.get(etiqueta, "")
+                    
+                    fila_actual += 1
+                    
+            except Exception as e:
+                print(f"Error al desglosar pasos: {e}")
+                for etiqueta, col in mapa_coordenadas.items():
+                    sheet[f"{col}{fila_actual}"] = caso.get(etiqueta, "")
+                fila_actual += 1
+        
         else:
-            if datos_ia:
-                caso_principal = datos_ia[0]
-                for etiqueta, valor in caso_principal.items():
-                    if etiqueta in mapa_etiquetas:
-                        coordenada = mapa_etiquetas[etiqueta]
-                        valor_final = valor
-                        if isinstance(valor, list):
-                            valor_final = "\n".join(str(v) for v in valor)
-                        sheet[coordenada] = valor_final
-        buffer_memoria = BytesIO()
-        workbook.save(buffer_memoria)
-        buffer_memoria.seek(0)
-        return buffer_memoria
-    except Exception as e:
-        print(f"Error generando Excel: {e}")
-        traceback.print_exc()
-        return None
+            for etiqueta, col in mapa_coordenadas.items():
+                sheet[f"{col}{fila_actual}"] = caso.get(etiqueta, "")
+            fila_actual += 1
+            
+    output = io.BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    workbook.close()
+    
+    return output
 
-def reemplazar_texto_en_parrafo(parrafo, etiqueta, valor):
-    # ... (Tu código existente)
-    if etiqueta in parrafo.text:
-        for run in parrafo.runs:
-            if etiqueta in run.text:
-                run.text = run.text.replace(etiqueta, str(valor))
-
-def generar_word_entregable(plantilla_obj, datos_ia):
-    # ... (Tu código existente)
+# --- FUNCIÓN (Requerimiento XML) ---
+def generar_xml_entregable(analisis_obj):
+    """
+    Genera un archivo XML con los casos de prueba (formato TestLink).
+    """
     try:
-        path_plantilla = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
-        document = docx.Document(path_plantilla)
-        mapa_simple = {mapa.etiqueta: f"{{{{{mapa.etiqueta}}}}}" for mapa in plantilla_obj.mapas if mapa.tipo_mapa == 'celda_simple'}
-        mapa_tabla = {mapa.etiqueta: int(mapa.coordenada) for mapa in plantilla_obj.mapas if mapa.tipo_mapa == 'fila_tabla'}
-        etiquetas_tabla_keys = list(mapa_tabla.keys())
-        for i, caso_ia in enumerate(datos_ia):
-            if i == 0:
-                for etiqueta_limpia, etiqueta_sucia in mapa_simple.items():
-                    if etiqueta_limpia in caso_ia:
-                        valor = caso_ia[etiqueta_limpia]
-                        for para in document.paragraphs: reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
-                        for table in document.tables:
-                            for row in table.rows:
-                                for cell in row.cells:
-                                    for para in cell.paragraphs: reemplazar_texto_en_parrafo(para, etiqueta_sucia, valor)
-                if etiquetas_tabla_keys:
-                    tabla_encontrada = None
-                    fila_plantilla_idx = -1
-                    for table in document.tables:
-                        if fila_plantilla_idx != -1: break
-                        for r_idx, row in enumerate(table.rows):
-                            try:
-                                primera_etiqueta = etiquetas_tabla_keys[0]
-                                primera_celda_idx = mapa_tabla[primera_etiqueta]
-                                if f"{{{{{primera_etiqueta}}}}}" in row.cells[primera_celda_idx].text:
-                                    tabla_encontrada = table
-                                    fila_plantilla_idx = r_idx
-                                    break
-                            except (IndexError, KeyError): continue
-                    if tabla_encontrada and fila_plantilla_idx != -1:
-                        datos_pasos = caso_ia.get("PASOS", [])
-                        if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys): datos_pasos = [caso_ia]
-                        if datos_pasos and len(datos_pasos) > 0:
-                            fila_plantilla_original = tabla_encontrada.rows[fila_plantilla_idx]
-                            textos_plantilla = {}
-                            for etiqueta_limpia, col_idx in mapa_tabla.items():
-                                try: textos_plantilla[etiqueta_limpia] = fila_plantilla_original.cells[col_idx].text
-                                except IndexError: textos_plantilla[etiqueta_limpia] = f"{{{{{etiqueta_limpia}}}}}"
-                            for paso_idx, paso_ia in enumerate(datos_pasos):
-                                if paso_idx == 0: fila_actual = fila_plantilla_original
-                                else: fila_actual = tabla_encontrada.add_row()
-                                for etiqueta_limpia, col_idx in mapa_tabla.items():
-                                    try:
-                                        if paso_idx > 0: fila_actual.cells[col_idx].text = textos_plantilla.get(etiqueta_limpia, "")
-                                        if etiqueta_limpia in paso_ia:
-                                            valor_paso = str(paso_ia[etiqueta_limpia])
-                                            etiqueta_sucia = f"{{{{{etiqueta_limpia}}}}}"
-                                            texto_actual = fila_actual.cells[col_idx].text
-                                            fila_actual.cells[col_idx].text = texto_actual.replace(etiqueta_sucia, valor_paso)
-                                    except IndexError: continue
-            else:
-                document.add_page_break()
-                id_caso_val = caso_ia.get('ID del caso de prueba', caso_ia.get('ID_CASO_PRUEBA', ''))
-                titulo_val = caso_ia.get('Descripción del caso de prueba', caso_ia.get('TITULO_CASO_PRUEBA', ''))
-                titulo_completo = f"Caso de Prueba: {id_caso_val} - {titulo_val}"
-                document.add_heading(titulo_completo, level=2)
-                for etiqueta_limpia in mapa_simple.keys():
-                    if etiqueta_limpia in caso_ia:
-                        document.add_heading(etiqueta_limpia.replace('_', ' ').title(), level=3)
-                        document.add_paragraph(str(caso_ia[etiqueta_limpia]))
-                datos_pasos = caso_ia.get("PASOS", [])
-                if not datos_pasos and all(key in caso_ia for key in etiquetas_tabla_keys): datos_pasos = [caso_ia]
-                if datos_pasos and etiquetas_tabla_keys:
-                    document.add_heading("Detalle de Ejecución", level=3)
-                    tabla_nueva = document.add_table(rows=1, cols=len(etiquetas_tabla_keys))
-                    try: tabla_nueva.style = 'Light Grid Accent 1'
-                    except KeyError: tabla_nueva.style = 'Table Grid'
-                    hdr_cells = tabla_nueva.rows[0].cells
-                    for idx, etiqueta in enumerate(etiquetas_tabla_keys): hdr_cells[idx].text = etiqueta
-                    for paso_ia in datos_pasos:
-                        row_cells = tabla_nueva.add_row().cells
-                        for idx, etiqueta_limpia in enumerate(etiquetas_tabla_keys):
-                            if etiqueta_limpia in paso_ia: row_cells[idx].text = str(paso_ia[etiqueta_limpia])
-                            else: row_cells[idx].text = ""
-        buffer_memoria = BytesIO()
-        document.save(buffer_memoria)
-        buffer_memoria.seek(0)
-        return buffer_memoria
+        casos_ia = json.loads(analisis_obj.ai_result_json)
+        if not isinstance(casos_ia, list) or not casos_ia:
+            raise ValueError("El JSON no es una lista válida o está vacío")
     except Exception as e:
-        print(f"Error generando Word: {e}")
-        traceback.print_exc()
+        print(f"Error al parsear JSON para XML: {e}")
         return None
 
-# ==============================================================================
-# RUTAS REFACTORIZADAS (Versión "Historial en BD" + Fix de IA)
-# ==============================================================================
+    id_field = next((k for k in casos_ia[0] if 'id' in k.lower()), 'ID_CASO')
+    titulo_field = next((k for k in casos_ia[0] if 'titulo' in k.lower() or 'nombre' in k.lower()), 'TITULO_CASO')
+    pasos_field = next((k for k in casos_ia[0] if 'paso' in k.lower()), 'PASOS_EJECUCION')
+    resultado_field = next((k for k in casos_ia[0] if 'resultado' in k.lower()), 'RESULTADOS_ESPERADOS')
+    precond_field = next((k for k in casos_ia[0] if 'precond' in k.lower()), 'PRECONDICIONES')
+    resumen_field = next((k for k in casos_ia[0] if 'resumen' in k.lower() or 'descrip' in k.lower()), 'RESUMEN')
 
-@bp.route('/analysis', methods=['GET', 'POST'])
+    root = ET.Element("testsuite")
+    
+    for caso in casos_ia:
+        testcase = ET.SubElement(root, "testcase", name=caso.get(titulo_field, "Caso sin título"))
+        
+        name_node = ET.SubElement(testcase, "name")
+        name_node.text = caso.get(titulo_field, "Caso sin título")
+        
+        summary = ET.SubElement(testcase, "summary")
+        summary.text = f"<![CDATA[{caso.get(resumen_field, '')}]]>"
+        
+        preconditions = ET.SubElement(testcase, "preconditions")
+        preconditions.text = f"<![CDATA[{caso.get(precond_field, '')}]]>"
+        
+        externalid = ET.SubElement(testcase, "externalid")
+        externalid.text = caso.get(id_field, "")
+
+        steps = ET.SubElement(testcase, "steps")
+        
+        pasos_list = caso.get(pasos_field, "").split('\n')
+        resultados_list = caso.get(resultado_field, "").split('\n')
+        num_pasos = max(len(pasos_list), len(resultados_list))
+        pasos_list.extend([''] * (num_pasos - len(pasos_list)))
+        resultados_list.extend([''] * (num_pasos - len(resultados_list)))
+
+        for i in range(num_pasos):
+            if not pasos_list[i]: continue
+            
+            step = ET.SubElement(steps, "step")
+            
+            step_number = ET.SubElement(step, "step_number")
+            step_number.text = str(i + 1)
+            
+            actions = ET.SubElement(step, "actions")
+            actions.text = f"<![CDATA[{pasos_list[i]}]]>"
+            
+            expectedresults = ET.SubElement(step, "expectedresults")
+            expectedresults.text = f"<![CDATA[{resultados_list[i]}]]>"
+            
+            execution_type = ET.SubElement(step, "execution_type")
+            execution_type.text = "1"
+    
+    rough_string = ET.tostring(root, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    pretty_xml = reparsed.toprettyxml(indent="  ", encoding="utf-8")
+
+    output = io.BytesIO(pretty_xml)
+    output.seek(0)
+    
+    return output
+
+# --- RUTAS ---
+
+@bp.route('/', methods=['GET', 'POST'])
 @login_required
 def analysis_index():
-    """
-    Ruta principal para análisis.
-    Maneja tanto el envío (POST) como la visualización (GET).
-    """
-    form = RequerimientoUploadForm()
-    
-    plantillas_usuario = Plantilla.query.filter_by(
-        autor=current_user
-    ).with_entities(Plantilla.id, Plantilla.nombre_plantilla).all()
-    form.plantilla.choices = [(p.id, p.nombre_plantilla) for p in plantillas_usuario]
-    
-    view_id = request.args.get('view_id', None)
-    
-    analisis_obj = None
-    analisis_info = None
-    ai_result_data = None
-    texto_requerimiento_raw = None
-    ai_result_raw_text = None 
+    form = AnalysisForm()
+    form.plantilla.choices = [
+        (p.id, p.nombre_plantilla) for p in Plantilla.query.filter_by(
+            autor=current_user
+        ).order_by(Plantilla.nombre_plantilla).all()
+    ]
 
-    if view_id:
-        analisis_obj = Analisis.query.get_or_404(view_id)
-        if analisis_obj.autor != current_user:
-            flash("Acceso no autorizado.", "danger")
-            return redirect(url_for('analysis.analysis_index'))
-            
-        analisis_info = {
-            'nivel': analisis_obj.nivel_complejidad,
-            'casos': analisis_obj.casos_generados,
-            'criterios': analisis_obj.criterios_detectados,
-            'palabras': analisis_obj.palabras_analizadas
-        }
-        texto_requerimiento_raw = analisis_obj.texto_requerimiento_raw
-        ai_result_raw_text = analisis_obj.ai_result_json
-        
-        if analisis_obj.ai_result_json:
-            try:
-                match = re.search(r'\[.*\]', analisis_obj.ai_result_json, re.DOTALL)
-                if match:
-                    ai_result_data = json.loads(match.group(0))
-            except Exception as e:
-                print(f"Error parseando JSON de BD: {e}")
-                ai_result_data = None
-    
+    analisis_obj = None
+    ai_result_data = None
+    ai_result_raw = None
+    texto_requerimiento = None
+    analisis_info = None
+    ai_result_xml_string = None 
+
+    # --- Lógica POST (Nuevo Análisis) ---
     if form.validate_on_submit():
         archivo = form.archivo_requerimiento.data
-        plantilla_seleccionada_id = form.plantilla.data
-        plantilla_obj = Plantilla.query.get(plantilla_seleccionada_id)
-        
-        mapas = plantilla_obj.mapas.all()
-        if not mapas:
-            flash(f"La plantilla '{plantilla_obj.nombre_plantilla}' no tiene etiquetas escaneadas.", "danger")
-            return redirect(url_for('analysis.analysis_index'))
-        if plantilla_obj.tipo_archivo == 'Excel' and (not plantilla_obj.sheet_name or not plantilla_obj.header_row):
-             flash(f"La plantilla de Excel '{plantilla_obj.nombre_plantilla}' está incompleta.", "danger")
-             return redirect(url_for('core.map_step_1_sheet', plantilla_id=plantilla_obj.id))
+        plantilla_id = form.plantilla.data
+        plantilla_obj = Plantilla.query.get_or_404(plantilla_id)
+
+        if archivo and allowed_file(archivo.filename):
+            filename = secure_filename(archivo.filename)
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            archivo.save(upload_path)
             
-        etiquetas_simples = [m.etiqueta for m in mapas if m.tipo_mapa == 'celda_simple']
-        etiquetas_tabla = [m.etiqueta for m in mapas if m.tipo_mapa == 'fila_tabla']
-        
-        texto_requerimiento = leer_texto_requerimiento(archivo)
-        
-        if texto_requerimiento:
-            print("\n" + "="*80)
-            print("🧠 ANALIZANDO COMPLEJIDAD DEL REQUERIMIENTO...")
-            print("="*80)
-            analisis = analizar_complejidad_requerimiento(texto_requerimiento)
-            num_casos = analisis['cantidad_casos']
-            # (impresión en consola de métricas)
+            texto_req = leer_requerimiento(upload_path)
+            metricas = analizar_complejidad_requerimiento(texto_req)
+            prompt = generar_prompt_dinamico(texto_req, plantilla_obj, metricas)
             
+            if not model or not prompt:
+                flash("Error: No se pudo inicializar el modelo de IA o la plantilla no está mapeada.", "danger")
+                return redirect(url_for('analysis.analysis_index'))
+
             try:
-                api_key = os.environ.get('GOOGLE_API_KEY') 
-                if not api_key:
-                    flash("Error: GOOGLE_API_KEY no está configurada.", "danger")
-                    return redirect(url_for('analysis.analysis_index'))
+                respuesta = model.generate_content(prompt)
+                respuesta_ia_raw = respuesta.text
+                respuesta_ia_json = limpiar_json_string(respuesta_ia_raw)
                 
-                genai.configure(api_key=api_key)
-                
-                # Volvemos al modelo FLASH que te funciona
-                model = genai.GenerativeModel('gemini-2.0-flash-exp') 
-                
-                # Prompt SIMPLIFICADO para el modelo FLASH
-                prompt = f"""
-Eres un asistente de QA que genera casos de prueba en formato JSON.
-Basado en el siguiente requerimiento, genera EXACTAMENTE {num_casos} casos de prueba.
-
-REQUERIMIENTO A ANALIZAR:
----
-{texto_requerimiento}
----
-
-INSTRUCCIONES CRÍTICAS:
-1. La respuesta debe ser ÚNICAMENTE un array JSON válido, sin texto adicional.
-2. Debes generar EXACTAMENTE {num_casos} casos de prueba.
-3. Basa tus casos en los Criterios de Aceptación y el texto del requerimiento.
-"""
-                
-                if etiquetas_simples and etiquetas_tabla:
-                    prompt += f"""
-4. Cada caso debe tener estos campos principales:
-   {json.dumps(etiquetas_simples, ensure_ascii=False)}
-   
-5. ADICIONALMENTE, cada caso debe tener "PASOS" (array de objetos):
-   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
-   
-6. Campos principales = strings. "PASOS" = array con 2-10 pasos.
-"""
-                elif not etiquetas_simples and etiquetas_tabla:
-                    prompt += f"""
-4. Cada caso debe tener estos campos:
-   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
-
-5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
-"""
-                elif etiquetas_simples and not etiquetas_tabla:
-                    prompt += f"""
-4. Cada caso debe tener estos campos:
-   {json.dumps(etiquetas_simples, ensure_ascii=False)}
-
-5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
-"""
-
-                prompt += f"""
-
-IMPORTANTE: 
-- Genera TODOS los campos exactamente como están escritos
-- NO inventes campos adicionales
-- Asegura que el JSON sea válido y parseable
-- EXACTAMENTE {num_casos} casos, ni más ni menos
-Responde ÚNICAMENTE con el array JSON: [ ... ]
-"""
-                
-                print("🤖 Enviando prompt a Gemini...")
-                response = model.generate_content(prompt)
-                
-                ai_json_string = None
-                casos_generados_count = 0
-                try:
-                    match = re.search(r'\[.*\]', response.text, re.DOTALL)
-                    if match:
-                        ai_json_string = match.group(0) 
-                        casos_generados = json.loads(ai_json_string)
-                        casos_generados_count = len(casos_generados)
-                        print(f"✅ Generación exitosa: {casos_generados_count} casos")
-                        flash(f"✅ Análisis completado: {casos_generados_count} casos generados", "success")
-                    else:
-                        flash("⚠️ Respuesta no parseable. Intenta nuevamente.", "warning")
-                        ai_json_string = response.text 
-                except json.JSONDecodeError as je:
-                    print(f"❌ Error JSON: {je}")
-                    flash("Error: Respuesta de IA inválida.", "danger")
-                    ai_json_string = response.text 
-
+                # --- ¡INICIO DE LA ACTUALIZACIÓN (Guardar Estimaciones)! ---
                 nuevo_analisis = Analisis(
                     autor=current_user,
                     plantilla_usada=plantilla_obj,
-                    nombre_requerimiento=archivo.filename,
-                    texto_requerimiento_raw=texto_requerimiento,
-                    nivel_complejidad=analisis['nivel_complejidad'],
-                    casos_generados=casos_generados_count,
-                    criterios_detectados=analisis['metricas']['criterios_aceptacion'],
-                    palabras_analizadas=analisis['metricas']['palabras'],
-                    ai_result_json=ai_json_string 
+                    nombre_requerimiento=filename,
+                    texto_requerimiento_raw=texto_req,
+                    nivel_complejidad=metricas["nivel"],
+                    casos_generados=metricas["casos_sugeridos"],
+                    criterios_detectados=metricas["criterios"],
+                    criterios_no_funcionales=metricas["criterios_no_funcionales"],
+                    palabras_analizadas=metricas["palabras"],
+                    horas_diseño_estimadas=metricas["horas_diseño_estimadas"], # ¡NUEVO!
+                    horas_ejecucion_estimadas=metricas["horas_ejecucion_estimadas"], # ¡NUEVO!
+                    ai_result_json=respuesta_ia_json
                 )
+                # --- FIN DE LA ACTUALIZACIÓN ---
                 
                 db.session.add(nuevo_analisis)
                 db.session.commit()
                 
-                print(f"💾 Análisis {nuevo_analisis.id} guardado en la base de datos.")
-                
+                flash("¡Análisis completado exitosamente!", "success")
                 return redirect(url_for('analysis.analysis_index', view_id=nuevo_analisis.id))
                 
             except Exception as e:
-                flash(f"Error con API Gemini: {str(e)}", "danger")
-                traceback.print_exc()
+                flash(f"Error al generar contenido de IA: {str(e)}", "danger")
+                print(f"RESPUESTA IA (RAW): {respuesta.text if 'respuesta' in locals() else 'N/A'}")
+
+        else:
+            flash("Tipo de archivo no permitido.", "warning")
+
+    # --- Lógica GET (Ver Historial) ---
+    view_id = request.args.get('view_id', type=int)
+    if view_id:
+        analisis_obj = Analisis.query.get_or_404(view_id)
         
-        return redirect(url_for('analysis.analysis_index')) 
+        if analisis_obj.autor != current_user:
+            flash("Acceso no autorizado.", "danger")
+            return redirect(url_for('analysis.analysis_index'))
+            
+        texto_requerimiento = analisis_obj.texto_requerimiento_raw
+        ai_result_raw = analisis_obj.ai_result_json
+        
+        # --- ¡INICIO DE LA ACTUALIZACIÓN (Mostrar Estimaciones)! ---
+        analisis_info = {
+            "nivel": analisis_obj.nivel_complejidad,
+            "casos": analisis_obj.casos_generados,
+            "criterios": analisis_obj.criterios_detectados,
+            "criterios_no_funcionales": analisis_obj.criterios_no_funcionales,
+            "palabras": analisis_obj.palabras_analizadas,
+            "horas_diseño": analisis_obj.horas_diseño_estimadas, # ¡NUEVO!
+            "horas_ejecucion": analisis_obj.horas_ejecucion_estimadas # ¡NUEVO!
+        }
+        # --- FIN DE LA ACTUALIZACIÓN ---
+        
+        try:
+            ai_result_data = json.loads(ai_result_raw)
+            
+            xml_output_io = generar_xml_entregable(analisis_obj)
+            if xml_output_io:
+                ai_result_xml_string = xml_output_io.getvalue().decode('utf-8')
+                
+        except json.JSONDecodeError:
+            ai_result_data = None
+            flash("Error al decodificar el JSON de la IA. Mostrando datos crudos.", "warning")
 
     historial_analisis = Analisis.query.filter_by(
         autor=current_user
-    ).order_by(Analisis.timestamp.desc()).all()
+    ).order_by(Analisis.timestamp.desc()).limit(20).all()
 
-    return render_template('analysis/analysis.html', 
-                           title='Análisis de Requerimiento', 
-                           form=form,
-                           analisis_obj=analisis_obj,
-                           analisis_info=analisis_info,
-                           ai_result_data=ai_result_data,
-                           ai_result_raw=ai_result_raw_text, 
-                           texto_requerimiento=texto_requerimiento_raw,
-                           historial_analisis=historial_analisis
-                           )
+    return render_template(
+        'analysis/analysis.html',
+        title='Análisis de Requerimientos',
+        form=form,
+        historial_analisis=historial_analisis,
+        analisis_obj=analisis_obj,
+        ai_result_data=ai_result_data,
+        ai_result_raw=ai_result_raw,
+        ai_result_xml_string=ai_result_xml_string,
+        texto_requerimiento=texto_requerimiento,
+        analisis_info=analisis_info
+    )
 
-
-@bp.route('/analysis/clear', methods=['POST'])
-@login_required
-def clear_analysis():
-    flash("Vista limpiada.", "info")
-    return redirect(url_for('analysis.analysis_index'))
-
-
-@bp.route('/analysis/delete/<int:view_id>', methods=['POST'])
-@login_required
-def delete_analysis(view_id):
-    """Elimina un registro de análisis del historial."""
-    
-    analisis = Analisis.query.get_or_404(view_id)
-    if analisis.autor != current_user:
-        flash("Acceso no autorizado.", "danger")
-        return redirect(url_for('analysis.analysis_index'))
-    
-    try:
-        db.session.delete(analisis)
-        db.session.commit()
-        flash(f"Análisis '{analisis.nombre_requerimiento}' eliminado.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error al eliminar el análisis: {str(e)}", "danger")
-    
-    return redirect(url_for('analysis.analysis_index'))
-
-
-# --- ¡NUEVA RUTA PARA RE-ANALIZAR! ---
-@bp.route('/analysis/re-analyze/<int:view_id>', methods=['POST'])
+# --- Ruta de Re-Análisis ---
+@bp.route('/re-analyze/<int:view_id>', methods=['POST'])
 @login_required
 def re_analyze(view_id):
-    """
-    Toma el texto editado del modal, lo re-analiza,
-    y actualiza el registro en la base de datos.
-    """
-    
-    # 1. Cargar el análisis existente
     analisis_obj = Analisis.query.get_or_404(view_id)
     if analisis_obj.autor != current_user:
         flash("Acceso no autorizado.", "danger")
         return redirect(url_for('analysis.analysis_index'))
     
-    # 2. Obtener el texto editado del formulario del modal
-    nuevo_texto = request.form.get('texto_requerimiento')
-    
-    if not nuevo_texto:
-        flash("El texto del requerimiento no puede estar vacío.", "danger")
+    texto_req = request.form.get('texto_requerimiento')
+    if not texto_req:
+        flash("No se proporcionó texto para re-analizar.", "warning")
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
-    
-    print("\n" + "="*80)
-    print(f"🧠 RE-ANALIZANDO REQUERIMIENTO (ID: {view_id})...")
-    print("="*80)
-    
-    # 3. Volver a ejecutar el motor de complejidad
-    analisis = analizar_complejidad_requerimiento(nuevo_texto)
-    num_casos = analisis['cantidad_casos']
-    
-    try:
-        # 4. Volver a llamar a la API de Gemini (con el modelo y prompt correctos)
-        api_key = os.environ.get('GOOGLE_API_KEY') 
-        if not api_key:
-            flash("Error: GOOGLE_API_KEY no está configurada.", "danger")
-            return redirect(url_for('analysis.analysis_index'))
         
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash-exp') # El modelo que te funciona
-        
-        # El mismo prompt simplificado
-        prompt = f"""
-Eres un asistente de QA que genera casos de prueba en formato JSON.
-Basado en el siguiente requerimiento, genera EXACTAMENTE {num_casos} casos de prueba.
-
-REQUERIMIENTO A ANALIZAR:
----
-{nuevo_texto}
----
-
-INSTRUCCIONES CRÍTICAS:
-1. La respuesta debe ser ÚNICAMENTE un array JSON válido, sin texto adicional.
-2. Debes generar EXACTAMENTE {num_casos} casos de prueba.
-3. Basa tus casos en los Criterios de Aceptación y el texto del requerimiento.
-"""
-        
-        # (Obtener etiquetas de la plantilla)
-        plantilla_obj = analisis_obj.plantilla_usada
-        mapas = plantilla_obj.mapas.all()
-        etiquetas_simples = [m.etiqueta for m in mapas if m.tipo_mapa == 'celda_simple']
-        etiquetas_tabla = [m.etiqueta for m in mapas if m.tipo_mapa == 'fila_tabla']
-
-        if etiquetas_simples and etiquetas_tabla:
-            prompt += f"""
-4. Cada caso debe tener estos campos principales:
-   {json.dumps(etiquetas_simples, ensure_ascii=False)}
-5. ADICIONALMENTE, cada caso debe tener "PASOS" (array de objetos):
-   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
-6. Campos principales = strings. "PASOS" = array con 2-10 pasos.
-"""
-        elif not etiquetas_simples and etiquetas_tabla:
-            prompt += f"""
-4. Cada caso debe tener estos campos:
-   {json.dumps(etiquetas_tabla, ensure_ascii=False)}
-5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
-"""
-        elif etiquetas_simples and not etiquetas_tabla:
-            prompt += f"""
-4. Cada caso debe tener estos campos:
-   {json.dumps(etiquetas_simples, ensure_ascii=False)}
-5. Todos strings. Si hay campo "Pasos", usar saltos de línea numerados.
-"""
-
-        prompt += f"""
-IMPORTANTE: 
-- Genera TODOS los campos exactamente como están escritos
-- NO inventes campos adicionales
-- Asegura que el JSON sea válido y parseable
-- EXACTAMENTE {num_casos} casos, ni más ni menos
-Responde ÚNICAMENTE con el array JSON: [ ... ]
-"""
-        
-        print("🤖 Enviando (nuevo) prompt a Gemini...")
-        response = model.generate_content(prompt)
-        
-        # 5. Parsear la nueva respuesta
-        ai_json_string = None
-        casos_generados_count = 0
-        try:
-            match = re.search(r'\[.*\]', response.text, re.DOTALL)
-            if match:
-                ai_json_string = match.group(0)
-                casos_generados = json.loads(ai_json_string)
-                casos_generados_count = len(casos_generados)
-                print(f"✅ Re-generación exitosa: {casos_generados_count} casos")
-                flash(f"✅ Análisis actualizado: {casos_generados_count} casos generados", "success")
-            else:
-                flash("⚠️ Respuesta no parseable. Intenta nuevamente.", "warning")
-                ai_json_string = response.text
-        except json.JSONDecodeError as je:
-            print(f"❌ Error JSON: {je}")
-            flash("Error: Respuesta de IA inválida.", "danger")
-            ai_json_string = response.text
-
-        # 6. ¡ACTUALIZAR (UPDATE) el registro en la BD!
-        analisis_obj.texto_requerimiento_raw = nuevo_texto
-        analisis_obj.nivel_complejidad = analisis['nivel_complejidad']
-        analisis_obj.casos_generados = casos_generados_count
-        analisis_obj.criterios_detectados = analisis['metricas']['criterios_aceptacion']
-        analisis_obj.palabras_analizadas = analisis['metricas']['palabras']
-        analisis_obj.ai_result_json = ai_json_string
-        
-        db.session.commit() # Guardar los cambios en el objeto existente
-        
-        print(f"💾 Análisis {analisis_obj.id} actualizado en la base de datos.")
-        
-    except Exception as e:
-        flash(f"Error con API Gemini: {str(e)}", "danger")
-        traceback.print_exc()
-    
-    # 7. Redirigir de vuelta a la vista del análisis
-    return redirect(url_for('analysis.analysis_index', view_id=view_id))
-
-
-@bp.route('/generate_file/<int:view_id>')
-@login_required
-def generate_file(view_id):
-    """
-    Genera y descarga el archivo entregable para un análisis específico.
-    (Sin cambios)
-    """
-    
-    analisis_obj = Analisis.query.get_or_404(view_id)
-    if analisis_obj.autor != current_user:
-        flash("Acceso no autorizado.", "danger")
-        return redirect(url_for('analysis.analysis_index'))
-
-    json_text = analisis_obj.ai_result_json
     plantilla_obj = analisis_obj.plantilla_usada
     
-    if not json_text or not plantilla_obj:
-        flash("Error: Faltan datos de JSON o plantilla en este análisis.", "danger")
+    metricas = analizar_complejidad_requerimiento(texto_req)
+    prompt = generar_prompt_dinamico(texto_req, plantilla_obj, metricas)
+    
+    if not model or not prompt:
+        flash("Error: No se pudo inicializar el modelo de IA o la plantilla no está mapeada.", "danger")
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
-        
+
     try:
-        match = re.search(r'\[.*\]', json_text, re.DOTALL)
-        datos_ia = json.loads(match.group(0))
-        print(f"📦 Generando archivo para Análisis {view_id} con {len(datos_ia)} casos")
+        respuesta = model.generate_content(prompt)
+        respuesta_ia_raw = respuesta.text
+        respuesta_ia_json = limpiar_json_string(respuesta_ia_raw)
+        
+        # --- ¡INICIO DE LA ACTUALIZACIÓN (Guardar Estimaciones)! ---
+        analisis_obj.texto_requerimiento_raw = texto_req
+        analisis_obj.nivel_complejidad = metricas["nivel"]
+        analisis_obj.casos_generados = metricas["casos_sugeridos"]
+        analisis_obj.criterios_detectados = metricas["criterios"]
+        analisis_obj.criterios_no_funcionales = metricas["criterios_no_funcionales"]
+        analisis_obj.palabras_analizadas = metricas["palabras"]
+        analisis_obj.horas_diseño_estimadas = metricas["horas_diseño_estimadas"] # ¡NUEVO!
+        analisis_obj.horas_ejecucion_estimadas = metricas["horas_ejecucion_estimadas"] # ¡NUEVO!
+        analisis_obj.ai_result_json = respuesta_ia_json
+        # --- FIN DE LA ACTUALIZACIÓN ---
+        
+        db.session.commit()
+        
+        flash("¡Re-análisis completado exitosamente!", "success")
+        
     except Exception as e:
-        flash("Error: Datos JSON corruptos en este análisis.", "danger")
-        traceback.print_exc()
-        return redirect(url_for('analysis.analysis_index', view_id=view_id))
-        
-    buffer_memoria = None
-    mimetype = ""
-    download_name = ""
+        flash(f"Error al generar contenido de IA: {str(e)}", "danger")
+        print(f"RESPUESTA IA (RAW): {respuesta.text if 'respuesta' in locals() else 'N/A'}")
+
+    return redirect(url_for('analysis.analysis_index', view_id=view_id))
+
+# --- Rutas de Borrado ---
+@bp.route('/delete-analysis/<int:view_id>', methods=['POST'])
+@login_required
+def delete_analysis(view_id):
+    analisis_obj = Analisis.query.filter_by(id=view_id, autor=current_user).first_or_404()
+    try:
+        db.session.delete(analisis_obj)
+        db.session.commit()
+        flash("Análisis eliminado.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al eliminar: {str(e)}", "danger")
+    return redirect(url_for('analysis.analysis_index'))
+
+@bp.route('/clear-analysis', methods=['POST'])
+@login_required
+def clear_analysis():
+    return redirect(url_for('analysis.analysis_index'))
+
+# --- RUTA DE DESCARGA ---
+@bp.route('/generate-file/<int:view_id>')
+@login_required
+def generate_file(view_id):
+    analisis_obj = Analisis.query.filter_by(id=view_id, autor=current_user).first_or_404()
     
-    if plantilla_obj.tipo_archivo == 'Excel':
-        buffer_memoria = generar_excel_entregable(plantilla_obj, datos_ia)
-        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        download_name = f"entregable_{analisis_obj.id}_{plantilla_obj.nombre_plantilla}.xlsx"
-        
-    elif plantilla_obj.tipo_archivo == 'Word':
-        buffer_memoria = generar_word_entregable(plantilla_obj, datos_ia)
-        mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        download_name = f"entregable_{analisis_obj.id}_{plantilla_obj.nombre_plantilla}.docx"
+    file_type = request.args.get('type', 'excel')
     
-    if buffer_memoria:
-        return send_file(
-            buffer_memoria,
-            as_attachment=True,
-            download_name=download_name,
-            mimetype=mimetype
-        )
+    if file_type == 'excel':
+        output = generar_excel_entregable(analisis_obj)
+        if output is None:
+            flash("Error al generar el archivo Excel.", "danger")
+            return redirect(url_for('analysis.analysis_index', view_id=view_id))
+        
+        filename = f"Analisis_{view_id}_{analisis_obj.plantilla_usada.nombre_plantilla}.xlsx"
+        mimetype = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    
+    elif file_type == 'xml':
+        output = generar_xml_entregable(analisis_obj)
+        if output is None:
+            flash("Error al generar el archivo XML.", "danger")
+            return redirect(url_for('analysis.analysis_index', view_id=view_id))
+            
+        filename = f"Analisis_{view_id}_TestLink.xml"
+        mimetype = "application/xml"
+        
     else:
-        flash(f"Error generando {plantilla_obj.tipo_archivo}. Revisa logs.", "danger")
+        flash("Tipo de archivo no válido.", "danger")
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype=mimetype
+    )

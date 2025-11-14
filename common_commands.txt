@@ -1,0 +1,25 @@
+## COMANDOS COMUNES DEL PROYECTO
+
+# (Asumiendo que estás en la carpeta 'backend/')
+
+# 1. Instalar dependencias (basado en los imports)
+# (Se recomienda crear un 'requirements.txt' si no existe)
+pip install Flask flask_sqlalchemy flask_login flask_migrate flask_wtf openpyxl python-docx google-generativeai
+
+# 2. Ejecutar la aplicación en modo Debug
+# (main.py tiene el app.run(debug=True))
+python main.py
+
+# 3. Gestión de la Base de Datos (Flask-Migrate)
+# (La primera vez)
+flask db init
+
+# (Cuando cambias 'app/models.py')
+flask db migrate -m "Descripción del cambio"
+
+# (Para aplicar los cambios a 'app.db')
+flask db upgrade
+
+# 4. Abrir la terminal interactiva de Flask
+# (Útil para probar consultas de DB. 'db' y 'Usuario' están expuestos)
+flask shell

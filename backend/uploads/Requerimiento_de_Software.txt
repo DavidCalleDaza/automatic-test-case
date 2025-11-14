@@ -1,0 +1,143 @@
+Requerimiento de Software – Gestión de Clientes (CRUD)
+1. Contexto
+
+La organización LogistiCom S.A.S., dedicada a la prestación de servicios de mensajería y logística empresarial, necesita optimizar el manejo de la información de sus clientes corporativos y naturales. Actualmente, los registros se gestionan de forma manual en hojas de cálculo, lo que dificulta el seguimiento, genera demoras en los procesos comerciales y aumenta el riesgo de inconsistencias.
+
+Para mejorar la eficiencia operativa, trazabilidad y centralización de la información, se requiere implementar un módulo CRUD de Clientes dentro del Sistema Web de Gestión Logística. Este módulo permitirá crear, consultar, actualizar y eliminar información de clientes de manera segura, rápida y auditada.
+
+El objetivo principal es garantizar que el equipo comercial y administrativo pueda gestionar la información de clientes de forma unificada, cumpliendo con estándares de calidad, usabilidad, seguridad y auditoría.
+
+2. Requerimiento
+
+El sistema debe proporcionar un módulo de Gestión de Clientes que permita registrar nuevos clientes, visualizar detalles, editar información existente y eliminar registros, respetando las restricciones de seguridad y los flujos de negocio definidos.
+
+3. Criterios de Aceptación (CA)
+CA-01: Crear Cliente
+
+Como usuario con rol Administrador o Comercial
+Quiero registrar un nuevo cliente en el sistema
+Para tener disponible su información en los procesos comerciales y operativos
+
+Comportamiento esperado
+
+El sistema debe permitir crear un cliente con los siguientes campos obligatorios:
+
+Tipo de cliente (Natural / Jurídico)
+
+Nombre o Razón Social
+
+Número de identificación (único en el sistema)
+
+Correo electrónico
+
+Número de contacto
+
+Dirección
+
+El sistema debe validar:
+
+Campos obligatorios completos
+
+Formato de correo
+
+Longitud del número de identificación
+
+Duplicidad de identificación
+
+Al guardar exitosamente, el sistema debe mostrar un mensaje:
+“Cliente creado correctamente.”
+
+CA-02: Consultar Clientes
+
+Como usuario autenticado
+Quiero visualizar un listado con todos los clientes registrados
+Para acceder fácilmente a la información disponible
+
+Comportamiento esperado
+
+El sistema debe mostrar un listado con:
+
+ID interno
+
+Nombre / Razón Social
+
+Tipo de cliente
+
+Identificación
+
+Estado (Activo / Inactivo)
+
+El listado debe permitir:
+
+Buscar por nombre, identificación o tipo de cliente
+
+Filtrar por estado
+
+Ordenar columnas
+
+El sistema debe mostrar un mensaje si no existen registros:
+“No se encontraron clientes registrados.”
+
+CA-03: Actualizar Cliente
+
+Como usuario con rol Administrador o Comercial
+Quiero modificar la información de un cliente existente
+Para mantener la base de datos actualizada
+
+Comportamiento esperado
+
+El sistema debe permitir abrir el detalle del cliente seleccionado y editar sus campos.
+
+Se deben mantener las mismas validaciones que en la creación.
+
+No se debe permitir cambiar la identificación si ya existe en otro registro.
+
+Al actualizar exitosamente, se mostrará:
+“Cliente actualizado correctamente.”
+
+CA-04: Eliminar Cliente
+
+Como Administrador
+Quiero eliminar un cliente del sistema
+Para depurar la información inactiva o errónea
+
+Comportamiento esperado
+
+El sistema debe solicitar confirmación antes de eliminar.
+
+Si el cliente tiene información relacionada (envíos, facturas, contratos), el sistema debe impedir eliminarlo y mostrar:
+“El cliente no puede ser eliminado porque tiene información asociada.”
+
+Si el registro no tiene relaciones, debe eliminarse y mostrar:
+“Cliente eliminado correctamente.”
+
+CA-05: Auditoría y Seguridad
+Comportamiento esperado
+
+Toda acción de crear, editar o eliminar clientes debe registrarse en una tabla de auditoría con:
+
+Usuario
+
+Fecha y hora
+
+Acción ejecutada
+
+ID del cliente afectado
+
+Solo los roles autorizados pueden ejecutar acciones del CRUD.
+
+El módulo debe estar protegido bajo autenticación activa.
+
+ 4. Criterios No Funcionales (CNF)
+
+CNF-01 – Rendimiento:
+La consulta del listado debe responder en menos de 2 segundos con hasta 10.000 clientes.
+
+CNF-02 – Seguridad:
+Los datos sensibles deben transmitirse mediante HTTPS.
+
+CNF-03 – Usabilidad:
+El formulario debe ser intuitivo y accesible.
+
+CNF-04 – Disponibilidad:
+El módulo debe estar disponible el 99.5% del tiempo.

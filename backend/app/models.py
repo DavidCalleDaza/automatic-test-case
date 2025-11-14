@@ -9,9 +9,6 @@ class Usuario(UserMixin, db.Model):
     password_hash = db.Column(db.String(256))
     
     plantillas = db.relationship('Plantilla', backref='autor', lazy='dynamic')
-
-    # --- ¡NUEVA RELACIÓN! ---
-    # Un usuario ahora puede tener muchos análisis guardados
     analisis_historial = db.relationship('Analisis', backref='autor', lazy='dynamic')
 
     def set_password(self, password):
@@ -38,10 +35,9 @@ class Plantilla(db.Model):
     sheet_name = db.Column(db.String(100), nullable=True)
     header_row = db.Column(db.Integer, nullable=True)
     
+    desglosar_pasos = db.Column(db.Boolean, default=False)
+    
     mapas = db.relationship('MapaPlantilla', backref='plantilla_padre', lazy='dynamic', cascade="all, delete-orphan")
-
-    # --- ¡NUEVA RELACIÓN! ---
-    # Una plantilla puede ser usada en muchos análisis
     analisis_historial = db.relationship('Analisis', backref='plantilla_usada', lazy='dynamic')
 
     def __repr__(self):
@@ -57,29 +53,28 @@ class MapaPlantilla(db.Model):
     def __repr__(self):
         return f'<Mapa {self.etiqueta} @ {self.coordenada} (Tipo: {self.tipo_mapa})>'
 
-# --- ¡NUEVA TABLA! ---
-# Esta tabla almacenará permanentemente cada ejecución del análisis
-# --------------------
 class Analisis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, index=True, default=lambda: datetime.now(timezone.utc))
     
-    # IDs para vincular
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id'))
     id_plantilla = db.Column(db.Integer, db.ForeignKey('plantilla.id'))
     
-    # Datos del requerimiento
     nombre_requerimiento = db.Column(db.String(255))
-    texto_requerimiento_raw = db.Column(db.Text) # Para el modal "Ver Requerimiento"
+    texto_requerimiento_raw = db.Column(db.Text)
     
-    # Datos de las métricas (las 4 tarjetas)
     nivel_complejidad = db.Column(db.String(100))
     casos_generados = db.Column(db.Integer)
     criterios_detectados = db.Column(db.Integer)
     palabras_analizadas = db.Column(db.Integer)
+    criterios_no_funcionales = db.Column(db.Integer, default=0)
     
-    # Datos del resultado
-    ai_result_json = db.Column(db.Text) # El JSON completo de Gemini
+    # --- ¡INICIO DE LA ACTUALIZACIÓN (Estimaciones)! ---
+    horas_diseño_estimadas = db.Column(db.Float, default=0)
+    horas_ejecucion_estimadas = db.Column(db.Float, default=0)
+    # --- FIN DE LA ACTUALIZACIÓN ---
+    
+    ai_result_json = db.Column(db.Text)
     
     def __repr__(self):
         return f'<Analisis {self.id} - {self.nombre_requerimiento}>'

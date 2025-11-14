@@ -1,0 +1,92 @@
+🌳 Análisis de Estructura del Proyecto: automatic-test-case
+
+└── 📂 /
+    └── 📄 README.md
+    └── 📄 analyze_project.py
+└── 📂 frontend/
+└── 📂 backend/
+        └── 📄 main.py
+        └── 📄 config.py
+        └── 📄 app.db
+    └── 📂 app/
+            └── 📄 __init__.py
+            └── 📄 models.py
+        └── 📂 core/
+                └── 📄 __init__.py
+                └── 📄 routes.py
+                └── 📄 forms.py
+        └── 📂 auth/
+                └── 📄 __init__.py
+                └── 📄 routes.py
+                └── 📄 forms.py
+        └── 📂 static/
+            └── 📂 img/
+                    └── 📄 LogoQVision.webp
+                    └── 📄 LogoQV.png
+                    └── 📄 login.png
+        └── 📂 templates/
+                └── 📄 base.html
+            └── 📂 core/
+                    └── 📄 dashboard.html
+                    └── 📄 map_step_2_row.html
+                    └── 📄 ver_plantilla.html
+                    └── 📄 map_step_1_sheet.html
+                    └── 📄 map_step_3_columns.html
+            └── 📂 auth/
+                    └── 📄 register.html
+                    └── 📄 login.html
+            └── 📂 analysis/
+                    └── 📄 analysis.html
+        └── 📂 analysis/
+                └── 📄 __init__.py
+                └── 📄 routes.py
+                └── 📄 forms.py
+    └── 📂 migrations/
+            └── 📄 alembic.ini
+            └── 📄 script.py.mako
+            └── 📄 README
+            └── 📄 env.py
+        └── 📂 versions/
+                └── 📄 cce774ff580f_creación_inicial_de_tablas_versión_.py
+                └── 📄 bdd92b2ba39f_añade_sheet_name_y_header_row_a_.py
+                └── 📄 e16a1aaf9517_añade_desglosar_pasos_a_plantilla.py
+                └── 📄 64e7f783b780_añade_tabla_analisis_para_historial.py
+    └── 📂 uploads/
+            └── 📄 plantilla3.xlsx
+            └── 📄 plantilla_maestra.xlsx
+            └── 📄 mod_test.xlsx
+            └── 📄 plantilla.xlsx
+
+
+==============================
+📜 RESUMEN DE SCRIPTS Y CÓDIGO
+==============================
+
+analyze_project.py
+backend/app/__init__.py
+backend/app/analysis/__init__.py
+backend/app/analysis/forms.py
+backend/app/analysis/routes.py
+backend/app/auth/__init__.py
+backend/app/auth/forms.py
+backend/app/auth/routes.py
+backend/app/core/__init__.py
+backend/app/core/forms.py
+backend/app/core/routes.py
+backend/app/models.py
+backend/app/templates/analysis/analysis.html
+backend/app/templates/auth/login.html
+backend/app/templates/auth/register.html
+backend/app/templates/base.html
+backend/app/templates/core/dashboard.html
+backend/app/templates/core/map_step_1_sheet.html
+backend/app/templates/core/map_step_2_row.html
+backend/app/templates/core/map_step_3_columns.html
+backend/app/templates/core/ver_plantilla.html
+backend/config.py
+backend/main.py
+backend/migrations/env.py
+backend/migrations/versions/64e7f783b780_añade_tabla_analisis_para_historial.py
+backend/migrations/versions/bdd92b2ba39f_añade_sheet_name_y_header_row_a_.py
+backend/migrations/versions/cce774ff580f_creación_inicial_de_tablas_versión_.py
+backend/migrations/versions/e16a1aaf9517_añade_desglosar_pasos_a_plantilla.py

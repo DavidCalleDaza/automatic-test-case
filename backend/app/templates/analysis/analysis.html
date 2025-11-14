@@ -54,6 +54,7 @@
     {% endif %}
   </div>
 </div>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -69,10 +70,10 @@
                             <i class="bi bi-clock-history me-1"></i> Historial
                         </button>
                         
-                        {% if texto_requerimiento %}
+                        {% if texto_requerimiento and analisis_obj %}
                         <button class="btn btn-light btn-sm shadow-sm" type="button" data-bs-toggle="modal" data-bs-target="#requerimientoModal">
-                            <i class="bi bi-file-text-fill me-1"></i>
-                            Ver Requerimiento
+                            <i class="bi bi-pencil-fill me-1"></i>
+                            Ver/Editar Requerimiento
                         </button>
                         {% endif %}
                     </div>
@@ -99,7 +100,7 @@
                                 {{ form.archivo_requerimiento.label(class="form-label text-white fw-bold") }}
                                 <div id="drop-zone" class="form-control form-control-lg d-flex align-items-center justify-content-center">
                                     <span id="drop-zone-text" class="text-muted small">
-                                        <i class="bi bi-upload me-2"></i>Arrastra o selecciona archivo
+                                        <i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)
                                     </span>
                                 </div>
                                 {{ form.archivo_requerimiento(class="d-none", id="file-input") }}
@@ -119,19 +120,30 @@
             <div class="modal fade" id="requerimientoModal" tabindex="-1" aria-labelledby="requerimientoModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
-                        <form action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}" method="POST">
+                        <form id="form-re-analyze" action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}" method="POST">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="requerimientoModalLabel">
-                                    <i class="bi bi-pencil-fill me-2"></i>Editar y Re-Analizar Requerimiento
+                                    <i class="bi bi-pencil-fill me-2"></i>Requerimiento
                                 </h5>
+                                <div class="form-check form-switch ms-auto me-3" id="viewModeToggleContainer" style="display: none;">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="viewModeToggle">
+                                    <label class="form-check-label" for="viewModeToggle">Editar Texto</label>
+                                </div>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <textarea name="texto_requerimiento" class="form-control" style="height: 400px; font-family: monospace; font-size: 0.9rem;">{{ texto_requerimiento }}</textarea>
+                                
+                                <ul class="nav nav-tabs" id="excelTabsContainer" role="tablist">
+                                    </ul>
+                                <div class="tab-content" id="excelTabsContentContainer">
+                                    </div>
+
+                                <textarea id="main-req-textarea" name="texto_requerimiento" class="form-control" style="display: none;">{{ texto_requerimiento }}</textarea>
+                            
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">
+                                <button id="submit-re-analyze" type="submit" class="btn btn-primary">
                                     <i class="bi bi-robot me-1"></i> Guardar y Re-Analizar
                                 </button>
                             </div>
@@ -144,33 +156,65 @@
             
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body bg-light">
-                    <div class="row text-center g-3">
-                        <div class="col-md-3">
+                    
+                    <div class="row text-center g-3 row-cols-1 row-cols-md-3 row-cols-lg-5">
+                        <div class="col">
                             <div class="p-3 bg-white rounded shadow-sm">
                                 <i class="bi bi-speedometer2 text-primary fs-2 mb-2"></i>
                                 <h6 class="text-muted small mb-1">Complejidad</h6>
                                 <p class="fw-bold mb-0">{{ analisis_info.nivel }}</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col">
                             <div class="p-3 bg-white rounded shadow-sm">
                                 <i class="bi bi-file-earmark-check text-success fs-2 mb-2"></i>
                                 <h6 class="text-muted small mb-1">Casos Generados</h6>
                                 <p class="fw-bold mb-0 text-success">{{ analisis_info.casos }}</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col">
                             <div class="p-3 bg-white rounded shadow-sm">
                                 <i class="bi bi-list-check text-info fs-2 mb-2"></i>
-                                <h6 class="text-muted small mb-1">Criterios Detectados</h6>
+                                <h6 class="text-muted small mb-1">Criterios (CA)</h6>
                                 <p class="fw-bold mb-0">{{ analisis_info.criterios }}</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col">
+                            <div class="p-3 bg-white rounded shadow-sm">
+                                <i class="bi bi-shield-check text-secondary fs-2 mb-2"></i>
+                                <h6 class="text-muted small mb-1">Criterios (CNF)</h6>
+                                <p class="fw-bold mb-0">{{ analisis_info.criterios_no_funcionales }}</p>
+                            </div>
+                        </div>
+                        <div class="col">
                             <div class="p-3 bg-white rounded shadow-sm">
                                 <i class="bi bi-file-text text-warning fs-2 mb-2"></i>
                                 <h6 class="text-muted small mb-1">Palabras Analizadas</h6>
                                 <p class="fw-bold mb-0">{{ analisis_info.palabras }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center mt-4 mb-3">
+                        <h5 class="h6 text-muted mb-0">Estimación de Esfuerzo (IA)</h5>
+                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" data-bs-toggle="modal" data-bs-target="#estimacionInfoModal">
+                            <i class="bi bi-info-circle-fill"></i> ¿Cómo se calcula?
+                        </button>
+                    </div>
+
+                    <div class="row text-center g-3 row-cols-1 row-cols-md-2">
+                        <div class="col">
+                            <div class="p-3 bg-white rounded shadow-sm">
+                                <i class="bi bi-clock text-primary fs-2 mb-2"></i>
+                                <h6 class="text-muted small mb-1">Horas de Diseño (Est.)</h6>
+                                <p class="fw-bold mb-0">{{ analisis_info.horas_diseño | round(1) }} hs</p>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-3 bg-white rounded shadow-sm">
+                                <i class="bi bi-play-circle-fill text-success fs-2 mb-2"></i>
+                                <h6 class="text-muted small mb-1">Horas de Ejecución (Est.)</h6>
+                                <p class="fw-bold mb-0">{{ analisis_info.horas_ejecucion | round(1) }} hs</p>
                             </div>
                         </div>
                     </div>
@@ -215,51 +259,54 @@
                     </div>
 
                     <div class="d-flex gap-2 mt-4 justify-content-end flex-wrap">
+                        
                         <form action="{{ url_for('analysis.clear_analysis') }}" method="post" style="display: inline;">
                             <button type="submit" class="btn btn-outline-secondary">
                                 <i class="bi bi-trash me-1"></i> Limpiar Vista
                             </button>
                         </form>
-                        <a href="{{ url_for('analysis.generate_file', view_id=analisis_obj.id) }}" class="btn btn-primary">
-                            <i class="bi bi-download me-1"></i> Descargar Entregable
+                        
+                        <a href="{{ url_for('analysis.generate_file', view_id=analisis_obj.id, type='excel') }}" class="btn btn-success">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Descargar Excel
                         </a>
+                        
+                        <a href="{{ url_for('analysis.generate_file', view_id=analisis_obj.id, type='xml') }}" class="btn btn-info">
+                            <i class="bi bi-file-earmark-code me-1"></i> Descargar XML (TestLink)
+                        </a>
+
                     </div>
                     
                     <div class="mt-4">
                         <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#jsonCollapse">
                             <i class="bi bi-code-square me-1"></i> Ver JSON Crudo
                         </button>
+                        
+                        {% if ai_result_xml_string %}
+                        <button class="btn btn-sm btn-outline-info ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#xmlCollapse">
+                            <i class="bi bi-code me-1"></i> Ver XML
+                        </button>
+                        {% endif %}
+
                         <div class="collapse mt-3" id="jsonCollapse">
                             <div class="card card-body bg-light" style="border-left: none;">
-                                <pre style="max-height: 400px; overflow-y: auto;">{{ ai_result_raw }}</pre>
+                                <pre style="max-height: 400px; overflow-y: auto;">{{ ai_result_data | tojson(indent=4) }}</pre>
                             </div>
                         </div>
+                        
+                        {% if ai_result_xml_string %}
+                        <div class="collapse mt-3" id="xmlCollapse">
+                            <div class="card card-body bg-light" style="border-left: none;">
+                                <pre style="max-height: 400px; overflow-y: auto;"><code>{{ ai_result_xml_string | escape }}</code></pre>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             
             {% else %}
             <div class="alert alert-danger mt-4" role="alert">
-                <h5 class="alert-heading">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Error al procesar la respuesta de la IA
-                </h5>
-                <p class="mb-2">La IA generó una respuesta, pero no se pudo convertir a formato JSON válido.</p>
-                <hr>
-                <p class="mb-2"><strong>Posibles causas:</strong></p>
-                <ul>
-                    <li>La IA incluyó texto explicativo antes o después del JSON.</li>
-                    <li>El JSON está malformado o incompleto.</li>
-                </ul>
-                <button class="btn btn-sm btn-outline-danger mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#errorDetails">
-                    Ver respuesta completa de la IA
-                </button>
-                <div class="collapse mt-3" id="errorDetails">
-                    <div class="card card-body bg-light">
-                        <pre style="max-height: 300px; overflow-y: auto; font-size: 0.85rem;">{{ ai_result_raw }}</pre>
-                    </div>
                 </div>
-            </div>
             {% endif %}
 
             {% else %}
@@ -326,6 +373,59 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="estimacionInfoModal" tabindex="-1" aria-labelledby="estimacionInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="estimacionInfoModalLabel">
+                    <i class="bi bi-calculator-fill me-2"></i>Justificación del Cálculo de Estimación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>La estimación actual se basa en un <strong>modelo heurístico simple</strong> definido en el sistema. <strong>No es (aún) un estándar formal</strong> de la industria.</p>
+                <p>El cálculo sigue estas reglas:</p>
+                
+                <table class="table table-bordered table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Métrica</th>
+                            <th>Complejidad "Baja" (Default)</th>
+                            <th>Complejidad "Media"</th>
+                            <th>Complejidad "Alta"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Gatillo (OR)</strong></td>
+                            <td>-</td>
+                            <td>&gt; 300 Palabras <strong>o</strong> &gt; 7 Criterios</td>
+                            <td>&gt; 800 Palabras <strong>o</strong> &gt; 15 Criterios</td>
+                        </tr>
+                        <tr>
+                            <td><i class="bi bi-clock me-2"></i><strong>Horas (Diseño/Ejecución)</strong></td>
+                            <td><strong>2.0 hs</strong> c/u</td>
+                            <td><strong>4.0 hs</strong> c/u</td>
+                            <td><strong>8.0 hs</strong> c/u</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr class="my-4">
+                
+                <h6 class="h5">Próximos Pasos (Evolución)</h6>
+                <p class="text-muted">Como se discutió en la reunión, el objetivo es evolucionar este módulo para que se base en estándares de la industria, como la **Estimación de 3 Puntos (PERT)** (mencionada por Liliana) o el **Análisis de Puntos de Prueba (TPA)**.</p>
+                <p>Esta versión inicial sirve como base para validar el flujo, y estos valores heurísticos serán reemplazados por un modelo de cálculo más robusto y parametrizable.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% if ai_result_data and ai_result_data|length > 10 %}
     <button id="scroll-toggle-btn" class="btn btn-primary btn-lg rounded-circle shadow-lg" 
        title="Ir al final"
@@ -336,7 +436,6 @@
 
 
 <style>
-    /* Estilo "Glassmorphism" para el Sidebar (Sin cambios) */
     .offcanvas {
         background-color: rgba(255, 255, 255, 0.7) !important; 
         backdrop-filter: blur(10px);
@@ -344,24 +443,28 @@
         border-right: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
-    .offcanvas-header {
-        background-color: transparent; 
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-    .offcanvas-body {
-        background-color: transparent; 
-    }
+    .offcanvas-header { background-color: transparent; border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
+    .offcanvas-body { background-color: transparent; }
     .offcanvas-body .list-group-item:not(.active) {
         background-color: rgba(255, 255, 255, 0.5);
         border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
-    /* Estilos de tabla, drag-drop (Sin cambios) */
     .table-sm td { padding: 0.5rem; font-size: 0.875rem; max-width: 200px; vertical-align: middle; }
     .cell-content { max-height: 100px; overflow: visible; }
     .text-container { max-width: 100%; }
+    
     pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 4px; }
+    pre code {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        color: #212529;
+        background-color: transparent;
+        padding: 0;
+        font-family: monospace;
+    }
     .text-preview, .text-full { white-space: pre-wrap; word-wrap: break-word; }
+    
     .table-hover thead th {
         background-color: var(--bs-secondary-dark);
         color: white;
@@ -369,117 +472,497 @@
         vertical-align: middle;
         padding: 0.75rem 0.5rem;
     }
+
     #drop-zone { border: 2px dashed rgba(255, 255, 255, 0.4); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease; background-color: rgba(255, 255, 255, 0.1); min-height: 58px; }
     #drop-zone.drag-over { background-color: rgba(255, 255, 255, 0.3); border-color: var(--bs-primary); transform: scale(1.02); }
-    #drop-zone-text { color: rgba(255, 255, 255, 0.7) !important; pointer-events: none; }
-    #drop-zone-text.file-selected { color: #fff !important; font-weight: 600; }
+    
+    #drop-zone-text { 
+        color: rgba(255, 255, 255, 0.7) !important; 
+        pointer-events: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 95%;
+        vertical-align: middle;
+    }
+    #drop-zone-text.file-selected { 
+        color: #fff !important; 
+        font-weight: 600;
+    }
+
+    /* --- Estilos Modal Requerimiento (Revertido a Glassmorphism CLARO) --- */
+    #requerimientoModal .modal-content {
+        background-color: rgba(255, 255, 255, 0.7) !important; 
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        color: #333; /* Texto oscuro */
+    }
+    #requerimientoModal .modal-header,
+    #requerimientoModal .modal-footer {
+        background-color: transparent;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    #requerimientoModal .modal-title {
+        color: #333;
+    }
+    #requerimientoModal .btn-close {
+        filter: none; /* Botón de cierre default (oscuro) */
+    }
+    #excelTabsContainer {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+        margin-bottom: 1rem;
+    }
+    #excelTabsContainer .nav-link {
+        color: var(--bs-dark);
+        opacity: 0.7;
+        border: none;
+    }
+    #excelTabsContainer .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.5);
+        color: var(--bs-primary-dark);
+        opacity: 1;
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid var(--bs-primary);
+    }
+    #requerimientoModal .tab-content {
+        background-color: transparent;
+    }
+    
+    /* ¡NUEVO! Contenedor del Textarea de Edición (Oculto por defecto) */
+    .tab-pane .edit-view {
+        display: none;
+    }
+    /* ¡NUEVO! Estilo para el Textarea de Edición (Excel) */
+    .tab-pane .excel-sheet-textarea {
+        height: 350px;
+        font-family: monospace;
+        font-size: 0.9rem;
+        background-color: #fff;
+        color: #333;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: .5rem;
+    }
+    
+    /* ¡NUEVO! Estilo para el Textarea de TXT simple (para arreglar bug de altura) */
+    #pane-req-simple #main-req-textarea {
+        height: 400px;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+    
+    /* ¡NUEVO! Estilos para la Vista de Cuadrícula (Excel) */
+    .tab-pane .grid-view {
+        height: 350px;
+        overflow: auto;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: .5rem;
+    }
+    .excel-grid-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.8rem;
+    }
+    .excel-grid-table th,
+    .excel-grid-table td {
+        border: 1px solid #dee2e6;
+        padding: 4px 8px;
+        min-width: 75px;
+    }
+    .excel-grid-table th {
+        background-color: #f8f9fa;
+        text-align: center;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .excel-grid-table td.cell-data {
+        white-space: pre-wrap; /* Ajustar texto largo en celdas de datos */
+        word-wrap: break-word;
+    }
+    
+    /* --- Fin Estilos Modal --- */
 </style>
 {% endblock %}
 
 
 {% block scripts %}
-{{ super() }}
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // ... (Tu script existente para 'Ver más', 'Drag-Drop' y 'Modal de Borrado') ...
-    document.querySelectorAll('.btn-toggle-text').forEach(button => {
-        button.addEventListener('click', function() {
-            const container = this.closest('.text-container');
-            const preview = container.querySelector('.text-preview');
-            const full = container.querySelector('.text-full');
-            if (full.style.display === 'none') {
-                preview.style.display = 'none';
-                full.style.display = 'block';
-                this.textContent = 'Ver menos';
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-outline-secondary');
-            } else {
-                preview.style.display = 'block';
-                full.style.display = 'none';
-                this.textContent = 'Ver más';
-                this.classList.remove('btn-outline-secondary');
-                this.classList.add('btn-outline-primary');
-            }
-        });
-    });
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const dropZoneText = document.getElementById('drop-zone-text');
-    if (dropZone && fileInput && dropZoneText) {
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                updateFileDisplay(fileInput.files[0]);
-            }
-        });
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length) {
-                updateFileDisplay(fileInput.files[0]);
-            } else {
-                dropZoneText.innerHTML = '<i class="bi bi-upload me-2"></i>Arrastra o selecciona archivo';
-                dropZoneText.classList.remove('file-selected');
-            }
-        });
-    }
-    function updateFileDisplay(file) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        dropZoneText.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${file.name} <small class="ms-2">(${sizeMB} MB)</small>`;
-        dropZoneText.classList.add('file-selected');
-    }
-
-    var deleteModal = document.getElementById('deleteConfirmModal');
-    var confirmButton = document.getElementById('confirmDeleteButton');
-    var formToSubmit; 
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var formId = button.getAttribute('data-form-id');
-            formToSubmit = document.getElementById(formId);
-        });
-        confirmButton.addEventListener('click', function () {
-            if (formToSubmit) {
-                formToSubmit.submit();
-            }
-        });
-    }
-
-    // Botón Scroll Toggle (Sin cambios)
-    const scrollBtn = document.getElementById('scroll-toggle-btn');
-    const scrollIcon = document.getElementById('scroll-toggle-icon');
-
-    if (scrollBtn && scrollIcon) {
+    function showToast(message, category) {
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) return;
         
-        function updateScrollButton() {
-            const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+        let toastClass = 'glass-secondary';
+        let iconClass = 'bi-info-circle-fill';
+        let closeButtonClass = 'btn-close-white';
+        let title = 'Notificación';
 
-            if (isAtBottom) {
-                scrollIcon.classList.remove('bi-arrow-down');
-                scrollIcon.classList.add('bi-arrow-up');
-                scrollBtn.setAttribute('title', 'Ir al inicio');
-            } else {
-                scrollIcon.classList.remove('bi-arrow-up');
-                scrollIcon.classList.add('bi-arrow-down');
-                scrollBtn.setAttribute('title', 'Ir al final');
+        if (category === 'success') {
+            toastClass = 'glass-success';
+            iconClass = 'bi-check-circle-fill';
+            closeButtonClass = '';
+            title = 'Éxito';
+        } else if (category === 'danger') {
+            toastClass = 'glass-danger';
+            iconClass = 'bi-exclamation-triangle-fill';
+            closeButtonClass = 'btn-close-white';
+            title = 'Error';
+        } else if (category === 'warning') {
+            toastClass = 'glass-warning';
+            iconClass = 'bi-exclamation-circle-fill';
+            closeButtonClass = '';
+            title = 'Advertencia';
+        } else if (category === 'info') {
+            toastClass = 'glass-info';
+            iconClass = 'bi-info-circle-fill';
+            closeButtonClass = '';
+            title = 'Información';
+        } else if (category === 'secondary') {
+            closeButtonClass = 'btn-close-white';
+            title = 'Procesando';
+        }
+
+        const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
+        const toastHTML = `
+            <div id="${toastId}" class="toast ${toastClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                <div class="toast-header">
+                    <i class="bi ${iconClass}"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <small>Ahora</small>
+                    <button type="button" class="btn-close ${closeButtonClass}" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+        toast.show();
+    }
+    
+    // --- ¡INICIO DE LA ACTUALIZACIÓN (JS)! ---
+    // Envolver todo en un solo DOMContentLoaded para evitar conflictos
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- 1. Lógica de Toasts (de 'base.html') ---
+        const flashData = document.getElementById('flash-data');
+        if (flashData) {
+            const messages = JSON.parse(flashData.dataset.messages || '[]');
+            if (messages.length > 0) {
+                messages.forEach(function(messagePair) {
+                    const category = messagePair[0];
+                    const message = messagePair[1];
+                    showToast(message, category);
+                });
             }
         }
-        scrollBtn.addEventListener('click', function() {
-            const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
-            
-            if (isAtBottom) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }
+
+        // --- 2. Lógica de "Ver más" en la tabla ---
+        document.querySelectorAll('.btn-toggle-text').forEach(button => {
+            button.addEventListener('click', function() {
+                const container = this.closest('.text-container');
+                const preview = container.querySelector('.text-preview');
+                const full = container.querySelector('.text-full');
+                if (full.style.display === 'none') {
+                    preview.style.display = 'none';
+                    full.style.display = 'block';
+                    this.textContent = 'Ver menos';
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-outline-secondary');
+                } else {
+                    preview.style.display = 'block';
+                    full.style.display = 'none';
+                    this.textContent = 'Ver más';
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-outline-primary');
+                }
+            });
         });
-        window.addEventListener('scroll', updateScrollButton);
-        updateScrollButton();
-    }
-});
+
+        // --- 3. Lógica de "Drag-Drop" ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const dropZoneText = document.getElementById('drop-zone-text');
+        
+        if (dropZone && fileInput && dropZoneText) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFileDisplay(fileInput.files[0]);
+                }
+            });
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    updateFileDisplay(fileInput.files[0]);
+                } else {
+                    dropZoneText.innerHTML = '<i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)';
+                    dropZoneText.classList.remove('file-selected');
+                }
+            });
+        }
+        
+        function updateFileDisplay(file) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            let fileName = file.name;
+            if (fileName.length > 35) {
+                fileName = fileName.substring(0, 20) + '...' + fileName.substring(fileName.length - 12);
+            }
+            dropZoneText.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${fileName} <small class="ms-2">(${sizeMB} MB)</small>`;
+            dropZoneText.classList.add('file-selected');
+        }
+
+        // --- 4. Lógica del Modal de Borrado (Funcional) ---
+        var deleteModal = document.getElementById('deleteConfirmModal');
+        var confirmButton = document.getElementById('confirmDeleteButton');
+        var formToSubmit; 
+        
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var formId = button.getAttribute('data-form-id');
+                formToSubmit = document.getElementById(formId);
+            });
+        }
+        if (confirmButton) {
+            confirmButton.addEventListener('click', function () {
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                }
+            });
+        }
+
+        // --- 5. Lógica del Botón de Scroll (Funcional) ---
+        const scrollBtn = document.getElementById('scroll-toggle-btn');
+        const scrollIcon = document.getElementById('scroll-toggle-icon');
+
+        if (scrollBtn && scrollIcon) {
+            function updateScrollButton() {
+                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+                if (isAtBottom) {
+                    scrollIcon.classList.remove('bi-arrow-down');
+                    scrollIcon.classList.add('bi-arrow-up');
+                    scrollBtn.setAttribute('title', 'Ir al inicio');
+                } else {
+                    scrollIcon.classList.remove('bi-arrow-up');
+                    scrollIcon.classList.add('bi-arrow-down');
+                    scrollBtn.setAttribute('title', 'Ir al final');
+                }
+            }
+            scrollBtn.addEventListener('click', function() {
+                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+                if (isAtBottom) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }
+            });
+            window.addEventListener('scroll', updateScrollButton);
+            updateScrollButton();
+        }
+        
+        
+        // --- 6. Lógica del Modal de Requerimiento (Grid/Edit Toggle) ---
+        const reqModal = document.getElementById('requerimientoModal');
+        
+        if (reqModal) {
+            const mainTextarea = document.getElementById('main-req-textarea');
+            const tabsContainer = document.getElementById('excelTabsContainer');
+            const contentContainer = document.getElementById('excelTabsContentContainer');
+            const form = document.getElementById('form-re-analyze');
+            const toggleContainer = document.getElementById('viewModeToggleContainer');
+            const toggle = document.getElementById('viewModeToggle');
+            const separator = "\n--- INICIO HOJA: ";
+
+            // 6.1. Lógica para construir las pestañas CUANDO SE ABRE EL MODAL
+            reqModal.addEventListener('show.bs.modal', function() {
+                const fullText = mainTextarea.value;
+                
+                tabsContainer.innerHTML = '';
+                contentContainer.innerHTML = '';
+                
+                if (fullText.includes(separator)) {
+                    // --- Es un archivo Excel ---
+                    toggleContainer.style.display = 'block';
+                    tabsContainer.classList.add('excel-active');
+                    
+                    const parts = fullText.split(separator);
+                    let textParts = [];
+                    let gridParts = [];
+
+                    if (parts[0].trim() !== '') {
+                        textParts.push({ name: 'Hoja 1 (Default)', content: parts[0] });
+                        gridParts.push({ name: 'Hoja 1 (Default)', content: buildGrid(parts[0]) });
+                    }
+                    
+                    for (let i = 1; i < parts.length; i++) {
+                        const contentSplit = parts[i].split(' ---\n');
+                        const sheetName = contentSplit[0];
+                        const sheetContent = contentSplit.slice(1).join(' ---\n');
+                        textParts.push({ name: sheetName, content: sheetContent });
+                        gridParts.push({ name: sheetName, content: buildGrid(sheetContent) });
+                    }
+                    
+                    buildTabs(textParts, gridParts);
+                    toggle.checked = false;
+                    toggleView(false);
+
+                } else {
+                    // --- Es un TXT simple ---
+                    toggleContainer.style.display = 'none';
+                    tabsContainer.classList.remove('excel-active');
+                    
+                    const pane = document.createElement('div');
+                    pane.className = 'tab-pane fade show active';
+                    pane.id = 'pane-req-simple';
+                    pane.setAttribute('role', 'tabpanel');
+                    
+                    mainTextarea.style.display = 'block';
+                    pane.appendChild(mainTextarea);
+                    contentContainer.appendChild(pane);
+
+                    const tab = document.createElement('li');
+                    tab.className = 'nav-item';
+                    tab.innerHTML = `<button class="nav-link active" id="tab-req-simple" data-bs-toggle="tab" data-bs-target="#pane-req-simple" type="button" role="tab">Requerimiento</button>`;
+                    tabsContainer.appendChild(tab);
+                }
+            });
+
+            // 6.2. Lógica para RE-UNIR el texto ANTES DE ENVIAR EL FORMULARIO
+            form.addEventListener('submit', function() {
+                if (tabsContainer.classList.contains('excel-active')) {
+                    let newFullText = '';
+                    const textareas = contentContainer.querySelectorAll('.excel-sheet-textarea');
+                    const sheetNames = tabsContainer.querySelectorAll('.nav-link');
+                    
+                    for (let i = 0; i < textareas.length; i++) {
+                        const sheetName = sheetNames[i].textContent;
+                        const sheetContent = textareas[i].value;
+                        
+                        if (i === 0 && sheetName === 'Hoja 1 (Default)') {
+                             newFullText += sheetContent;
+                        } else {
+                             newFullText += `${separator}${sheetName} ---\n${sheetContent}`;
+                        }
+                    }
+                    mainTextarea.value = newFullText;
+                }
+                mainTextarea.style.display = 'block';
+                mainTextarea.style.visibility = 'hidden';
+                mainTextarea.style.height = '0';
+            });
+            
+            // 6.3. Lógica del Interruptor (Toggle)
+            toggle.addEventListener('change', function() {
+                toggleView(this.checked);
+            });
+            
+            function toggleView(isEditMode) {
+                const gridViews = reqModal.querySelectorAll('.grid-view');
+                const editViews = reqModal.querySelectorAll('.edit-view');
+                if (isEditMode) {
+                    gridViews.forEach(el => el.style.display = 'none');
+                    editViews.forEach(el => el.style.display = 'block');
+                } else {
+                    gridViews.forEach(el => el.style.display = 'block');
+                    editViews.forEach(el => el.style.display = 'none');
+                }
+            }
+
+            // 6.4. Función Helper para construir la Cuadrícula
+            function buildGrid(content) {
+                let maxCols = 0;
+                const rows = content.split('\n');
+                const tableRows = [];
+                
+                rows.forEach(rowStr => {
+                    if (rowStr.trim() === '') return;
+                    const cells = rowStr.split(' | ');
+                    tableRows.push(cells);
+                    if (cells.length > maxCols) {
+                        maxCols = cells.length;
+                    }
+                });
+                
+                if (maxCols === 0) maxCols = 1;
+                
+                let html = '<div class="grid-view"><table class="excel-grid-table"><thead><tr>';
+                for(let i = 0; i < maxCols; i++) {
+                    let colName = '';
+                    let n = i;
+                    do {
+                        colName = String.fromCharCode(65 + (n % 26)) + colName;
+                        n = Math.floor(n / 26) - 1;
+                    } while (n >= 0);
+                    html += `<th>${colName}</th>`;
+                }
+                html += '</tr></thead><tbody>';
+                
+                tableRows.forEach(cells => {
+                    html += '<tr>';
+                    for(let i = 0; i < maxCols; i++) {
+                        const cellData = cells[i] || '';
+                        html += `<td class="cell-data">${cellData.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`;
+                    }
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+                return html;
+            }
+
+            // 6.5. Función Helper para construir las Pestañas (crea ambas vistas)
+            function buildTabs(textParts, gridParts) {
+                for(let i = 0; i < textParts.length; i++) {
+                    const name = textParts[i].name;
+                    const textContent = textParts[i].content;
+                    const gridContent = (gridParts[i] && gridParts[i].content) ? gridParts[i].content : '<p>Error</p>';
+                    const id = 'sheet-' + i;
+                    const isActive = (i === 0);
+
+                    const tab = document.createElement('li');
+                    tab.className = 'nav-item';
+                    tab.setAttribute('role', 'presentation');
+                    tab.innerHTML = `
+                        <button class="nav-link ${isActive ? 'active' : ''}" id="tab-${id}" data-bs-toggle="tab" data-bs-target="#pane-${id}" type="button" role="tab">${name}</button>
+                    `;
+                    tabsContainer.appendChild(tab);
+                    
+                    const pane = document.createElement('div');
+                    pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
+                    pane.id = `pane-${id}`;
+                    pane.setAttribute('role', 'tabpanel');
+                    
+                    const gridView = document.createElement('div');
+                    gridView.className = 'grid-view';
+                    gridView.innerHTML = gridContent;
+                    
+                    const editView = document.createElement('div');
+                    editView.className = 'edit-view';
+                    editView.innerHTML = `<textarea class="form-control excel-sheet-textarea">${textContent}</textarea>`;
+                    
+                    pane.appendChild(gridView);
+                    pane.appendChild(editView);
+                    contentContainer.appendChild(pane);
+                }
+            }
+        } // fin de 'if (reqModal)'
+    
+    }); // fin de DOMContentLoaded
 </script>
 {% endblock %}

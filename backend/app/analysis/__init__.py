@@ -1,7 +1,7 @@
 from flask import Blueprint
 
-# Creamos el Blueprint. 'analysis' es el nombre que usaremos.
-bp = Blueprint('analysis', __name__)
+bp = Blueprint('analysis', __name__, template_folder='templates/analysis')
 
-# Importamos las rutas al final
-from app.analysis import routes
+# Esta es la forma correcta, solo importando las rutas.
+# Las rutas, a su vez, importarán los formularios.
+from . import routes

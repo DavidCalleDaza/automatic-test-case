@@ -1,0 +1,24 @@
+🔬 Informe de Tecnologías y Dependencias: automatic-test-case
+
+
+
+==============================
+💻 TECNOLOGÍAS INFERIDAS
+==============================
+
+* Python
+* Web (HTML/CSS)
+
+
+==============================
+🐍 DEPENDENCIAS DE PYTHON (de requirements.txt)
+==============================
+
+No se encontró 'requirements.txt' o estaba vacío.
+
+
+==============================
+📦 DEPENDENCIAS DE JAVASCRIPT (de package.json)
+==============================
+
+No se encontró 'package.json' o no tiene dependencias.
