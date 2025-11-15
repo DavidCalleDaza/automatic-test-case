@@ -1,4 +1,4 @@
-## CONTEXTO DEL PROYECTO: automatic-test-case V4 (Funcional)
+## CONTEXTO DEL PROYECTO: automatic-test-case V6 (Base de Usuario)
 
 **1. ROL Y OBJETIVO:**
 * **Usuario (David Calle):** Dev Full Stack (Python/Web) en Q-Vision, actuando como líder técnico.
@@ -7,42 +7,40 @@
 * **Repositorio:** https://github.com/DavidCalleDaza/automatic-test-case.git
 
 **2. STACK TECNOLÓGICO (ESTABLE):**
-* **Backend:** Python 3, Flask, Patrón Application Factory (`create_app`).
+* **Backend:** Python 3, Flask, Patrón Application Factory.
 * **Base de Datos:** SQLAlchemy con SQLite (`app.db`), gestionada por Flask-Migrate.
 * **Autenticación:** Flask-Login, Flask-WTF.
 * **Frontend:** Jinja2, Bootstrap 5, JS vainilla.
 * **Dependencias Clave (Python):** `openpyxl`, `python-docx`, `google-generativeai`.
 
-**3. ARQUITECTURA (BLUEPRINTS):**
-* **`app/auth`:** Gestión de usuarios (login, register, logout).
-* **`app/core`:** Gestión de Plantillas (dashboard, asistente de 3 pasos).
-* **`app/analysis`:** Módulo de IA.
+**3. MODELOS DE DATOS (models.py):**
+* **`Usuario`**: Modelo estándar de Flask-Login.
+* **`Plantilla`**: Almacena los metadatos del archivo (`sheet_name`, `header_row`, `desglosar_pasos`).
+* **`MapaPlantilla`**: Almacena el mapeo (`etiqueta` vs. `coordenada`).
+* **`Analisis`**:
+    * Almacena las métricas de análisis: `nivel_complejidad`, `casos_generados`, `criterios_detectados`, `palabras_analizadas`, `criterios_no_funcionales`.
+    * Almacena las entradas/salidas: `texto_requerimiento_raw`, `ai_result_json`.
+    * Incluye campos para el módulo de estimaciones: `horas_diseño_estimadas`, `horas_ejecucion_estimadas`, `horas_diseño_reales`, `horas_ejecucion_reales`.
 
 **4. FUNCIONALIDAD CLAVE (Módulo de Análisis):**
-* **Lectura de Requerimientos:** Acepta `.txt`, `.docx`, y `.xlsx`.
+* **Lectura de Requerimientos:** Acepta `.txt`, `.docx`, y `.xlsx` (leyendo todas las hojas).
 * **Análisis de Complejidad (`routes.py`):**
     * Detecta Complejidad ("Baja", "Media", "Alta").
     * Cuenta Criterios Funcionales (CA) usando Regex (ej. `CA-XX`).
     * Cuenta Criterios No Funcionales (CNF) usando Regex (ej. `CNF-XX`).
-    * Estima horas de diseño y ejecución (modelo heurístico).
+    * **NOTA:** La lógica para CALCULAR `horas_diseño_estimadas` ha sido eliminada de `routes.py`.
 * **Generación de Entregables (`routes.py`):**
     * **Prompt 1:1:** Instruye a Gemini (`gemini-2.0-flash-exp`) para generar 1 resultado por cada paso (`\n`).
-    * **Excel:** Genera un `.xlsx` que crea **filas separadas** para cada paso (sin celdas combinadas), listo para TestLink.
+    * **Excel:** Genera un `.xlsx` que crea **filas separadas** para cada paso (sin celdas combinadas).
     * **XML:** Genera un `.xml` básico compatible con TestLink.
 * **UI de Resultados (`analysis.html`):**
-    * Muestra métricas (CA, CNF, Horas Estimadas) en tarjetas.
-    * Muestra un modal de justificación para la estimación.
-    * Muestra los resultados en una tabla.
+    * Muestra métricas (CA, CNF, Complejidad) en tarjetas.
+    * **NOTA:** Muestra las tarjetas para "Horas de Diseño" y "Horas de Ejecución", pero estas mostrarán 0 o valores nulos.
+    * Muestra los resultados en una tabla (diseño 'light').
     * Permite ver el JSON (indentado) y el XML crudo.
 * **UI Modal "Ver/Editar Requerimiento" (`analysis.html`):**
-    * **¡NUEVA MEJORA!** El modal ahora tiene un interruptor (toggle) "Ver/Editar".
-    * Si el requerimiento es `.txt` o `.docx`, muestra el editor de texto (`<textarea>`).
-    * Si el requerimiento es `.xlsx` (detecta `--- INICIO HOJA: ---`):
-        * **Modo Ver (Default):** Muestra pestañas por cada hoja, y el contenido de cada una es una **cuadrícula `<table>` de solo lectura** (simulando Excel).
-        * **Modo Editar:** Al activar el interruptor, oculta la cuadrícula y muestra los `<textarea>` para edición.
-* **Bugs Corregidos:**
-    * Los botones de "Eliminar" y "Scroll" son funcionales.
-    * El modal de `.txt` ahora usa el 100% del tamaño disponible.
-
-**5. PRÓXIMOS PASOS (Pendiente):**
-* Recibir la plantilla de Excel de Estimaciones (de Lina o Maria) para construir el módulo de estimación avanzado.
+    * **¡FUNCIONALIDAD DESEADA!** Si el requerimiento es `.xlsx`, el modal muestra un diseño "glassmorphism" oscuro con pestañas para cada hoja (ej. "Descripción gral del servicio").
+    * (Lógica de "Grid/Toggle" NO implementada en esta versión).
+    * **BUG CONOCIDO (UI):** Si el requerimiento es `.txt`, el modal se muestra demasiado pequeño.
+* **BUGS CONOCIDOS (JS):**
+    * El script JS en `analysis.html` (1179 líneas) tiene un error que impide que se adjunten los *event listeners* del modal de borrado y del botón de scroll.

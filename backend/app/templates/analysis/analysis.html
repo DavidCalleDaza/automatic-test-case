@@ -19,7 +19,7 @@
     <div class="list-group">
         {% for item in historial_analisis %}
         <div class="list-group-item list-group-item-action p-2 
-                    {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}" 
+                    {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}"
              style="border-radius: .5rem; margin-bottom: 5px; position: relative;">
             
             <div class="d-flex w-100 justify-content-between align-items-center">
@@ -34,6 +34,16 @@
                         {{ item.casos_generados }} casos ({{ item.nivel_complejidad }})
                     </small>
                 </a>
+                             
+                {% if analisis_obj and analisis_obj.id_plantilla == item.id_plantilla and analisis_obj.id != item.id %}
+                <form action="{{ url_for('analysis.reuse_analysis', source_id=item.id, target_id=analisis_obj.id) }}" 
+                      method="POST" class="ms-2" style="position: relative; z-index: 5;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary" 
+                            title="Importar casos de este análisis al actual">
+                        <i class="bi bi-box-arrow-down"></i>
+                    </button>
+                </form>
+                {% endif %}
                 
                 <form id="form-delete-{{ item.id }}" 
                       action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}" 
@@ -50,7 +60,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="text-center text-muted small mt-4">No tienes análisis guardados.</p>
+        <p class="text-center text-muted small mt-4">No tienes análisis guardados.</p>
     {% endif %}
   </div>
 </div>
@@ -117,41 +127,40 @@
             </div>
 
             {% if texto_requerimiento and analisis_obj %}
-            <div class="modal fade" id="requerimientoModal" tabindex="-1" aria-labelledby="requerimientoModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <form id="form-re-analyze" action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}" method="POST">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="requerimientoModalLabel">
-                                    <i class="bi bi-pencil-fill me-2"></i>Requerimiento
-                                </h5>
-                                <div class="form-check form-switch ms-auto me-3" id="viewModeToggleContainer" style="display: none;">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="viewModeToggle">
-                                    <label class="form-check-label" for="viewModeToggle">Editar Texto</label>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                
-                                <ul class="nav nav-tabs" id="excelTabsContainer" role="tablist">
-                                    </ul>
-                                <div class="tab-content" id="excelTabsContentContainer">
-                                    </div>
-
-                                <textarea id="main-req-textarea" name="texto_requerimiento" class="form-control" style="display: none;">{{ texto_requerimiento }}</textarea>
-                            
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button id="submit-re-analyze" type="submit" class="btn btn-primary">
-                                    <i class="bi bi-robot me-1"></i> Guardar y Re-Analizar
-                                </button>
-                            </div>
-                        </form>
+<div class="modal fade" id="requerimientoModal" tabindex="-1" aria-labelledby="requerimientoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="form-re-analyze" action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="requerimientoModalLabel">
+                        <i class="bi bi-pencil-fill me-2"></i>Requerimiento
+                    </h5>
+                    <div class="form-check form-switch ms-auto me-3" id="viewModeToggleContainer" style="display: none;">
+                        <input class="form-check-input" type="checkbox" role="switch" id="viewModeToggle">
+                        <label class="form-check-label" for="viewModeToggle">Modo Edición</label>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-            {% endif %}
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="excelTabsContainer" role="tablist"></ul>
+                    <div class="tab-content" id="excelTabsContentContainer"></div>
+                    <textarea id="main-req-textarea" name="texto_requerimiento" class="form-control" style="display: none;">{{ texto_requerimiento }}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="save-changes-btn" type="button" class="btn btn-success">
+                        <i class="bi bi-save me-1"></i> Guardar Cambios
+                    </button>
+                    <button id="submit-re-analyze" type="submit" class="btn btn-primary">
+                        <i class="bi bi-robot me-1"></i> Guardar y Re-Analizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
             {% if analisis_info %}
             
             <div class="card mb-4 border-0 shadow-sm">
@@ -187,6 +196,7 @@
                             </div>
                         </div>
                         <div class="col">
+                        
                             <div class="p-3 bg-white rounded shadow-sm">
                                 <i class="bi bi-file-text text-warning fs-2 mb-2"></i>
                                 <h6 class="text-muted small mb-1">Palabras Analizadas</h6>
@@ -229,7 +239,9 @@
                             <thead>
                                 <tr>
                                     {% for header in ai_result_data[0].keys() %}
+                                        {% if not header.startswith('__') %}
                                         <th scope="col">{{ header }}</th>
+                                        {% endif %}
                                     {% endfor %}
                                 </tr>
                             </thead>
@@ -237,20 +249,26 @@
                                 {% for caso in ai_result_data %}
                                     <tr>
                                         {% for key, value in caso.items() %}
-                                            <td class="cell-content">
-                                                {% set valor_str = value|string %}
-                                                {% set max_length = 120 %}
-                                                
-                                                {% if valor_str|length > max_length %}
-                                                    <div class="text-container">
-                                                        <div class="text-preview small">{{ valor_str[:max_length] }}...</div>
-                                                        <div class="text-full small" style="display: none;"><pre class="mb-0">{{ valor_str }}</pre></div>
-                                                        <button class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100" type="button">Ver más</button>
-                                                    </div>
-                                                {% else %}
-                                                    <span class="small">{{ valor_str }}</span>
-                                                {% endif %}
+                                            {% if not key.startswith('__') %}
+                                            {% set valor_str = value|string %}
+                                            {% set max_length = 120 %}
+                                            
+                                            <td class="cell-content" data-original="{{ valor_str|replace('"','&quot;') }}">
+                                                <div class="cell-display">
+                                                    {% if valor_str|length > max_length %}
+                                                        <div class="text-container">
+                                                            <div class="text-preview small">{{ valor_str[:max_length] }}...</div>
+                                                            <div class="text-full small" style="display: none;"><pre class="mb-0">{{ valor_str }}</pre></div>
+                                                            <button class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100" type="button">Ver más</button>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="small">{{ valor_str }}</span>
+                                                    {% endif %}
+                                                </div>
+
+                                                <textarea class="cell-editor form-control small d-none">{{ valor_str }}</textarea>
                                             </td>
+                                            {% endif %}
                                         {% endfor %}
                                     </tr>
                                 {% endfor %}
@@ -266,6 +284,14 @@
                             </button>
                         </form>
                         
+                        <button id="resultsEditToggle" class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> Activar edición
+                        </button>
+
+                        <button id="save-results-btn" class="btn btn-primary d-none">
+                            <i class="bi bi-save me-1"></i> Guardar cambios
+                        </button>
+
                         <a href="{{ url_for('analysis.generate_file', view_id=analisis_obj.id, type='excel') }}" class="btn btn-success">
                             <i class="bi bi-file-earmark-spreadsheet me-1"></i> Descargar Excel
                         </a>
@@ -306,7 +332,8 @@
             
             {% else %}
             <div class="alert alert-danger mt-4" role="alert">
-                </div>
+                No hay datos válidos para mostrar.
+            </div>
             {% endif %}
 
             {% else %}
@@ -379,44 +406,61 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="estimacionInfoModalLabel">
-                    <i class="bi bi-calculator-fill me-2"></i>Justificación del Cálculo de Estimación
+                    <i class="bi bi-calculator-fill me-2"></i>Justificación de la Estimación (Estándar PERT)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>La estimación actual se basa en un <strong>modelo heurístico simple</strong> definido en el sistema. <strong>No es (aún) un estándar formal</strong> de la industria.</p>
-                <p>El cálculo sigue estas reglas:</p>
+                <p>Las estimaciones de esfuerzo (Horas de Diseño y Ejecución) se calculan automáticamente utilizando la <strong>Técnica de Estimación de 3 Puntos (PERT)</strong>.</p>
+                <p>Este es un método estándar en la gestión de proyectos, respaldado por el <strong>PMBOK© del Project Management Institute (PMI)</strong>, que proporciona una estimación ponderada más realista que un cálculo simple.</p>
+
+                <h6 class="mt-4">Fórmula Aplicada</h6>
+                <p>La fórmula central es: <code>Te = (To + 4Tm + Tp) / 6</code></p>
                 
                 <table class="table table-bordered table-sm">
                     <thead class="table-dark">
                         <tr>
-                            <th>Métrica</th>
-                            <th>Complejidad "Baja" (Default)</th>
-                            <th>Complejidad "Media"</th>
-                            <th>Complejidad "Alta"</th>
+                            <th>Variable</th>
+                            <th>Descripción</th>
+                            <th>Valor Asignado (por Caso de Prueba)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Gatillo (OR)</strong></td>
-                            <td>-</td>
-                            <td>&gt; 300 Palabras <strong>o</strong> &gt; 7 Criterios</td>
-                            <td>&gt; 800 Palabras <strong>o</strong> &gt; 15 Criterios</td>
+                            <td><strong>To</strong></td>
+                            <td>Tiempo Optimista</td>
+                            <td rowspan="3">
+                                Los valores (To, Tm, Tp) se asignan automáticamente<br>
+                                según la <strong>Complejidad (Baja, Media, Alta)</strong><br>
+                                detectada por la IA.
+                            </td>
                         </tr>
                         <tr>
-                            <td><i class="bi bi-clock me-2"></i><strong>Horas (Diseño/Ejecución)</strong></td>
-                            <td><strong>2.0 hs</strong> c/u</td>
-                            <td><strong>4.0 hs</strong> c/u</td>
-                            <td><strong>8.0 hs</strong> c/u</td>
+                            <td><strong>Tm</strong></td>
+                            <td>Tiempo Más Probable</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tp</strong></td>
+                            <td>Tiempo Pesimista</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Te</strong></td>
+                            <td><strong>Tiempo Estimado (Ponderado)</strong></td>
+                            <td>Resultado de la fórmula PERT.</td>
                         </tr>
                     </tbody>
                 </table>
-
+                
                 <hr class="my-4">
                 
-                <h6 class="h5">Próximos Pasos (Evolución)</h6>
-                <p class="text-muted">Como se discutió en la reunión, el objetivo es evolucionar este módulo para que se base en estándares de la industria, como la **Estimación de 3 Puntos (PERT)** (mencionada por Liliana) o el **Análisis de Puntos de Prueba (TPA)**.</p>
-                <p>Esta versión inicial sirve como base para validar el flujo, y estos valores heurísticos serán reemplazados por un modelo de cálculo más robusto y parametrizable.</p>
+                <h6 class="h5">Cálculo Final</h6>
+                <p>El cálculo total que ves en las tarjetas es el resultado de:</p>
+                <p class="text-center fs-5 fw-bold text-primary bg-light p-3 rounded">
+                    Horas Totales = (Te por Caso) × (Nro. Casos Generados)
+                </p>
+                <p class="text-muted small mt-3">
+                    Este enfoque proporciona una estimación inicial creíble y auditable, alineada con las buenas prácticas de la industria, eliminando la subjetividad de la estimación heurística simple.
+                </p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
@@ -425,7 +469,6 @@
     </div>
 </div>
 
-
 {% if ai_result_data and ai_result_data|length > 10 %}
     <button id="scroll-toggle-btn" class="btn btn-primary btn-lg rounded-circle shadow-lg" 
        title="Ir al final"
@@ -433,7 +476,6 @@
         <i id="scroll-toggle-icon" class="bi bi-arrow-down"></i>
     </button>
 {% endif %}
-
 
 <style>
     .offcanvas {
@@ -491,14 +533,13 @@
         font-weight: 600;
     }
 
-    /* --- Estilos Modal Requerimiento (Revertido a Glassmorphism CLARO) --- */
     #requerimientoModal .modal-content {
         background-color: rgba(255, 255, 255, 0.7) !important; 
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        color: #333; /* Texto oscuro */
+        color: #333;
     }
     #requerimientoModal .modal-header,
     #requerimientoModal .modal-footer {
@@ -510,7 +551,7 @@
         color: #333;
     }
     #requerimientoModal .btn-close {
-        filter: none; /* Botón de cierre default (oscuro) */
+        filter: none;
     }
     #excelTabsContainer {
         border-bottom: 1px solid rgba(0, 0, 0, 0.2);
@@ -533,29 +574,43 @@
         background-color: transparent;
     }
     
-    /* ¡NUEVO! Contenedor del Textarea de Edición (Oculto por defecto) */
-    .tab-pane .edit-view {
-        display: none;
+    .excel-grid-table td.editable-cell {
+        cursor: text;
+        position: relative;
     }
-    /* ¡NUEVO! Estilo para el Textarea de Edición (Excel) */
-    .tab-pane .excel-sheet-textarea {
-        height: 350px;
-        font-family: monospace;
-        font-size: 0.9rem;
-        background-color: #fff;
-        color: #333;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: .5rem;
+    .excel-grid-table td.editable-cell:hover {
+        background-color: #e7f3ff;
+        outline: 2px solid #007bff;
+    }
+    .excel-grid-table td.editing {
+        padding: 0;
+    }
+    .cell-editor {
+        width: 100%;
+        min-height: 30px;
+        border: 2px solid #007bff;
+        padding: 4px 8px;
+        font-family: inherit;
+        font-size: inherit;
+        resize: vertical;
+    }
+    .save-changes-btn {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1060;
+    }
+    .save-changes-btn.show {
+        display: block;
     }
     
-    /* ¡NUEVO! Estilo para el Textarea de TXT simple (para arreglar bug de altura) */
     #pane-req-simple #main-req-textarea {
         height: 400px;
         font-family: monospace;
         font-size: 0.9rem;
     }
     
-    /* ¡NUEVO! Estilos para la Vista de Cuadrícula (Excel) */
     .tab-pane .grid-view {
         height: 350px;
         overflow: auto;
@@ -583,386 +638,606 @@
         z-index: 10;
     }
     .excel-grid-table td.cell-data {
-        white-space: pre-wrap; /* Ajustar texto largo en celdas de datos */
+        white-space: pre-wrap;
         word-wrap: break-word;
     }
-    
-    /* --- Fin Estilos Modal --- */
 </style>
 {% endblock %}
 
-
 {% block scripts %}
+{{ super() }}
 
 <script>
-    function showToast(message, category) {
-        const toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) return;
-        
-        let toastClass = 'glass-secondary';
-        let iconClass = 'bi-info-circle-fill';
-        let closeButtonClass = 'btn-close-white';
-        let title = 'Notificación';
-
-        if (category === 'success') {
-            toastClass = 'glass-success';
-            iconClass = 'bi-check-circle-fill';
-            closeButtonClass = '';
-            title = 'Éxito';
-        } else if (category === 'danger') {
-            toastClass = 'glass-danger';
-            iconClass = 'bi-exclamation-triangle-fill';
-            closeButtonClass = 'btn-close-white';
-            title = 'Error';
-        } else if (category === 'warning') {
-            toastClass = 'glass-warning';
-            iconClass = 'bi-exclamation-circle-fill';
-            closeButtonClass = '';
-            title = 'Advertencia';
-        } else if (category === 'info') {
-            toastClass = 'glass-info';
-            iconClass = 'bi-info-circle-fill';
-            closeButtonClass = '';
-            title = 'Información';
-        } else if (category === 'secondary') {
-            closeButtonClass = 'btn-close-white';
-            title = 'Procesando';
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // SOLUCIÓN: Procesar mensajes flash solo si no se procesaron antes
+    const flashData = document.getElementById('flash-data');
+    if (flashData && !flashData.dataset.processed) {
+        const messages = JSON.parse(flashData.dataset.messages || '[]');
+        if (messages.length > 0) {
+            messages.forEach(function(messagePair) {
+                const category = messagePair[0];
+                const message = messagePair[1];
+                showToast(message, category);
+            });
+            // Marcar como procesado para evitar duplicados
+            flashData.dataset.processed = 'true';
         }
+    }
 
-        const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
-        const toastHTML = `
-            <div id="${toastId}" class="toast ${toastClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
-                <div class="toast-header">
-                    <i class="bi ${iconClass}"></i>
-                    <strong class="me-auto">${title}</strong>
-                    <small>Ahora</small>
-                    <button type="button" class="btn-close ${closeButtonClass}" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            </div>
-        `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement);
-        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
-        toast.show();
+    document.querySelectorAll('.btn-toggle-text').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = this.closest('.text-container');
+            const preview = container.querySelector('.text-preview');
+            const full = container.querySelector('.text-full');
+            if (full.style.display === 'none') {
+                preview.style.display = 'none';
+                full.style.display = 'block';
+                this.textContent = 'Ver menos';
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-outline-secondary');
+            } else {
+                preview.style.display = 'block';
+                full.style.display = 'none';
+                this.textContent = 'Ver más';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-outline-primary');
+            }
+        });
+    });
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const dropZoneText = document.getElementById('drop-zone-text');
+    
+    if (dropZone && fileInput && dropZoneText) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileDisplay(fileInput.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                updateFileDisplay(fileInput.files[0]);
+            } else {
+                dropZoneText.innerHTML = '<i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)';
+                dropZoneText.classList.remove('file-selected');
+            }
+        });
     }
     
-    // --- ¡INICIO DE LA ACTUALIZACIÓN (JS)! ---
-    // Envolver todo en un solo DOMContentLoaded para evitar conflictos
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        // --- 1. Lógica de Toasts (de 'base.html') ---
-        const flashData = document.getElementById('flash-data');
-        if (flashData) {
-            const messages = JSON.parse(flashData.dataset.messages || '[]');
-            if (messages.length > 0) {
-                messages.forEach(function(messagePair) {
-                    const category = messagePair[0];
-                    const message = messagePair[1];
-                    showToast(message, category);
-                });
+    function updateFileDisplay(file) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        let fileName = file.name;
+        if (fileName.length > 35) {
+            fileName = fileName.substring(0, 20) + '...' + fileName.substring(fileName.length - 12);
+        }
+        dropZoneText.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${fileName} <small class="ms-2">(${sizeMB} MB)</small>`;
+        dropZoneText.classList.add('file-selected');
+    }
+
+    var deleteModal = document.getElementById('deleteConfirmModal');
+    var confirmButton = document.getElementById('confirmDeleteButton');
+    var formToSubmit; 
+    
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var formId = button.getAttribute('data-form-id');
+            formToSubmit = document.getElementById(formId);
+        });
+    }
+    if (confirmButton) {
+        confirmButton.addEventListener('click', function () {
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        });
+    }
+
+    const scrollBtn = document.getElementById('scroll-toggle-btn');
+    const scrollIcon = document.getElementById('scroll-toggle-icon');
+
+    if (scrollBtn && scrollIcon) {
+        function updateScrollButton() {
+            const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+            if (isAtBottom) {
+                scrollIcon.classList.remove('bi-arrow-down');
+                scrollIcon.classList.add('bi-arrow-up');
+                scrollBtn.setAttribute('title', 'Ir al inicio');
+            } else {
+                scrollIcon.classList.remove('bi-arrow-up');
+                scrollIcon.classList.add('bi-arrow-down');
+                scrollBtn.setAttribute('title', 'Ir al final');
             }
         }
+        scrollBtn.addEventListener('click', function() {
+            const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+            if (isAtBottom) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        });
+        window.addEventListener('scroll', updateScrollButton);
+        updateScrollButton();
+    }
+    
+    const reqModal = document.getElementById('requerimientoModal');
+    
+    if (reqModal) {
+        const reqModalForm = document.getElementById('form-re-analyze');
+        const mainTextarea = document.getElementById('main-req-textarea');
+        const tabsContainer = document.getElementById('excelTabsContainer');
+        const contentContainer = document.getElementById('excelTabsContentContainer');
+        const toggleContainer = document.getElementById('viewModeToggleContainer');
+        const toggle = document.getElementById('viewModeToggle');
+        const saveChangesBtn = document.getElementById('save-changes-btn');
+        const separator = "\n--- INICIO HOJA: ";
+        let isEditMode = false;
+        let hasUnsavedChanges = false;
 
-        // --- 2. Lógica de "Ver más" en la tabla ---
-        document.querySelectorAll('.btn-toggle-text').forEach(button => {
-            button.addEventListener('click', function() {
-                const container = this.closest('.text-container');
-                const preview = container.querySelector('.text-preview');
-                const full = container.querySelector('.text-full');
-                if (full.style.display === 'none') {
-                    preview.style.display = 'none';
-                    full.style.display = 'block';
-                    this.textContent = 'Ver menos';
-                    this.classList.remove('btn-outline-primary');
-                    this.classList.add('btn-outline-secondary');
-                } else {
-                    preview.style.display = 'block';
-                    full.style.display = 'none';
-                    this.textContent = 'Ver más';
-                    this.classList.remove('btn-outline-secondary');
-                    this.classList.add('btn-outline-primary');
+        reqModal.addEventListener('show.bs.modal', function() {
+            const fullText = mainTextarea.value;
+            
+            tabsContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+            isEditMode = false;
+            hasUnsavedChanges = false;
+            toggle.checked = false;
+            saveChangesBtn.classList.remove('show');
+            
+            if (fullText.includes(separator)) {
+                toggleContainer.style.display = 'block';
+                tabsContainer.classList.add('excel-active');
+                
+                const parts = fullText.split(separator);
+                let sheetData = [];
+
+                if (parts[0].trim() !== '') {
+                    sheetData.push({ name: 'Hoja 1 (Default)', content: parts[0] });
                 }
-            });
+                
+                for (let i = 1; i < parts.length; i++) {
+                    const contentSplit = parts[i].split(' ---\n');
+                    const sheetName = contentSplit[0];
+                    const sheetContent = contentSplit.slice(1).join(' ---\n');
+                    sheetData.push({ name: sheetName, content: sheetContent });
+                }
+                
+                buildExcelTabs(sheetData);
+
+            } else {
+                toggleContainer.style.display = 'none';
+                tabsContainer.classList.remove('excel-active');
+                
+                const pane = document.createElement('div');
+                pane.className = 'tab-pane fade show active';
+                pane.id = 'pane-req-simple';
+                pane.setAttribute('role', 'tabpanel');
+                
+                mainTextarea.style.display = 'block';
+                pane.appendChild(mainTextarea);
+                contentContainer.appendChild(pane);
+
+                const tab = document.createElement('li');
+                tab.className = 'nav-item';
+                tab.innerHTML = `<button class="nav-link active" id="tab-req-simple" data-bs-toggle="tab" data-bs-target="#pane-req-simple" type="button" role="tab">Requerimiento</button>`;
+                tabsContainer.appendChild(tab);
+            }
         });
 
-        // --- 3. Lógica de "Drag-Drop" ---
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const dropZoneText = document.getElementById('drop-zone-text');
-        
-        if (dropZone && fileInput && dropZoneText) {
-            dropZone.addEventListener('click', () => fileInput.click());
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    updateFileDisplay(fileInput.files[0]);
-                }
-            });
-            fileInput.addEventListener('change', () => {
-                if (fileInput.files.length) {
-                    updateFileDisplay(fileInput.files[0]);
-                } else {
-                    dropZoneText.innerHTML = '<i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)';
-                    dropZoneText.classList.remove('file-selected');
-                }
-            });
-        }
-        
-        function updateFileDisplay(file) {
-            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            let fileName = file.name;
-            if (fileName.length > 35) {
-                fileName = fileName.substring(0, 20) + '...' + fileName.substring(fileName.length - 12);
-            }
-            dropZoneText.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${fileName} <small class="ms-2">(${sizeMB} MB)</small>`;
-            dropZoneText.classList.add('file-selected');
-        }
+        function buildExcelTabs(sheetData) {
+            for(let i = 0; i < sheetData.length; i++) {
+                const name = sheetData[i].name;
+                const content = sheetData[i].content;
+                const id = 'sheet-' + i;
+                const isActive = (i === 0);
 
-        // --- 4. Lógica del Modal de Borrado (Funcional) ---
-        var deleteModal = document.getElementById('deleteConfirmModal');
-        var confirmButton = document.getElementById('confirmDeleteButton');
-        var formToSubmit; 
-        
-        if (deleteModal) {
-            deleteModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var formId = button.getAttribute('data-form-id');
-                formToSubmit = document.getElementById(formId);
-            });
-        }
-        if (confirmButton) {
-            confirmButton.addEventListener('click', function () {
-                if (formToSubmit) {
-                    formToSubmit.submit();
-                }
-            });
-        }
-
-        // --- 5. Lógica del Botón de Scroll (Funcional) ---
-        const scrollBtn = document.getElementById('scroll-toggle-btn');
-        const scrollIcon = document.getElementById('scroll-toggle-icon');
-
-        if (scrollBtn && scrollIcon) {
-            function updateScrollButton() {
-                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
-                if (isAtBottom) {
-                    scrollIcon.classList.remove('bi-arrow-down');
-                    scrollIcon.classList.add('bi-arrow-up');
-                    scrollBtn.setAttribute('title', 'Ir al inicio');
-                } else {
-                    scrollIcon.classList.remove('bi-arrow-up');
-                    scrollIcon.classList.add('bi-arrow-down');
-                    scrollBtn.setAttribute('title', 'Ir al final');
-                }
-            }
-            scrollBtn.addEventListener('click', function() {
-                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
-                if (isAtBottom) {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                }
-            });
-            window.addEventListener('scroll', updateScrollButton);
-            updateScrollButton();
-        }
-        
-        
-        // --- 6. Lógica del Modal de Requerimiento (Grid/Edit Toggle) ---
-        const reqModal = document.getElementById('requerimientoModal');
-        
-        if (reqModal) {
-            const mainTextarea = document.getElementById('main-req-textarea');
-            const tabsContainer = document.getElementById('excelTabsContainer');
-            const contentContainer = document.getElementById('excelTabsContentContainer');
-            const form = document.getElementById('form-re-analyze');
-            const toggleContainer = document.getElementById('viewModeToggleContainer');
-            const toggle = document.getElementById('viewModeToggle');
-            const separator = "\n--- INICIO HOJA: ";
-
-            // 6.1. Lógica para construir las pestañas CUANDO SE ABRE EL MODAL
-            reqModal.addEventListener('show.bs.modal', function() {
-                const fullText = mainTextarea.value;
+                const tab = document.createElement('li');
+                tab.className = 'nav-item';
+                tab.setAttribute('role', 'presentation');
+                tab.innerHTML = `
+                    <button class="nav-link ${isActive ? 'active' : ''}" id="tab-${id}" data-bs-toggle="tab" data-bs-target="#pane-${id}" type="button" role="tab">${name}</button>
+                `;
+                tabsContainer.appendChild(tab);
                 
-                tabsContainer.innerHTML = '';
-                contentContainer.innerHTML = '';
+                const pane = document.createElement('div');
+                pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
+                pane.id = `pane-${id}`;
+                pane.setAttribute('role', 'tabpanel');
+                pane.setAttribute('data-sheet-name', name);
                 
-                if (fullText.includes(separator)) {
-                    // --- Es un archivo Excel ---
-                    toggleContainer.style.display = 'block';
-                    tabsContainer.classList.add('excel-active');
-                    
-                    const parts = fullText.split(separator);
-                    let textParts = [];
-                    let gridParts = [];
+                pane.innerHTML = buildEditableGrid(content);
+                contentContainer.appendChild(pane);
+            }
+        }
 
-                    if (parts[0].trim() !== '') {
-                        textParts.push({ name: 'Hoja 1 (Default)', content: parts[0] });
-                        gridParts.push({ name: 'Hoja 1 (Default)', content: buildGrid(parts[0]) });
-                    }
-                    
-                    for (let i = 1; i < parts.length; i++) {
-                        const contentSplit = parts[i].split(' ---\n');
-                        const sheetName = contentSplit[0];
-                        const sheetContent = contentSplit.slice(1).join(' ---\n');
-                        textParts.push({ name: sheetName, content: sheetContent });
-                        gridParts.push({ name: sheetName, content: buildGrid(sheetContent) });
-                    }
-                    
-                    buildTabs(textParts, gridParts);
-                    toggle.checked = false;
-                    toggleView(false);
-
-                } else {
-                    // --- Es un TXT simple ---
-                    toggleContainer.style.display = 'none';
-                    tabsContainer.classList.remove('excel-active');
-                    
-                    const pane = document.createElement('div');
-                    pane.className = 'tab-pane fade show active';
-                    pane.id = 'pane-req-simple';
-                    pane.setAttribute('role', 'tabpanel');
-                    
-                    mainTextarea.style.display = 'block';
-                    pane.appendChild(mainTextarea);
-                    contentContainer.appendChild(pane);
-
-                    const tab = document.createElement('li');
-                    tab.className = 'nav-item';
-                    tab.innerHTML = `<button class="nav-link active" id="tab-req-simple" data-bs-toggle="tab" data-bs-target="#pane-req-simple" type="button" role="tab">Requerimiento</button>`;
-                    tabsContainer.appendChild(tab);
+        function buildEditableGrid(content) {
+            let maxCols = 0;
+            const rows = content.split('\n');
+            const tableRows = [];
+            
+            rows.forEach(rowStr => {
+                if (rowStr.trim() === '') return;
+                const cells = rowStr.split(' | ');
+                tableRows.push(cells);
+                if (cells.length > maxCols) {
+                    maxCols = cells.length;
                 }
             });
+            
+            if (maxCols === 0) maxCols = 1;
+            
+            let html = '<div class="grid-view"><table class="excel-grid-table"><thead><tr>';
+            for(let i = 0; i < maxCols; i++) {
+                let colName = '';
+                let n = i;
+                do {
+                    colName = String.fromCharCode(65 + (n % 26)) + colName;
+                    n = Math.floor(n / 26) - 1;
+                } while (n >= 0);
+                html += `<th>${colName}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+            
+            tableRows.forEach((cells, rowIdx) => {
+                html += '<tr>';
+                for(let colIdx = 0; colIdx < maxCols; colIdx++) {
+                    const cellData = cells[colIdx] || '';
+                    const escapedData = cellData.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    html += `<td class="cell-data" data-row="${rowIdx}" data-col="${colIdx}">${escapedData}</td>`;
+                }
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div>';
+            return html;
+        }
 
-            // 6.2. Lógica para RE-UNIR el texto ANTES DE ENVIAR EL FORMULARIO
-            form.addEventListener('submit', function() {
+        toggle.addEventListener('change', function() {
+            isEditMode = this.checked;
+            toggleEditMode(isEditMode);
+        });
+        
+        function toggleEditMode(editMode) {
+            const allCells = reqModal.querySelectorAll('.excel-grid-table td.cell-data');
+            
+            if (editMode) {
+                allCells.forEach(cell => {
+                    cell.classList.add('editable-cell');
+                    cell.setAttribute('contenteditable', 'false');
+                });
+                allCells.forEach(cell => {
+                    cell.addEventListener('dblclick', handleCellDoubleClick);
+                });
+            } else {
+                const activeEditor = reqModal.querySelector('.cell-editor');
+                if (activeEditor) {
+                    saveCell(activeEditor);
+                }
+                
+                allCells.forEach(cell => {
+                    cell.classList.remove('editable-cell');
+                    cell.removeAttribute('contenteditable');
+                    cell.removeEventListener('dblclick', handleCellDoubleClick);
+                });
+                hasUnsavedChanges = false;
+                saveChangesBtn.classList.remove('show');
+            }
+        }
+
+        function handleCellDoubleClick(e) {
+            if (!isEditMode) return;
+            
+            const cell = e.target;
+            if (cell.classList.contains('editing')) return;
+            
+            const activeEditor = reqModal.querySelector('.cell-editor');
+            if (activeEditor) {
+                saveCell(activeEditor);
+            }
+            
+            const originalContent = cell.textContent;
+            cell.classList.add('editing');
+            cell.setAttribute('data-original', originalContent);
+            
+            const textarea = document.createElement('textarea');
+            textarea.className = 'cell-editor';
+            textarea.value = originalContent;
+            textarea.setAttribute('data-original', originalContent);
+            
+            cell.textContent = '';
+            cell.appendChild(textarea);
+            textarea.focus();
+            
+            textarea.addEventListener('blur', function() {
+                saveCell(textarea);
+            });
+            
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveCell(textarea);
+                }
+                if (e.key === 'Escape') {
+                    cell.classList.remove('editing');
+                    cell.removeAttribute('data-original');
+                    cell.textContent = originalContent;
+                }
+            });
+        }
+
+        function saveCell(textarea) {
+            const cell = textarea.parentElement;
+            const newContent = textarea.value;
+            const originalContent = cell.getAttribute('data-original') || '';
+            
+            cell.classList.remove('editing');
+            cell.removeAttribute('data-original');
+            cell.textContent = newContent;
+            
+            if (newContent !== originalContent) {
+                hasUnsavedChanges = true;
+                saveChangesBtn.classList.add('show');
+            }
+        }
+
+        if (saveChangesBtn) {
+            saveChangesBtn.addEventListener('click', function() {
+                const activeEditor = reqModal.querySelector('.cell-editor');
+                if (activeEditor) {
+                    saveCell(activeEditor);
+                }
+                
+                consolidateChanges();
+                
+                hasUnsavedChanges = false;
+                saveChangesBtn.classList.remove('show');
+                
+                toggle.checked = false;
+                toggleEditMode(false);
+                
+                showToast('Cambios guardados correctamente', 'success');
+            });
+        }
+
+        function consolidateChanges() {
+            if (!tabsContainer.classList.contains('excel-active')) return;
+            
+            let newFullText = '';
+            const panes = contentContainer.querySelectorAll('.tab-pane');
+            
+            panes.forEach((pane, idx) => {
+                const sheetName = pane.getAttribute('data-sheet-name');
+                const table = pane.querySelector('.excel-grid-table tbody');
+                if (!table) return;
+                
+                const rows = table.querySelectorAll('tr');
+                let sheetContent = '';
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    const rowData = Array.from(cells).map(cell => cell.textContent.trim());
+                    if (rowData.some(val => val !== '')) {
+                        sheetContent += rowData.join(' | ') + '\n';
+                    }
+                });
+                
+                if (idx === 0 && sheetName === 'Hoja 1 (Default)') {
+                    newFullText += sheetContent;
+                } else {
+                    newFullText += `${separator}${sheetName} ---\n${sheetContent}`;
+                }
+            });
+            
+            mainTextarea.value = newFullText;
+        }
+
+        if (reqModalForm) {
+            reqModalForm.addEventListener('submit', function(e) {
+                const activeEditor = reqModal.querySelector('.cell-editor');
+                if (activeEditor) {
+                    saveCell(activeEditor);
+                }
+                
                 if (tabsContainer.classList.contains('excel-active')) {
-                    let newFullText = '';
-                    const textareas = contentContainer.querySelectorAll('.excel-sheet-textarea');
-                    const sheetNames = tabsContainer.querySelectorAll('.nav-link');
-                    
-                    for (let i = 0; i < textareas.length; i++) {
-                        const sheetName = sheetNames[i].textContent;
-                        const sheetContent = textareas[i].value;
-                        
-                        if (i === 0 && sheetName === 'Hoja 1 (Default)') {
-                             newFullText += sheetContent;
-                        } else {
-                             newFullText += `${separator}${sheetName} ---\n${sheetContent}`;
-                        }
-                    }
-                    mainTextarea.value = newFullText;
+                    consolidateChanges();
                 }
+                
                 mainTextarea.style.display = 'block';
                 mainTextarea.style.visibility = 'hidden';
                 mainTextarea.style.height = '0';
             });
-            
-            // 6.3. Lógica del Interruptor (Toggle)
-            toggle.addEventListener('change', function() {
-                toggleView(this.checked);
-            });
-            
-            function toggleView(isEditMode) {
-                const gridViews = reqModal.querySelectorAll('.grid-view');
-                const editViews = reqModal.querySelectorAll('.edit-view');
-                if (isEditMode) {
-                    gridViews.forEach(el => el.style.display = 'none');
-                    editViews.forEach(el => el.style.display = 'block');
-                } else {
-                    gridViews.forEach(el => el.style.display = 'block');
-                    editViews.forEach(el => el.style.display = 'none');
-                }
-            }
-
-            // 6.4. Función Helper para construir la Cuadrícula
-            function buildGrid(content) {
-                let maxCols = 0;
-                const rows = content.split('\n');
-                const tableRows = [];
-                
-                rows.forEach(rowStr => {
-                    if (rowStr.trim() === '') return;
-                    const cells = rowStr.split(' | ');
-                    tableRows.push(cells);
-                    if (cells.length > maxCols) {
-                        maxCols = cells.length;
-                    }
-                });
-                
-                if (maxCols === 0) maxCols = 1;
-                
-                let html = '<div class="grid-view"><table class="excel-grid-table"><thead><tr>';
-                for(let i = 0; i < maxCols; i++) {
-                    let colName = '';
-                    let n = i;
-                    do {
-                        colName = String.fromCharCode(65 + (n % 26)) + colName;
-                        n = Math.floor(n / 26) - 1;
-                    } while (n >= 0);
-                    html += `<th>${colName}</th>`;
-                }
-                html += '</tr></thead><tbody>';
-                
-                tableRows.forEach(cells => {
-                    html += '<tr>';
-                    for(let i = 0; i < maxCols; i++) {
-                        const cellData = cells[i] || '';
-                        html += `<td class="cell-data">${cellData.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td>`;
-                    }
-                    html += '</tr>';
-                });
-                
-                html += '</tbody></table></div>';
-                return html;
-            }
-
-            // 6.5. Función Helper para construir las Pestañas (crea ambas vistas)
-            function buildTabs(textParts, gridParts) {
-                for(let i = 0; i < textParts.length; i++) {
-                    const name = textParts[i].name;
-                    const textContent = textParts[i].content;
-                    const gridContent = (gridParts[i] && gridParts[i].content) ? gridParts[i].content : '<p>Error</p>';
-                    const id = 'sheet-' + i;
-                    const isActive = (i === 0);
-
-                    const tab = document.createElement('li');
-                    tab.className = 'nav-item';
-                    tab.setAttribute('role', 'presentation');
-                    tab.innerHTML = `
-                        <button class="nav-link ${isActive ? 'active' : ''}" id="tab-${id}" data-bs-toggle="tab" data-bs-target="#pane-${id}" type="button" role="tab">${name}</button>
-                    `;
-                    tabsContainer.appendChild(tab);
-                    
-                    const pane = document.createElement('div');
-                    pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
-                    pane.id = `pane-${id}`;
-                    pane.setAttribute('role', 'tabpanel');
-                    
-                    const gridView = document.createElement('div');
-                    gridView.className = 'grid-view';
-                    gridView.innerHTML = gridContent;
-                    
-                    const editView = document.createElement('div');
-                    editView.className = 'edit-view';
-                    editView.innerHTML = `<textarea class="form-control excel-sheet-textarea">${textContent}</textarea>`;
-                    
-                    pane.appendChild(gridView);
-                    pane.appendChild(editView);
-                    contentContainer.appendChild(pane);
-                }
-            }
-        } // fin de 'if (reqModal)'
-    
-    }); // fin de DOMContentLoaded
+        }
+    }
+});
 </script>
+
+{% if analisis_obj %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const editBtn = document.getElementById("resultsEditToggle");
+    const saveBtn = document.getElementById("save-results-btn");
+    const table = document.querySelector("table.table-hover");
+    let editMode = false;
+    let changesPending = false;
+    const saveUrl = "{{ url_for('analysis.update_results', view_id=analisis_obj.id) }}";
+
+    editBtn?.addEventListener("click", () => {
+        editMode = !editMode;
+
+        document.querySelectorAll(".cell-editor").forEach(e => e.classList.toggle("d-none", !editMode));
+        document.querySelectorAll(".cell-display").forEach(d => d.classList.toggle("d-none", editMode));
+
+        if (editMode) {
+            editBtn.innerHTML = `<i class="bi bi-x-circle me-1"></i> Cancelar edición`;
+            editBtn.classList.remove("btn-warning");
+            editBtn.classList.add("btn-secondary");
+            saveBtn.classList.remove("d-none");
+            
+            document.querySelectorAll(".cell-editor").forEach(autoResizeTextarea);
+
+        } else {
+            editBtn.innerHTML = `<i class="bi bi-pencil-square me-1"></i> Activar edición`;
+            editBtn.classList.add("btn-warning");
+            editBtn.classList.remove("btn-secondary");
+            saveBtn.classList.add("d-none");
+
+            if (changesPending) {
+                document.querySelectorAll(".cell-editor").forEach(editor => {
+                    editor.value = editor.closest('.cell-content').dataset.original;
+                });
+                changesPending = false;
+                saveBtn.classList.remove("btn-danger");
+                saveBtn.classList.add("btn-primary");
+                saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
+                showToast("Cambios descartados", "info");
+            }
+        }
+    });
+
+    saveBtn?.addEventListener("click", () => {
+        if (!changesPending) {
+            showToast("No hay cambios pendientes para guardar.", "info");
+            return;
+        }
+        
+        const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
+        const dataRows = [];
+        
+        table.querySelectorAll("tbody tr").forEach(row => {
+            const rowData = {};
+            row.querySelectorAll(".cell-editor").forEach((editor, index) => {
+                const header = headers[index];
+                rowData[header] = editor.value;
+            });
+            dataRows.push(rowData);
+        });
+        
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataRows)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || 'Error en el servidor') });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(data.message, 'success');
+                changesPending = false;
+                
+                const casosCard = document.querySelector('.fw-bold.mb-0.text-success');
+                if (casosCard) {
+                    casosCard.textContent = data.casos;
+                }
+                
+                table.querySelectorAll("tbody tr").forEach((row, rowIndex) => {
+                    row.querySelectorAll(".cell-content").forEach((cell, colIndex) => {
+                        const newValue = dataRows[rowIndex][headers[colIndex]];
+                        cell.dataset.original = newValue.replace(/"/g, '&quot;');
+                        
+                        const display = cell.querySelector(".cell-display");
+                        const valor_str = String(newValue);
+                        const max_length = 120;
+                        if (valor_str.length > max_length) {
+                            if (!display.querySelector(".text-container")) {
+                                display.innerHTML = `
+                                    <div class="text-container">
+                                        <div class="text-preview small"></div>
+                                        <div class="text-full small" style="display: none;"><pre class="mb-0"></pre></div>
+                                        <button class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100" type="button">Ver más</button>
+                                    </div>
+                                `;
+                                display.querySelector('.btn-toggle-text').addEventListener('click', function() {
+                                    const container = this.closest('.text-container');
+                                    const preview = container.querySelector('.text-preview');
+                                    const full = container.querySelector('.text-full');
+                                    if (full.style.display === 'none') {
+                                        preview.style.display = 'none';
+                                        full.style.display = 'block';
+                                        this.textContent = 'Ver menos';
+                                        this.classList.remove('btn-outline-primary');
+                                        this.classList.add('btn-outline-secondary');
+                                    } else {
+                                        preview.style.display = 'block';
+                                        full.style.display = 'none';
+                                        this.textContent = 'Ver más';
+                                        this.classList.remove('btn-outline-secondary');
+                                        this.classList.add('btn-outline-primary');
+                                    }
+                                });
+                            }
+                            display.querySelector(".text-preview").textContent = valor_str.substring(0, max_length) + '...';
+                            display.querySelector(".text-full pre").textContent = valor_str;
+                        } else {
+                            display.innerHTML = `<span class="small">${valor_str}</span>`;
+                        }
+                    });
+                });
+
+                editBtn.click(); 
+                
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error al guardar:', error);
+            showToast(`Error al guardar: ${error.message}`, 'danger');
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove("btn-danger");
+            saveBtn.classList.add("btn-primary");
+            saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
+        });
+    });
+
+    function autoResizeTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = (el.scrollHeight) + 'px';
+    }
+    
+    document.querySelectorAll(".cell-editor").forEach(editor => {
+        editor.closest('.cell-content').dataset.original = editor.value.replace(/"/g, '&quot;');
+
+        editor.addEventListener("input", () => {
+            if (!changesPending) {
+                changesPending = true;
+                saveBtn.classList.remove("btn-primary");
+                saveBtn.classList.add("btn-danger");
+                saveBtn.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i> Guardar (Cambios pendientes)`;
+            }
+            autoResizeTextarea(editor);
+        });
+    });
+
+    document.querySelectorAll("a[href*='generate_file'], form[action*='clear_analysis'] button").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            if (changesPending) {
+                e.preventDefault();
+                showToast("¡Atención! Hay cambios sin guardar. Guarda tus ediciones antes de descargar o salir.", "warning");
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+
 {% endblock %}

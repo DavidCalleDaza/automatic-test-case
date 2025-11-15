@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite>
+  <testcase name="Caso de Prueba 1">
+    <summary>Verificar el registro exitoso de un nuevo usuario, incluyendo la verificación por correo electrónico.</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar Nombre, Correo (único), Contraseña y Confirmación de Contraseña (cumpliendo CA-03).</actions>
+        <expectedresults>2. Los datos son ingresados correctamente.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>3. El sistema muestra un mensaje de éxito y notifica el envío del correo de verificación (CA-04).</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Verificar la bandeja de entrada del correo electrónico.</actions>
+        <expectedresults>4. Se recibe el correo de verificación.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>5</step_number>
+        <actions>5. Hacer clic en el enlace de verificación.</actions>
+        <expectedresults>5. El sistema confirma la activación de la cuenta y redirige a la página de inicio de sesión.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>6</step_number>
+        <actions>6. Intentar iniciar sesión con las credenciales recién creadas.</actions>
+        <expectedresults>6. El inicio de sesión es exitoso.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 2">
+    <summary>Verificar que el sistema rechace el registro si el correo electrónico ya está en uso (Flujo Alternativo A1).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar un correo electrónico que ya existe en la base de datos.</actions>
+        <expectedresults>2. El correo es reconocido como existente.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Ingresar datos válidos para Nombre y Contraseñas.</actions>
+        <expectedresults>3. Los datos son ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>4. El sistema muestra un mensaje de error indicando que el correo ya está registrado y ofrece la opción de recuperación de contraseña.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 3">
+    <summary>Verificar que no se permita el envío del formulario si falta el campo 'Correo Electrónico' (CA-01).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Llenar Nombre, Contraseña y Confirmación de Contraseña con datos válidos.</actions>
+        <expectedresults>2. Los datos son ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Dejar el campo 'Correo Electrónico' vacío.</actions>
+        <expectedresults>3. El campo queda vacío.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>4. El sistema muestra un mensaje de error indicando que el campo 'Correo Electrónico' es obligatorio y no permite el envío.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 4">
+    <summary>Verificar que la contraseña sea rechazada si no cumple con el requisito de longitud mínima (CA-03).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar datos válidos para Nombre y Correo.</actions>
+        <expectedresults>2. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Ingresar una contraseña de 7 caracteres (ej: 'A1b!cde').</actions>
+        <expectedresults>3. Contraseña ingresada.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Ingresar la misma contraseña en 'Confirmación de Contraseña'.</actions>
+        <expectedresults>4. Contraseña confirmada.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>5</step_number>
+        <actions>5. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>5. El sistema muestra un mensaje de error indicando que la contraseña debe tener al menos 8 caracteres.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 5">
+    <summary>Verificar que la contraseña sea rechazada si no incluye un carácter especial (CA-03).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar datos válidos.</actions>
+        <expectedresults>2. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Ingresar una contraseña de 8+ caracteres que solo contenga mayúsculas, minúsculas y números (ej: 'Password123').</actions>
+        <expectedresults>3. Contraseña ingresada.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>4. El sistema muestra un mensaje de error indicando que la contraseña debe contener al menos un carácter especial.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 6">
+    <summary>Verificar que el sistema rechace el registro si las contraseñas no coinciden.</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar datos válidos para Nombre y Correo.</actions>
+        <expectedresults>2. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Ingresar 'Contraseña123!' en el campo Contraseña.</actions>
+        <expectedresults>3. Contraseñas diferentes.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Ingresar 'Contraseña456!' en el campo Confirmación de Contraseña.</actions>
+        <expectedresults>4. El sistema muestra un mensaje de error indicando que las contraseñas no coinciden.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>5</step_number>
+        <actions>5. Presionar el botón 'Registrar'.</actions>
+        <expectedresults> </expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 7">
+    <summary>Verificar que un usuario recién registrado no pueda iniciar sesión antes de la verificación por correo (CA-05).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Completar el registro exitoso (TC-REG-001, pasos 1-3).</actions>
+        <expectedresults>1. La cuenta se crea y el correo es enviado.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. NO hacer clic en el enlace de verificación.</actions>
+        <expectedresults>2. La cuenta permanece en estado 'Inactivo'.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Intentar iniciar sesión con el correo y contraseña registrados.</actions>
+        <expectedresults>3. El sistema muestra un mensaje de error indicando que la cuenta no ha sido verificada o está inactiva.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 8">
+    <summary>Verificar que el sistema rechace un correo electrónico con formato inválido (ej: sin '@').</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Ingresar 'usuario.dominio.com' en el campo Correo Electrónico.</actions>
+        <expectedresults>2. Correo ingresado.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Ingresar datos válidos para los demás campos.</actions>
+        <expectedresults>3. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>4. El sistema muestra un mensaje de error indicando que el formato del correo electrónico es inválido.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 9">
+    <summary>Verificar el manejo de errores cuando el usuario intenta registrarse sin conexión a internet (CA-06).</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Acceder a la opción 'Registrarse'.</actions>
+        <expectedresults>1. El sistema muestra el formulario de registro.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Desconectar la conexión a internet del dispositivo.</actions>
+        <expectedresults>2. Conexión interrumpida.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Llenar todos los campos con datos válidos.</actions>
+        <expectedresults>3. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>4. El sistema debe mostrar un mensaje claro indicando que no se pudo procesar la solicitud debido a un problema de conexión o red (CA-06).</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>5</step_number>
+        <actions>5. Reconectar la conexión a internet.</actions>
+        <expectedresults>5. El mensaje desaparece o se permite reintentar.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+  <testcase name="Caso de Prueba 10">
+    <summary>Verificar el manejo de errores si el servicio de correo electrónico falla después de la creación de la cuenta.</summary>
+    <preconditions>N/A</preconditions>
+    <importance>2</importance>
+    <steps>
+      <step>
+        <step_number>1</step_number>
+        <actions>1. Simular una falla en el servicio de correo electrónico (ej: desconexión del servicio SMTP).</actions>
+        <expectedresults>1. Falla simulada.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>2</step_number>
+        <actions>2. Completar el registro con datos válidos.</actions>
+        <expectedresults>2. Datos ingresados.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>3</step_number>
+        <actions>3. Presionar el botón 'Registrar'.</actions>
+        <expectedresults>3. El sistema debe crear la cuenta en estado 'Inactivo' y mostrar un mensaje de error indicando que no se pudo enviar el correo de verificación (o reintentar el envío).</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+      <step>
+        <step_number>4</step_number>
+        <actions>4. Verificar el estado de la cuenta en la base de datos.</actions>
+        <expectedresults>4. La cuenta existe, pero está inactiva.</expectedresults>
+        <execution_type>1</execution_type>
+      </step>
+    </steps>
+  </testcase>
+</testsuite>
