@@ -215,9 +215,22 @@ def generar_excel_entregable(view_id, type):
     # === Lógica de Generación de EXCEL ===
     if type == 'excel':
         plantilla_path = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
+        
+        # REQ #7: Validar existencia del archivo físico
+        if not os.path.exists(plantilla_path):
+            flash(
+                f'Error: El archivo de plantilla "{plantilla_obj.nombre_plantilla}" no se encuentra en el servidor. '
+                'Es posible que haya sido eliminado. Contacta al administrador.',
+                'danger'
+            )
+            return redirect(url_for('analysis.analysis_index', view_id=view_id))
+        
         try:
             wb = openpyxl.load_workbook(plantilla_path)
             ws = wb[plantilla_obj.sheet_name]
+        except FileNotFoundError:
+            flash('Error: No se pudo abrir el archivo de plantilla.', 'danger')
+            return redirect(url_for('analysis.analysis_index', view_id=view_id))
         except Exception as e:
             flash(f'Error al cargar el archivo de plantilla Excel: {e}', 'danger')
             return redirect(url_for('analysis.analysis_index', view_id=view_id))

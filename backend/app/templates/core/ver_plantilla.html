@@ -162,13 +162,17 @@
                 </td>
 
                 <td class="text-center" style="padding: 1rem">
-                  <a
-                    href="{{ url_for('core.edit_mapa', mapa_id=mapa.id) }}"
+                  <button
+                    type="button"
                     class="btn btn-sm btn-outline-primary me-1"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editMapaModal"
+                    data-mapa-id="{{ mapa.id }}"
+                    data-etiqueta-actual="{{ mapa.etiqueta }}"
                     title="Editar Etiqueta"
                   >
                     <i class="bi bi-pencil-fill"></i>
-                  </a>
+                  </button>
                   <form
                     id="form-delete-mapa-{{ mapa.id }}"
                     action="{{ url_for('core.delete_mapa', mapa_id=mapa.id) }}"
@@ -545,6 +549,44 @@
   }
 </style>
 
+<!-- ========================================
+     REQ #1: MODAL EDITAR ETIQUETA
+     ======================================== -->
+<div class="modal fade" id="editMapaModal" tabindex="-1" aria-labelledby="editMapaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--bs-primary), var(--bs-info)); color: white;">
+        <h5 class="modal-title" id="editMapaModalLabel">
+          <i class="bi bi-pencil-square me-2"></i>Editar Etiqueta
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editMapaForm" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editMapaEtiqueta" class="form-label">Nueva Etiqueta</label>
+            <input type="text" class="form-control" id="editMapaEtiqueta" name="etiqueta" 
+                   maxlength="100" required 
+                   placeholder="Ej: # caso, Descripción, Pasos">
+            <div class="form-text">Máximo 100 caracteres</div>
+          </div>
+          
+          <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Nota:</strong> La coordenada y tipo de mapa no se pueden modificar.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %} {% block scripts %} {{ super() }}
 
 <script>
@@ -577,6 +619,28 @@
           // 4. ...enviar el formulario guardado.
           formToSubmit.submit();
         }
+      });
+    }
+
+    // ========================================
+    // REQ #1: LÓGICA DEL MODAL DE EDICIÓN
+    // ========================================
+    var editMapaModal = document.getElementById('editMapaModal');
+    var editMapaForm = document.getElementById('editMapaForm');
+    var editMapaEtiqueta = document.getElementById('editMapaEtiqueta');
+    
+    if (editMapaModal) {
+      editMapaModal.addEventListener('show.bs.modal', function(event) {
+        // Obtener el botón que disparó el modal
+        var button = event.relatedTarget;
+        
+        // Extraer información del botón
+        var mapaId = button.getAttribute('data-mapa-id');
+        var etiquetaActual = button.getAttribute('data-etiqueta-actual');
+        
+        // Actualizar el formulario
+        editMapaEtiqueta.value = etiquetaActual;
+        editMapaForm.action = '/edit_mapa/' + mapaId;
       });
     }
   });

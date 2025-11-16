@@ -313,22 +313,81 @@ def map_step_3_columns(plantilla_id):
         plantilla=plantilla
     )
 
-# --- RUTAS DE EDICIÓN DE MAPA (PLACEHOLDERS) ---
+# ==============================================================================
+# REQ #1: EDITAR Y ELIMINAR MAPAS (FUNCIONAL)
+# ==============================================================================
 
 @bp.route('/edit_mapa/<int:mapa_id>', methods=['GET', 'POST'])
 @login_required
 def edit_mapa(mapa_id):
-    """Ruta placeholder para editar un mapa."""
+    """Editar etiqueta de un mapa existente."""
     mapa = MapaPlantilla.query.get_or_404(mapa_id)
-    # Aquí irá la lógica del formulario de edición
-    flash(f'Funcionalidad de edición para "{mapa.etiqueta}" aún no implementada.', 'info')
+    
+    # Verificar ownership
+    if mapa.plantilla.autor != current_user:
+        flash('No tienes permiso para editar este mapeo.', 'danger')
+        return redirect(url_for('core.dashboard'))
+    
+    if request.method == 'POST':
+        nueva_etiqueta = request.form.get('etiqueta', '').strip()
+        
+        # Validación
+        if not nueva_etiqueta:
+            flash('La etiqueta no puede estar vacía.', 'warning')
+            return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+        
+        if len(nueva_etiqueta) > 100:
+            flash('La etiqueta no puede exceder 100 caracteres.', 'warning')
+            return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+        
+        # Verificar duplicados en la misma plantilla
+        duplicado = MapaPlantilla.query.filter(
+            MapaPlantilla.id_plantilla == mapa.id_plantilla,
+            MapaPlantilla.etiqueta == nueva_etiqueta,
+            MapaPlantilla.id != mapa.id
+        ).first()
+        
+        if duplicado:
+            flash(f'Ya existe una etiqueta "{nueva_etiqueta}" en esta plantilla.', 'warning')
+            return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+        
+        # Actualizar
+        etiqueta_antigua = mapa.etiqueta
+        mapa.etiqueta = nueva_etiqueta
+        
+        try:
+            db.session.commit()
+            flash(f'Etiqueta actualizada: "{etiqueta_antigua}" → "{nueva_etiqueta}"', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar: {str(e)}', 'danger')
+        
+        return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+    
+    # GET: Redirigir (modal maneja la edición visualmente)
     return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+
 
 @bp.route('/delete_mapa/<int:mapa_id>', methods=['POST'])
 @login_required
 def delete_mapa(mapa_id):
-    """Ruta placeholder para eliminar un mapa."""
+    """Eliminar un mapa de forma permanente."""
     mapa = MapaPlantilla.query.get_or_404(mapa_id)
-    # Aquí irá la lógica de db.session.delete(mapa)
-    flash(f'Funcionalidad de borrado para "{mapa.etiqueta}" aún no implementada.', 'info')
-    return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+    
+    # Verificar ownership
+    if mapa.plantilla.autor != current_user:
+        flash('No tienes permiso para eliminar este mapeo.', 'danger')
+        return redirect(url_for('core.dashboard'))
+    
+    plantilla_id = mapa.id_plantilla
+    etiqueta_eliminada = mapa.etiqueta
+    
+    try:
+        db.session.delete(mapa)
+        db.session.commit()
+        flash(f'Mapeo "{etiqueta_eliminada}" eliminado correctamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar el mapeo: {str(e)}', 'danger')
+    
+    return redirect(url_for('core.ver_plantilla', plantilla_id=plantilla_id))
