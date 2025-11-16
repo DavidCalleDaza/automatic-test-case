@@ -608,3 +608,219 @@ def update_results(view_id):
         return jsonify({'status': 'error', 'message': f'Error al guardar en la BD: {e}'}), 500
 
 # --- RUTA 'reuse_analysis' ELIMINADA ---
+
+
+# ============================================================================
+# 🆕 REQUERIMIENTO #3: API para obtener información de plantilla
+# ============================================================================
+@bp.route('/api/plantilla/<int:plantilla_id>/info', methods=['GET'])
+@login_required
+def get_plantilla_info(plantilla_id):
+    """
+    Endpoint AJAX para obtener información detallada de una plantilla.
+    Usado por el modal "Ver Plantilla Seleccionada" en analysis.html
+    """
+    from app.models import Plantilla, MapaPlantilla
+    
+    # Buscar plantilla
+    plantilla = Plantilla.query.get_or_404(plantilla_id)
+    
+    # Validar ownership
+    if plantilla.autor != current_user:
+        return jsonify({
+            'success': False,
+            'error': 'No tienes permiso para ver esta plantilla'
+        }), 403
+    
+    # Obtener mapas
+    mapas = plantilla.mapas.all()
+    
+    # Construir respuesta
+    plantilla_data = {
+        'id': plantilla.id,
+        'nombre': plantilla.nombre_plantilla,
+        'tipo_archivo': plantilla.tipo_archivo.upper() if plantilla.tipo_archivo else 'N/A',
+        'sheet_name': plantilla.sheet_name or 'N/A',
+        'header_row': plantilla.header_row or 1,
+        'desglosar_pasos': plantilla.desglosar_pasos,
+        'timestamp': plantilla.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+        'total_mapas': len(mapas)
+    }
+    
+    mapas_data = [
+        {
+            'etiqueta': mapa.etiqueta,
+            'coordenada': mapa.coordenada,
+            'tipo_mapa': mapa.tipo_mapa
+        }
+        for mapa in mapas
+    ]
+    
+    return jsonify({
+        'success': True,
+        'plantilla': plantilla_data,
+        'mapas': mapas_data
+    })
+
+
+# ============================================================================
+# 🆕 REQUERIMIENTO #5: API para obtener historial de cambios
+# ============================================================================
+@bp.route('/api/historial/<int:analisis_id>', methods=['GET'])
+@login_required
+def get_historial_cambios(analisis_id):
+    """
+    Endpoint AJAX para obtener el historial de cambios de un análisis.
+    Soporta paginación y filtrado por tipo de cambio.
+    """
+    # Validar parámetros
+    try:
+        limit = int(request.args.get('limit', 20))
+        offset = int(request.args.get('offset', 0))
+        tipo_filtro = request.args.get('tipo', None)
+        
+        if limit > 100:
+            limit = 100
+        if limit < 1:
+            limit = 20
+        if offset < 0:
+            offset = 0
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Parámetros inválidos'}), 400
+    
+    # Buscar análisis
+    analisis = Analisis.query.get_or_404(analisis_id)
+    
+    # Validar ownership
+    if analisis.autor != current_user:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 403
+    
+    # Construir query
+    from app.models import Usuario
+    query = HistorialCambios.query.join(Usuario).filter(
+        HistorialCambios.id_analisis == analisis_id
+    )
+    
+    if tipo_filtro:
+        query = query.filter(HistorialCambios.tipo_cambio == tipo_filtro)
+    
+    # Total de registros
+    total_cambios = query.count()
+    
+    # Obtener registros con paginación
+    historial = query.order_by(
+        HistorialCambios.timestamp.desc()
+    ).limit(limit).offset(offset).all()
+    
+    # Construir respuesta
+    cambios_data = []
+    for h in historial:
+        # Preview del JSON
+        preview_json = None
+        if h.datos_json_antiguos:
+            preview_json = h.datos_json_antiguos[:200]
+            if len(h.datos_json_antiguos) > 200:
+                preview_json += '...'
+        
+        # Badge color según tipo
+        tipo_badge = {
+            'REQUERIMIENTO_MODIFICADO': 'warning',
+            'CASOS_MODIFICADOS': 'info',
+            'PLANTILLA_CAMBIADA': 'secondary',
+            'RE_ANALISIS': 'primary'
+        }.get(h.tipo_cambio, 'secondary')
+        
+        cambios_data.append({
+            'id': h.id,
+            'fecha': h.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'fecha_relativa': calcular_tiempo_relativo(h.timestamp),
+            'usuario': h.autor.email,
+            'tipo_cambio': h.tipo_cambio,
+            'tipo_badge': tipo_badge,
+            'tiene_json_backup': h.datos_json_antiguos is not None,
+            'preview_json': preview_json,
+            'tamano_json': len(h.datos_json_antiguos) if h.datos_json_antiguos else 0
+        })
+    
+    # Datos del análisis
+    analisis_data = {
+        'id': analisis.id,
+        'nombre': analisis.nombre_requerimiento,
+        'timestamp': analisis.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+        'casos_generados': analisis.casos_generados,
+        'nivel_complejidad': analisis.nivel_complejidad
+    }
+    
+    return jsonify({
+        'success': True,
+        'analisis': analisis_data,
+        'total_cambios': total_cambios,
+        'cambios': cambios_data,
+        'paginacion': {
+            'limit': limit,
+            'offset': offset,
+            'tiene_mas': (offset + limit) < total_cambios,
+            'pagina_actual': (offset // limit) + 1,
+            'total_paginas': (total_cambios + limit - 1) // limit
+        }
+    })
+
+
+@bp.route('/api/historial/<int:historial_id>/json', methods=['GET'])
+@login_required
+def get_historial_json_completo(historial_id):
+    """
+    Endpoint para obtener el JSON completo de un cambio específico.
+    """
+    # Buscar registro
+    historial = HistorialCambios.query.get_or_404(historial_id)
+    
+    # Validar ownership
+    if historial.analisis.autor != current_user:
+        return jsonify({'success': False, 'error': 'No autorizado'}), 403
+    
+    # Parsear JSON
+    try:
+        if historial.datos_json_antiguos:
+            json_data = json.loads(historial.datos_json_antiguos)
+        else:
+            json_data = None
+    except json.JSONDecodeError:
+        json_data = historial.datos_json_antiguos
+    
+    return jsonify({
+        'success': True,
+        'historial_id': historial.id,
+        'tipo_cambio': historial.tipo_cambio,
+        'fecha': historial.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+        'json_backup': json_data
+    })
+
+
+def calcular_tiempo_relativo(timestamp):
+    """Convierte timestamp en representación legible de tiempo relativo."""
+    from datetime import datetime, timezone
+    
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    
+    ahora = datetime.now(timezone.utc)
+    diferencia = ahora - timestamp
+    segundos = diferencia.total_seconds()
+    
+    if segundos < 60:
+        return "hace un momento"
+    elif segundos < 3600:
+        minutos = int(segundos / 60)
+        return f"hace {minutos} {'minuto' if minutos == 1 else 'minutos'}"
+    elif segundos < 86400:
+        horas = int(segundos / 3600)
+        return f"hace {horas} {'hora' if horas == 1 else 'horas'}"
+    elif segundos < 604800:
+        dias = int(segundos / 86400)
+        return f"hace {dias} {'día' if dias == 1 else 'días'}"
+    elif segundos < 2592000:
+        semanas = int(segundos / 604800)
+        return f"hace {semanas} {'semana' if semanas == 1 else 'semanas'}"
+    else:
+        return timestamp.strftime('%d/%m/%Y')

@@ -40,7 +40,7 @@
                     
                     {{ form.submit(value="Analizar y Generar Casos", class="btn btn-primary w-100") }}
                     
-                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnForm">
+                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnForm" data-bs-toggle="modal" data-bs-target="#verPlantillaModal">
                         <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla Seleccionada
                     </button>
                 </form>
@@ -68,7 +68,7 @@
                     </div>
                     {{ form.submit(value="Analizar y Generar Casos", class="btn btn-primary w-100") }}
                     
-                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnFormMobile">
+                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnFormMobile" data-bs-toggle="modal" data-bs-target="#verPlantillaModal">
                         <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla Seleccionada
                     </button>
                 </form>
@@ -151,9 +151,15 @@
                         Usando plantilla: <strong>{{ analisis_obj.plantilla_usada.nombre_plantilla }}</strong>
                     </small>
                 </div>
-                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#requerimientoModal">
-                    <i class="bi bi-file-text me-1"></i> Ver/Editar Requerimiento
-                </button>
+                
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#requerimientoModal">
+                        <i class="bi bi-file-text me-1"></i> Ver/Editar Requerimiento
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="verHistorialBtn" data-analisis-id="{{ analisis_obj.id }}">
+                        <i class="bi bi-clock-history me-1"></i> Ver Historial
+                    </button>
+                </div>
             </div>
             
             <div class="row g-3 mb-4 justify-content-center">
@@ -402,7 +408,6 @@
                     <h6 class="mt-4">Fórmula Aplicada</h6>
                     <p><code>Te = (To + 4Tm + Tp) / 6</code></p>
                     
-                    <!-- Toggle para mostrar valores reales -->
                     <div class="mb-3">
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#valoresRealesCollapse" aria-expanded="false">
                             <i class="bi bi-calculator me-1"></i> Ver valores reales aplicados
@@ -471,7 +476,6 @@
         </div>
     </div>
 
-    <!-- REQ #5: MODAL COMPLEJIDAD -->
     <div class="modal fade" id="complejidadInfoModal" tabindex="-1" aria-labelledby="complejidadInfoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -528,7 +532,6 @@
         </div>
     </div>
 
-    <!-- REQ #5: MODAL CASOS GENERADOS -->
     <div class="modal fade" id="casosInfoModal" tabindex="-1" aria-labelledby="casosInfoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -586,7 +589,6 @@
         </div>
     </div>
 
-    <!-- REQ #5: MODAL CRITERIOS -->
     <div class="modal fade" id="criteriosInfoModal" tabindex="-1" aria-labelledby="criteriosInfoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -712,6 +714,258 @@
     </div>
 </div>
 
+<div class="modal fade" id="verPlantillaModal" tabindex="-1" aria-labelledby="verPlantillaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--bs-info), var(--bs-secondary)); color: white;">
+                <h5 class="modal-title" id="verPlantillaModalLabel">
+                    <i class="bi bi-layout-text-sidebar-reverse me-2"></i>
+                    Información de la Plantilla
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="plantillaModalLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando información de la plantilla...</p>
+                </div>
+                
+                <div id="plantillaModalContent" style="display: none;">
+                    <div class="card mb-3 border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3 text-muted">
+                                <i class="bi bi-info-circle me-2"></i>Información General
+                            </h6>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-text text-primary me-2" style="font-size: 1.2rem;"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Nombre</small>
+                                            <strong id="plantillaNombre">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-spreadsheet text-success me-2" style="font-size: 1.2rem;"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Tipo de Archivo</small>
+                                            <strong id="plantillaTipoArchivo">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-table text-info me-2" style="font-size: 1.2rem;"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Hoja Seleccionada</small>
+                                            <strong id="plantillaSheetName">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-hash text-warning me-2" style="font-size: 1.2rem;"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Fila de Encabezados</small>
+                                            <strong id="plantillaHeaderRow">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card border-0">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3 text-muted">
+                                <i class="bi bi-diagram-3 me-2"></i>Mapeo de Columnas
+                            </h6>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover" id="plantillaMapasTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 10%;">#</th>
+                                            <th style="width: 60%;">Etiqueta</th>
+                                            <th style="width: 30%;">Coordenada</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="plantillaMapasTbody"></tbody>
+                                </table>
+                            </div>
+                            
+                            <div id="plantillaNoMapas" style="display: none;" class="alert alert-warning" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                No se encontraron mapeos de columnas para esta plantilla.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="plantillaModalError" style="display: none;" class="alert alert-danger" role="alert">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <span id="plantillaModalErrorMessage">Error al cargar la información de la plantilla.</span>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="historialCambiosModal" tabindex="-1" aria-labelledby="historialCambiosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--bs-secondary), var(--bs-info)); color: white;">
+                <h5 class="modal-title" id="historialCambiosModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Historial de Cambios
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="card mb-3 border-0" style="background-color: #f8f9fa;">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                                    <strong id="historialAnalisisNombre">-</strong>
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    <span id="historialAnalisisFecha">-</span>
+                                    <span class="ms-3">
+                                        <i class="bi bi-list-check me-1"></i>
+                                        <span id="historialAnalisisCasos">-</span> casos
+                                    </span>
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-info fs-6">
+                                    <span id="historialTotalCambios">0</span> cambios
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm" id="historialFiltroTipo">
+                                <option value="">Todos los tipos</option>
+                                <option value="REQUERIMIENTO_MODIFICADO">Requerimiento Modificado</option>
+                                <option value="CASOS_MODIFICADOS">Casos Modificados</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-sm btn-primary w-100" id="historialAplicarFiltro">
+                                <i class="bi bi-funnel me-1"></i>Aplicar
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="historialRefresh">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="historialModalLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando historial...</p>
+                </div>
+                
+                <div id="historialModalContent" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="historialCambiosTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Tipo</th>
+                                    <th>Detalles</th>
+                                    <th>Ver</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historialCambiosTbody"></tbody>
+                        </table>
+                    </div>
+                    
+                    <nav id="historialPaginacion" style="display: none;">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <li class="page-item" id="historialPaginaPrev">
+                                <a class="page-link" href="#">«</a>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    <span id="historialPaginaActual">1</span>/<span id="historialPaginaTotal">1</span>
+                                </span>
+                            </li>
+                            <li class="page-item" id="historialPaginaNext">
+                                <a class="page-link" href="#">»</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    
+                    <div id="historialNoCambios" style="display: none;" class="alert alert-info" role="alert">
+                        No se encontraron cambios para este análisis.
+                    </div>
+                </div>
+                
+                <div id="historialModalError" style="display: none;" class="alert alert-danger" role="alert">
+                    <span id="historialModalErrorMessage"></span>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="jsonBackupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-code-square me-2"></i>JSON Backup
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <small class="text-muted d-block mb-2">
+                    Fecha: <span id="jsonBackupFecha">-</span>
+                </small>
+                <pre id="jsonBackupContent" style="background-color: #f8f9fa; padding: 1rem; border-radius: 0.375rem; max-height: 500px; overflow-y: auto;"><code></code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 <style>
     .glassmorphism-modal .modal-content {
         background: rgba(255, 255, 255, 0.7);
@@ -871,42 +1125,9 @@
             console.warn('Modal de confirmación de eliminación no encontrado en el DOM');
         }
 
-        // --- ERROR #4 CORRECCIÓN: Lógica del Botón Ver Plantilla Seleccionada ---
-        const viewTemplateBtnForm = document.getElementById('viewTemplateBtnForm');
-        const viewTemplateBtnFormMobile = document.getElementById('viewTemplateBtnFormMobile');
-        const plantillaSelect = document.getElementById('plantilla');
-        const plantillaSelectMobile = document.querySelector('.d-lg-none #plantilla');
-        
-        function mostrarPlantillaSeleccionada(selectElement) {
-            if (!selectElement) {
-                showToast('No se encontró el selector de plantilla', 'danger');
-                return;
-            }
-            
-            const plantillaId = selectElement.value;
-            
-            if (!plantillaId) {
-                showToast('Por favor, selecciona una plantilla primero', 'warning');
-                return;
-            }
-            
-            // Redirigir a la vista de plantilla
-            window.location.href = `/ver_plantilla/${plantillaId}`;
-        }
-        
-        if (viewTemplateBtnForm && plantillaSelect) {
-            viewTemplateBtnForm.addEventListener('click', function(e) {
-                e.preventDefault();
-                mostrarPlantillaSeleccionada(plantillaSelect);
-            });
-        }
-        
-        if (viewTemplateBtnFormMobile && plantillaSelectMobile) {
-            viewTemplateBtnFormMobile.addEventListener('click', function(e) {
-                e.preventDefault();
-                mostrarPlantillaSeleccionada(plantillaSelectMobile);
-            });
-        }
+        // --- 🆕 REQUERIMIENTO #3: Lógica del botón "Ver Plantilla" ELIMINADA ---
+        // (El JavaScript antiguo fue borrado. El nuevo está al final del archivo).
+
 
         // --- Lógica del Botón de Scroll ---
         const scrollBtn = document.getElementById('scroll-toggle-btn');
@@ -1367,4 +1588,291 @@
     </script>
     {% endif %}
 
-{% endblock %}
+
+    <script>
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔍 [DEBUG] Inicializando Ver Plantilla en Modal");
+        
+        const viewTemplateBtns = document.querySelectorAll("#viewTemplateBtnForm, #viewTemplateBtnFormMobile");
+        
+        if (viewTemplateBtns.length === 0) {
+            console.log("ℹ️ [INFO] Botones Ver Plantilla no encontrados");
+            return;
+        }
+        
+        const verPlantillaModal = document.getElementById("verPlantillaModal");
+        const modalLoading = document.getElementById("plantillaModalLoading");
+        const modalContent = document.getElementById("plantillaModalContent");
+        const modalError = document.getElementById("plantillaModalError");
+        
+        viewTemplateBtns.forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                // e.preventDefault(); // El preventDefault se quita, ya que el data-bs-toggle lo maneja
+                
+                const plantillaSelect = document.querySelector('select[name="plantilla"]');
+                if (!plantillaSelect) {
+                    console.error("❌ Select de plantilla no encontrado");
+                    return;
+                }
+                
+                const plantillaId = plantillaSelect.value;
+                if (!plantillaId) {
+                    // Prevenimos que el modal se abra si no hay plantilla
+                    e.stopPropagation(); 
+                    alert("⚠️ Por favor, selecciona una plantilla primero");
+                    return;
+                }
+                
+                // El modal se abre automáticamente por data-bs-toggle
+                // Solo necesitamos cargar los datos
+                
+                modalLoading.style.display = 'block';
+                modalContent.style.display = 'none';
+                modalError.style.display = 'none';
+                
+                fetch('/analysis/api/plantilla/' + plantillaId + '/info')
+                    .then(response => {
+                        if (!response.ok) throw new Error('Error del servidor');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) throw new Error(data.error || 'Error desconocido');
+                        
+                        modalLoading.style.display = 'none';
+                        
+                        document.getElementById('plantillaNombre').textContent = data.plantilla.nombre;
+                        document.getElementById('plantillaTipoArchivo').textContent = data.plantilla.tipo_archivo;
+                        document.getElementById('plantillaSheetName').textContent = data.plantilla.sheet_name;
+                        document.getElementById('plantillaHeaderRow').textContent = data.plantilla.header_row;
+                        
+                        const mapasTableBody = document.getElementById('plantillaMapasTbody');
+                        const noMapasDiv = document.getElementById('plantillaNoMapas');
+                        
+                        mapasTableBody.innerHTML = '';
+                        
+                        if (data.mapas && data.mapas.length > 0) {
+                            noMapasDiv.style.display = 'none';
+                            
+                            data.mapas.forEach((mapa, index) => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <i class="bi bi-tag-fill text-primary me-2"></i>
+                                        <strong>${mapa.etiqueta}</strong>
+                                    </td>
+                                    <td><span class="badge bg-secondary">${mapa.coordenada}</span></td>
+                                `;
+                                mapasTableBody.appendChild(row);
+                            });
+                        } else {
+                            noMapasDiv.style.display = 'block';
+                        }
+                        
+                        modalContent.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error("❌ Error:", error);
+                        modalLoading.style.display = 'none';
+                        document.getElementById('plantillaModalErrorMessage').textContent = error.message;
+                        modalError.style.display = 'block';
+                    });
+            });
+        });
+        
+        console.log("✅ Ver Plantilla configurado");
+    });
+
+    // ============================================================================
+    // 🆕 REQUERIMIENTO #5: Ver Historial de Cambios
+    // ============================================================================
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔍 [DEBUG] Inicializando Historial de Cambios");
+        
+        let currentAnalisisId = null;
+        let currentPage = 1;
+        let currentLimit = 20;
+        let currentTipoFiltro = '';
+        
+        const verHistorialBtn = document.getElementById("verHistorialBtn");
+        const historialModal = document.getElementById("historialCambiosModal");
+        const historialModalLoading = document.getElementById("historialModalLoading");
+        const historialModalContent = document.getElementById("historialModalContent");
+        const historialModalError = document.getElementById("historialModalError");
+        const historialCambiosTbody = document.getElementById("historialCambiosTbody");
+        const historialNoCambios = document.getElementById("historialNoCambios");
+        
+        if (!verHistorialBtn) {
+            console.log("ℹ️ Botón Ver Historial no encontrado");
+            return;
+        }
+        
+        verHistorialBtn.addEventListener("click", function () {
+            currentAnalisisId = verHistorialBtn.getAttribute("data-analisis-id");
+            currentPage = 1;
+            currentTipoFiltro = '';
+            document.getElementById('historialFiltroTipo').value = '';
+            
+            const modal = new bootstrap.Modal(historialModal);
+            modal.show();
+            
+            cargarHistorial();
+        });
+        
+        document.getElementById('historialAplicarFiltro').addEventListener('click', function () {
+            currentTipoFiltro = document.getElementById('historialFiltroTipo').value;
+            currentPage = 1;
+            cargarHistorial();
+        });
+        
+        document.getElementById('historialRefresh').addEventListener('click', function () {
+            cargarHistorial();
+        });
+        
+        document.getElementById('historialPaginaPrev').addEventListener('click', function (e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                cargarHistorial();
+            }
+        });
+        
+        document.getElementById('historialPaginaNext').addEventListener('click', function (e) {
+            e.preventDefault();
+            currentPage++;
+            cargarHistorial();
+        });
+        
+        function cargarHistorial() {
+            historialModalLoading.style.display = 'block';
+            historialModalContent.style.display = 'none';
+            historialModalError.style.display = 'none';
+            
+            const offset = (currentPage - 1) * currentLimit;
+            let url = '/analysis/api/historial/' + currentAnalisisId + 
+                      '?limit=' + currentLimit + '&offset=' + offset;
+            
+            if (currentTipoFiltro) {
+                url += '&tipo=' + encodeURIComponent(currentTipoFiltro);
+            }
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error del servidor');
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) throw new Error(data.error || 'Error desconocido');
+                    
+                    historialModalLoading.style.display = 'none';
+                    
+                    document.getElementById('historialAnalisisNombre').textContent = data.analisis.nombre;
+                    document.getElementById('historialAnalisisFecha').textContent = 
+                        new Date(data.analisis.timestamp).toLocaleString('es-CO');
+                    document.getElementById('historialAnalisisCasos').textContent = data.analisis.casos_generados;
+                    document.getElementById('historialTotalCambios').textContent = data.total_cambios;
+                    
+                    historialCambiosTbody.innerHTML = '';
+                    
+                    if (data.cambios && data.cambios.length > 0) {
+                        historialNoCambios.style.display = 'none';
+                        
+                        data.cambios.forEach((cambio, index) => {
+                            const row = document.createElement('tr');
+                            const badgeClass = 'bg-' + cambio.tipo_badge;
+                            
+                            row.innerHTML = `
+                                <td>${offset + index + 1}</td>
+                                <td>
+                                    <small>
+                                        <strong>${cambio.fecha}</strong><br>
+                                        <span class="text-muted">${cambio.fecha_relativa}</span>
+                                    </small>
+                                </td>
+                                <td><small>${cambio.usuario}</small></td>
+                                <td><span class="badge ${badgeClass}">${cambio.tipo_cambio}</span></td>
+                                <td>
+                                    <small class="text-muted">
+                                        ${cambio.tiene_json_backup 
+                                            ? '<i class="bi bi-file-earmark-code me-1"></i>' + formatBytes(cambio.tamano_json)
+                                            : '<i class="bi bi-dash-circle"></i>Sin backup'
+                                        }
+                                    </small>
+                                </td>
+                                <td>
+                                    ${cambio.tiene_json_backup 
+                                        ? '<button type="button" class="btn btn-sm btn-outline-info ver-json-btn" data-historial-id="' + cambio.id + '"><i class="bi bi-eye"></i></button>'
+                                        : '-'
+                                    }
+                                </td>
+                            `;
+                            
+                            historialCambiosTbody.appendChild(row);
+                        });
+                        
+                        document.querySelectorAll('.ver-json-btn').forEach(btn => {
+                            btn.addEventListener('click', function () {
+                                verJsonCompleto(this.getAttribute('data-historial-id'));
+                            });
+                        });
+                        
+                        if (data.paginacion.total_paginas > 1) {
+                            document.getElementById('historialPaginacion').style.display = 'block';
+                            document.getElementById('historialPaginaActual').textContent = data.paginacion.pagina_actual;
+                            document.getElementById('historialPaginaTotal').textContent = data.paginacion.total_paginas;
+                            
+                            document.getElementById('historialPaginaPrev').classList.toggle('disabled', currentPage === 1);
+                            document.getElementById('historialPaginaNext').classList.toggle('disabled', !data.paginacion.tiene_mas);
+                        } else {
+                            document.getElementById('historialPaginacion').style.display = 'none';
+                        }
+                    } else {
+                        historialNoCambios.style.display = 'block';
+                    }
+                    
+                    historialModalContent.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("❌ Error:", error);
+                    historialModalLoading.style.display = 'none';
+                    document.getElementById('historialModalErrorMessage').textContent = error.message;
+                    historialModalError.style.display = 'block';
+                });
+        }
+        
+        function verJsonCompleto(historialId) {
+            const jsonModal = new bootstrap.Modal(document.getElementById('jsonBackupModal'));
+            jsonModal.show();
+            
+            document.getElementById('jsonBackupContent').innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+            
+            fetch('/analysis/api/historial/' + historialId + '/json')
+                .then(response => {
+                    if (!response.ok) throw new Error('Error al cargar JSON');
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) throw new Error(data.error || 'Error');
+                    
+                    document.getElementById('jsonBackupFecha').textContent = data.fecha;
+                    document.getElementById('jsonBackupContent').textContent = 
+                        JSON.stringify(data.json_backup, null, 2);
+                })
+                .catch(error => {
+                    document.getElementById('jsonBackupContent').textContent = 'Error: ' + error.message;
+                });
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        console.log("✅ Historial de Cambios configurado");
+    });
+    </script>
+    {% endblock %}
