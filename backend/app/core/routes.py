@@ -156,7 +156,7 @@ def map_step_1_sheet(plantilla_id):
     )
 
 # ==============================================================================
-# RUTA 5: ASISTENTE PASO 2 (¡CORREGIDA!)
+# RUTA 5: ASISTENTE PASO 2 (¡ACTUALIZADA CON VALIDACIÓN DE FILA VACÍA!)
 # ==============================================================================
 @bp.route('/map_step_2_row/<int:plantilla_id>', methods=['GET', 'POST'])
 @login_required
@@ -178,22 +178,15 @@ def map_step_2_row(plantilla_id):
     row_choices = []  
     MAX_PREVIEW_ROWS = 30 
     MAX_PREVIEW_COLS = 20 
-
-    # --- ¡INICIO DE LA CORRECCIÓN! ---
-    column_headers = [] # Guardará ['A', 'B', 'C', ...]
-    # --- FIN DE LA CORRECCIÓN ---
+    column_headers = [] 
 
     try:
         path_archivo = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla.filename_seguro)
         workbook = openpyxl.load_workbook(path_archivo, read_only=True, data_only=True)
         sheet = workbook[plantilla.sheet_name]
 
-        # --- ¡INICIO DE LA CORRECCIÓN! ---
-        # Generar los encabezados de columna (A, B, C...)
-        # Usamos 'get_column_letter' de openpyxl.utils
         for i in range(1, MAX_PREVIEW_COLS + 1):
             column_headers.append(get_column_letter(i))
-        # --- FIN DE LA CORRECCIÓN! ---
 
         row_index = 1
         for row in sheet.iter_rows(min_row=1, max_row=MAX_PREVIEW_ROWS, max_col=MAX_PREVIEW_COLS):
@@ -212,7 +205,34 @@ def map_step_2_row(plantilla_id):
     form.header_row.choices = row_choices
 
     if form.validate_on_submit():
-        plantilla.header_row = form.header_row.data
+        selected_row_num = form.header_row.data
+
+        # --- INICIO DE NUEVA VALIDACIÓN (REQ 2) ---
+        try:
+            path_archivo_val = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla.filename_seguro)
+            workbook_val = openpyxl.load_workbook(path_archivo_val, read_only=True, data_only=True)
+            sheet_val = workbook_val[plantilla.sheet_name]
+            
+            # Leer la fila seleccionada por el usuario
+            selected_row_cells = sheet_val[selected_row_num]
+            
+            # Comprobar si TODAS las celdas de esa fila están vacías
+            is_row_empty = all(cell.value is None or str(cell.value).strip() == "" for cell in selected_row_cells)
+            
+            workbook_val.close()
+
+            if is_row_empty:
+                flash("La fila que seleccionaste está vacía. Por favor, selecciona una fila que contenga encabezados.", "danger")
+                # Recargamos la página (GET) para mostrar el error
+                return redirect(url_for('core.map_step_2_row', plantilla_id=plantilla.id))
+
+        except Exception as e:
+            flash(f"Error al validar la fila de encabezados: {str(e)}", "danger")
+            return redirect(url_for('core.map_step_1_sheet', plantilla_id=plantilla.id))
+        # --- FIN DE NUEVA VALIDACIÓN ---
+
+        # Si la validación pasa, guardamos y continuamos
+        plantilla.header_row = selected_row_num
         db.session.commit()
         return redirect(url_for('core.map_step_3_columns', plantilla_id=plantilla.id))
 
@@ -222,7 +242,7 @@ def map_step_2_row(plantilla_id):
         form=form, 
         plantilla=plantilla,
         preview_data=preview_data,
-        column_headers=column_headers # <-- Pasamos la nueva variable al template
+        column_headers=column_headers
     )
 
 # ==============================================================================
@@ -292,3 +312,23 @@ def map_step_3_columns(plantilla_id):
         form=form, 
         plantilla=plantilla
     )
+
+# --- RUTAS DE EDICIÓN DE MAPA (PLACEHOLDERS) ---
+
+@bp.route('/edit_mapa/<int:mapa_id>', methods=['GET', 'POST'])
+@login_required
+def edit_mapa(mapa_id):
+    """Ruta placeholder para editar un mapa."""
+    mapa = MapaPlantilla.query.get_or_404(mapa_id)
+    # Aquí irá la lógica del formulario de edición
+    flash(f'Funcionalidad de edición para "{mapa.etiqueta}" aún no implementada.', 'info')
+    return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))
+
+@bp.route('/delete_mapa/<int:mapa_id>', methods=['POST'])
+@login_required
+def delete_mapa(mapa_id):
+    """Ruta placeholder para eliminar un mapa."""
+    mapa = MapaPlantilla.query.get_or_404(mapa_id)
+    # Aquí irá la lógica de db.session.delete(mapa)
+    flash(f'Funcionalidad de borrado para "{mapa.etiqueta}" aún no implementada.', 'info')
+    return redirect(url_for('core.ver_plantilla', plantilla_id=mapa.id_plantilla))

@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 # --- ¡RadioField ya estaba, pero ahora IntegerField se va! ---
 from wtforms import StringField, SubmitField, RadioField, SelectMultipleField, widgets
 from flask_wtf.file import FileField, FileRequired
+# --- DataRequired se usa para el nombre, InputRequired para los radios ---
 from wtforms.validators import DataRequired, InputRequired, StopValidation
 
 # --- Validadores Personalizados (Sin cambios) ---
@@ -24,13 +25,18 @@ class MultiCheckboxField(SelectMultipleField):
     option_widget = widgets.CheckboxInput()
 
 
-# --- Formulario 1: Subida de Plantilla (Sin cambios) ---
+# --- Formulario 1: Subida de Plantilla (¡ACTUALIZADO!) ---
 class PlantillaUploadForm(FlaskForm):
     """Formulario para subir una nueva plantilla."""
-    nombre_plantilla = StringField('Nombre de la Plantilla', validators=[DataRequired()])
     
+    # REQ 2: Mensaje de validación personalizado
+    nombre_plantilla = StringField('Nombre de la Plantilla', validators=[
+        DataRequired(message="Este campo es obligatorio.")
+    ])
+    
+    # REQ 2: Mensaje de validación personalizado
     archivo_plantilla = FileField('Archivo de Plantilla (.xlsx o .docx)', validators=[
-        FileRequired()
+        FileRequired(message="Debes seleccionar un archivo.")
     ])
     
     submit = SubmitField('Subir y Continuar al Asistente')
@@ -47,14 +53,10 @@ class SelectSheetForm(FlaskForm):
     submit = SubmitField('Siguiente')
 
 
-# --- Formulario 3: Asistente - Seleccionar Fila (¡ACTUALIZADO!) ---
+# --- Formulario 3: Asistente - Seleccionar Fila (Sin cambios) ---
 class SelectHeaderRowForm(FlaskForm):
     """Formulario para seleccionar la fila de encabezados (visual)."""
     
-    # --- ¡CAMBIO AQUÍ! ---
-    # Ya no es un IntegerField. Ahora es un RadioField.
-    # Las 'choices' (ej. [(10, 'Fila 10')]) se llenarán dinámicamente
-    # desde la ruta.
     header_row = RadioField(
         'Fila de Encabezados', 
         validators=[InputRequired(message="Por favor, selecciona la fila de encabezados.")],

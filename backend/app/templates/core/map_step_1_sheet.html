@@ -1,40 +1,219 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body p-4">
-                <h2 class="h4 mb-3">Asistente de Mapeo (Paso 1 de 3)</h2>
-                <h3 class="h5">Seleccionar Hoja de Trabajo</h3>
-                <hr>
-                <p class="mb-3">Estás mapeando la plantilla: <strong>{{ plantilla.nombre_plantilla }}</strong></p>
-                <p class="text-muted">Hemos detectado las siguientes hojas en tu archivo. Por favor, selecciona la hoja que contiene los casos de prueba.</p>
-                
-                <form action="" method="post" novalidate>
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {% for subfield in form.sheet_name %}
-                        <div class="form-check fs-5">
-                            {{ subfield(class="form-check-input") }}
-                            {{ subfield.label(class="form-check-label") }}
-                        </div>
-                        {% endfor %}
-                        
-                        {% for error in form.sheet_name.errors %}
-                        <div class="text-danger small mt-2">
-                            {{ error }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="text-end">
-                        {{ form.submit(class="btn btn-primary px-4") }}
-                    </div>
-                </form>
-            </div>
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="stepper-wrapper mb-4">
+          <div class="stepper-item active">
+            <a
+              href="{{ url_for('core.map_step_1_sheet', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle">1</div>
+              <div class="stepper-label">Hoja</div>
+            </a>
+          </div>
+
+          {% if plantilla.sheet_name %}
+          <div class="stepper-item">
+            <a
+              href="{{ url_for('core.map_step_2_row', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle">2</div>
+              <div class="stepper-label">Encabezados</div>
+            </a>
+          </div>
+          {% else %}
+          <div class="stepper-item disabled">
+            <div class="stepper-circle">2</div>
+            <div class="stepper-label">Encabezados</div>
+          </div>
+          {% endif %} {% if plantilla.sheet_name and plantilla.header_row %}
+          <div class="stepper-item">
+            <a
+              href="{{ url_for('core.map_step_3_columns', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle">3</div>
+              <div class="stepper-label">Columnas</div>
+            </a>
+          </div>
+          {% else %}
+          <div class="stepper-item disabled">
+            <div class="stepper-circle">3</div>
+            <div class="stepper-label">Columnas</div>
+          </div>
+          {% endif %}
         </div>
+        <div class="wizard-header mb-4">
+          <h2 class="h4 fw-bold mb-2">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Seleccionar Hoja
+            de Trabajo
+          </h2>
+          <p class="text-muted mb-0">Paso 1 de 3</p>
+        </div>
+
+        <p class="mb-3">
+          Estás mapeando la plantilla:
+          <strong>{{ plantilla.nombre_plantilla }}</strong>
+        </p>
+
+        <div class="alert alert-light border mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          Hemos detectado las siguientes hojas en tu archivo. Por favor,
+          selecciona la hoja que contiene los casos de prueba.
+        </div>
+
+        <form action="" method="post" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            {% for subfield in form.sheet_name %}
+            <label class="option-card mb-3">
+              <div class="d-flex align-items-center">
+                {{ subfield(class="form-check-input me-3") }}
+                <div class="flex-grow-1">
+                  <span class="fs-5">
+                    <i class="bi bi-table me-2"></i>
+                    {{ subfield.label.text }}
+                  </span>
+                </div>
+              </div>
+            </label>
+            {% endfor %} {% for error in form.sheet_name.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="text-end">
+            {{ form.submit(class="btn btn-primary px-4") }}
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
+
+<style>
+  /* Stepper */
+  .stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 1rem;
+  }
+
+  .stepper-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 0;
+  }
+
+  .stepper-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stepper-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #adb5bd;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .stepper-item.active .stepper-circle {
+    background: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+  }
+
+  .stepper-item.completed .stepper-circle {
+    background: var(--bs-success);
+    border-color: var(--bs-success);
+    color: white;
+  }
+
+  .stepper-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+  }
+
+  .stepper-item.active .stepper-label {
+    color: var(--bs-dark);
+    font-weight: 600;
+  }
+
+  /* Option Cards */
+  .option-card {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    display: block;
+  }
+
+  .option-card:hover {
+    border-color: #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .option-card input[type="radio"]:checked {
+    accent-color: var(--bs-primary);
+  }
+
+  .option-card:has(input[type="radio"]:checked) {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.02);
+  }
+
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+  }
+
+  /* REQ 2: Estilos para el stepper dinámico */
+  .stepper-item a {
+    text-decoration: none;
+  }
+  .stepper-item.disabled .stepper-circle {
+    background: #f8f9fa;
+    color: #adb5bd;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+  }
+  .stepper-item.disabled .stepper-label {
+    color: #adb5bd;
+    cursor: not-allowed;
+  }
+  .stepper-item a:hover .stepper-circle {
+    background-color: #f0f0f0; /* Un hover sutil */
+  }
+  .stepper-item.active a:hover .stepper-circle {
+    background-color: var(
+      --bs-primary-dark
+    ); /* Oscurecer en hover si está activo */
+  }
+  .stepper-item.completed a:hover .stepper-circle {
+    background-color: var(
+      --bs-success-dark
+    ); /* Oscurecer en hover si está completo */
+  }
+</style>
 {% endblock %}

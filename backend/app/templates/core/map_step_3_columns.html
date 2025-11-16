@@ -1,139 +1,357 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body p-4">
-                <h2 class="h4 mb-3">Asistente de Mapeo (Paso 3 de 3)</h2>
-                <h3 class="h5">Seleccionar Columnas (Encabezados)</h3>
-                <hr>
-                
-                <ul class="list-group list-group-flush mb-3">
-                    <li class="list-group-item d-flex justify-content-between">
-                        <strong>Plantilla:</strong>
-                        <span>{{ plantilla.nombre_plantilla }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <strong>Hoja:</strong>
-                        <span>{{ plantilla.sheet_name }}</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <strong>Fila de Encabezados:</strong>
-                        <span>{{ plantilla.header_row }}</span>
-                    </li>
-                </ul>
-                
-                <p class="text-muted">Hemos leído los encabezados de la fila {{ plantilla.header_row }}. Selecciona los campos que deseas que la IA rellene.</p>
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="stepper-wrapper mb-4">
+          <div class="stepper-item completed">
+            <a
+              href="{{ url_for('core.map_step_1_sheet', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle"><i class="bi bi-check-lg"></i></div>
+              <div class="stepper-label">Hoja</div>
+            </a>
+          </div>
 
-                <form action="" method="post" novalidate>
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-bold">Encabezados encontrados:</label>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="selectAllCheckbox">
-                                <label class="form-check-label" for="selectAllCheckbox">Seleccionar Todo</label>
-                            </div>
-                        </div>
-                        <ul class="list-group" id="checkbox-list">
-                            {% for subfield in form.headers %}
-                            <li class="list-group-item">
-                                <div class="form-check fs-5">
-                                    {{ subfield(class="form-check-input") }}
-                                    {{ subfield.label(class="form-check-label") }}
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        
-                        {% for error in form.headers.errors %}
-                        <div class="text-danger small mt-2">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('core.map_step_2_row', plantilla_id=plantilla.id) }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Volver (Fila)
-                        </a>
-                        {{ form.submit(value="Finalizar Mapeo", class="btn btn-primary px-4") }}
-                    </div>
-                </form>
-            </div>
+          <div class="stepper-item completed">
+            <a
+              href="{{ url_for('core.map_step_2_row', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle"><i class="bi bi-check-lg"></i></div>
+              <div class="stepper-label">Encabezados</div>
+            </a>
+          </div>
+
+          <div class="stepper-item active">
+            <a
+              href="{{ url_for('core.map_step_3_columns', plantilla_id=plantilla.id) }}"
+            >
+              <div class="stepper-circle">3</div>
+              <div class="stepper-label">Columnas</div>
+            </a>
+          </div>
         </div>
+        <div class="wizard-header mb-4">
+          <h2 class="h4 fw-bold mb-2">
+            <i class="bi bi-check2-square me-2"></i>Seleccionar Columnas
+            (Encabezados)
+          </h2>
+          <p class="text-muted mb-0">Paso 3 de 3</p>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="info-pill">
+              <span class="info-pill-label">Plantilla:</span>
+              <span class="info-pill-value"
+                >{{ plantilla.nombre_plantilla }}</span
+              >
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-pill">
+              <span class="info-pill-label">Hoja:</span>
+              <span class="info-pill-value">{{ plantilla.sheet_name }}</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="info-pill">
+              <span class="info-pill-label">Fila de Encabezados:</span>
+              <span class="info-pill-value">{{ plantilla.header_row }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-light border mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          Hemos leído los encabezados de la fila {{ plantilla.header_row }}.
+          Selecciona los campos que deseas que la IA rellene.
+        </div>
+
+        <form action="" method="post" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <label class="form-label fw-bold mb-0"
+                >Encabezados encontrados:</label
+              >
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="selectAllCheckbox"
+                />
+                <label class="form-check-label" for="selectAllCheckbox"
+                  >Seleccionar Todo</label
+                >
+              </div>
+            </div>
+
+            <div class="card" style="border: 1px solid #e9ecef">
+              <div
+                class="card-body p-3"
+                style="max-height: 400px; overflow-y: auto"
+              >
+                <div id="checkbox-list">
+                  {% for subfield in form.headers %}
+                  <div class="checkbox-list-item">
+                    <div class="form-check">
+                      {{ subfield(class="form-check-input") }} {{
+                      subfield.label(class="form-check-label fs-5") }}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% for error in form.headers.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a
+              href="{{ url_for('core.map_step_2_row', plantilla_id=plantilla.id) }}"
+              class="btn btn-outline-secondary"
+            >
+              <i class="bi bi-arrow-left me-2"></i> Volver
+            </a>
+            {{ form.submit(value="Finalizar Mapeo", class="btn btn-primary
+            px-4") }}
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
-    #checkbox-list .list-group-item {
-        border-radius: .5rem;
-        margin-bottom: 0.5rem;
-        border: 1px solid #dee2e6;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-    #checkbox-list .list-group-item:hover {
-        background-color: var(--bs-light);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
-    .form-check-input:checked {
-        /* (Esto usa tu estilo naranja de base.html) */
-    }
-    .form-check-input:checked + .form-check-label {
-        /* (Esto usa tu estilo naranja de base.html) */
-    }
-    .form-check-input, .form-check-label {
-        cursor: pointer;
-    }
-    /* (Estilo para el nuevo 'switch') */
-    .form-switch .form-check-input {
-        width: 3.5em; /* Un poco más grande */
-        height: 1.75em;
-    }
+  /* Stepper */
+  .stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 1rem;
+  }
+
+  .stepper-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 0;
+  }
+
+  .stepper-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stepper-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #adb5bd;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+  }
+
+  .stepper-item.active .stepper-circle {
+    background: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+  }
+
+  .stepper-item.completed .stepper-circle {
+    background: var(--bs-success);
+    border-color: var(--bs-success);
+    color: white;
+  }
+
+  .stepper-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+  }
+
+  .stepper-item.active .stepper-label {
+    color: var(--bs-dark);
+    font-weight: 600;
+  }
+
+  /* Info Pills */
+  .info-pill {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-pill-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .info-pill-value {
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+
+  /* Checkbox List */
+  .checkbox-list-item {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+    background: white;
+    cursor: pointer;
+  }
+
+  .checkbox-list-item:hover {
+    border-color: #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .checkbox-list-item:has(input[type="checkbox"]:checked) {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.02);
+  }
+
+  /* Ajuste para que el último item no se corte */
+  #checkbox-list .checkbox-list-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+  }
+
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+
+  .form-check-label {
+    margin-left: 0.75rem;
+    cursor: pointer;
+  }
+
+  /* Switch Toggle */
+  .form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+  }
+
+  .form-switch .form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+
+  /* REQ 2: Estilos para el stepper dinámico */
+  .stepper-item a {
+    text-decoration: none;
+  }
+  .stepper-item.disabled .stepper-circle {
+    background: #f8f9fa;
+    color: #adb5bd;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+  }
+  .stepper-item.disabled .stepper-label {
+    color: #adb5bd;
+    cursor: not-allowed;
+  }
+  .stepper-item a:hover .stepper-circle {
+    background-color: #f0f0f0; /* Un hover sutil */
+  }
+  .stepper-item.active a:hover .stepper-circle {
+    background-color: var(
+      --bs-primary-dark
+    ); /* Oscurecer en hover si está activo */
+  }
+  .stepper-item.completed a:hover .stepper-circle {
+    background-color: var(
+      --bs-success-dark
+    ); /* Oscurecer en hover si está completo */
+  }
 </style>
-{% endblock %}
-
-
-{% block scripts %}
-{{ super() }}
+{% endblock %} {% block scripts %} {{ super() }}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    
+  document.addEventListener("DOMContentLoaded", function () {
     // 1. Obtener los checkboxes
-    const masterCheckbox = document.getElementById('selectAllCheckbox');
-    const childCheckboxes = document.querySelectorAll('#checkbox-list .form-check-input');
-    
+    const masterCheckbox = document.getElementById("selectAllCheckbox");
+    const childCheckboxes = document.querySelectorAll(
+      "#checkbox-list .form-check-input"
+    );
+
     if (masterCheckbox) {
-        
-        // 2. Función para actualizar el "master" basado en los "hijos"
-        function updateMasterCheckbox() {
-            // Comprueba si TODOS los hijos están marcados
-            const allChecked = Array.from(childCheckboxes).every(c => c.checked);
-            masterCheckbox.checked = allChecked;
-        }
+      // 2. Función para actualizar el "master" basado en los "hijos"
+      function updateMasterCheckbox() {
+        // Comprueba si TODOS los hijos están marcados
+        const allChecked = Array.from(childCheckboxes).every((c) => c.checked);
+        masterCheckbox.checked = allChecked;
+      }
 
-        // 3. Cuando se hace clic en "Seleccionar Todo"...
-        masterCheckbox.addEventListener('change', function() {
-            // ...marcar todos los hijos igual que el master.
-            childCheckboxes.forEach(function(child) {
-                child.checked = masterCheckbox.checked;
-            });
+      // 3. Cuando se hace clic en "Seleccionar Todo"...
+      masterCheckbox.addEventListener("change", function () {
+        // ...marcar todos los hijos igual que el master.
+        childCheckboxes.forEach(function (child) {
+          child.checked = masterCheckbox.checked;
         });
+      });
 
-        // 4. Cuando se hace clic en CUALQUIER hijo...
-        childCheckboxes.forEach(function(child) {
-            child.addEventListener('change', function() {
-                // ...revisar si todos están marcados para actualizar el master.
-                updateMasterCheckbox();
-            });
+      // 4. Cuando se hace clic en CUALQUIER hijo...
+      childCheckboxes.forEach(function (child) {
+        child.addEventListener("change", function () {
+          // ...revisar si todos están marcados para actualizar el master.
+          updateMasterCheckbox();
         });
+      });
 
-        // 5. Comprobar el estado al cargar la página
-        updateMasterCheckbox();
+      // 5. Comprobar el estado al cargar la página
+      updateMasterCheckbox();
     }
-});
+
+    // 6. Hacer clickeable toda la tarjeta del checkbox
+    document.querySelectorAll(".checkbox-list-item").forEach(function (item) {
+      item.addEventListener("click", function (e) {
+        // Solo si no se hizo clic directamente en el checkbox
+        if (e.target.type !== "checkbox" && e.target.tagName !== "LABEL") {
+          const checkbox = this.querySelector(".form-check-input");
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            updateMasterCheckbox();
+          }
+        }
+      });
+    });
+  });
 </script>
 {% endblock %}

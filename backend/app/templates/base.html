@@ -1,40 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     {% if title %}
     <title>{{ title }} - Automatic Test Case</title>
     {% else %}
     <title>Automatic Test Case</title>
     {% endif %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
 
     <style>
       :root {
         /* Tu Paleta */
-        --bs-primary: #FF7A3D;
-        --bs-primary-dark: #C25722;
-        --bs-secondary: #4A6FA5;
-        --bs-secondary-dark: #2D4366;
-        --bs-info: #8FB7D6;
-        --bs-info-dark: #5A7F99;
-        --bs-dark: #2F3237;
-        --bs-light: #F5F7FA;
-        
+        --bs-primary: #ff7a3d;
+        --bs-primary-dark: #c25722;
+        --bs-secondary: #4a6fa5;
+        --bs-secondary-dark: #2d4366;
+        --bs-info: #8fb7d6;
+        --bs-info-dark: #5a7f99;
+        --bs-dark: #2f3237;
+        --bs-light: #f5f7fa;
+
         /* Verde Pastel */
-        --bs-success: #A3E4D7;
-        --bs-success-dark: #58A77E;
-        
-        --bs-danger: #E85C70;
-        --bs-danger-dark: #B13C4D;
-        --bs-warning: #F4C670;
-        --bs-warning-dark: #B68F3E;
-        --bs-body-bg: #F5F7FA;
-        --bs-body-color: #2F3237;
+        --bs-success: #a3e4d7;
+        --bs-success-dark: #58a77e;
+
+        --bs-danger: #e85c70;
+        --bs-danger-dark: #b13c4d;
+        --bs-warning: #f4c670;
+        --bs-warning-dark: #b68f3e;
+        --bs-body-bg: #f5f7fa;
+        --bs-body-color: #2f3237;
 
         /* Variables RGB para transparencia */
         --bs-success-rgb: 163, 228, 215;
@@ -43,75 +49,134 @@
         --bs-info-rgb: 143, 183, 214;
         --bs-secondary-rgb: 74, 111, 165;
       }
-      
+
       /* Estilos de Navbar, Botones, Tarjetas, etc. */
-      .navbar-dark { background-color: var(--bs-secondary-dark) !important; }
-      .btn-primary { background-color: var(--bs-primary) !important; border-color: var(--bs-primary) !important; color: #fff !important; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 122, 61, 0.25); }
-      .btn-primary:hover { background-color: var(--bs-primary-dark) !important; border-color: var(--bs-primary-dark) !important; box-shadow: 0 4px 14px rgba(194, 87, 34, 0.35); }
-      .btn-secondary { background-color: var(--bs-secondary) !important; border-color: var(--bs-secondary) !important; color: #fff !important; font-weight: 600; box-shadow: 0 4px 12px rgba(74, 111, 165, 0.25); }
-      .btn-secondary:hover { background-color: var(--bs-secondary-dark) !important; border-color: var(--bs-secondary-dark) !important; box-shadow: 0 4px 14px rgba(45, 67, 102, 0.35); }
-      .card { border: none; border-radius: 0.75rem; box-shadow: none; background-color: transparent; }
-      
-      .alert-success { background-color: var(--bs-success) !important; border-color: var(--bs-success-dark) !important; color: var(--bs-dark) !important; }
-      .badge.bg-success { background-color: var(--bs-success) !important; color: var(--bs-dark) !important; font-weight: 600; border: 1px solid var(--bs-success-dark); }
-      
-      .badge.bg-primary { background-color: var(--bs-primary) !important; color: #fff !important; font-weight: 500; }
-      .form-check-input:checked { background-color: var(--bs-primary) !important; border-color: var(--bs-primary-dark) !important; }
-      .form-check-input:checked + .form-check-label { color: var(--bs-primary); font-weight: 600; }
-      .btn-outline-primary { color: var(--bs-primary) !important; border-color: var(--bs-primary) !important; font-weight: 600; }
-      .btn-outline-primary:hover { background-color: var(--bs-primary-dark) !important; border-color: var(--bs-primary-dark) !important; color: #fff !important; }
-    
-      /* --- ¡MEJORA: ESTILO GLASSMORPHISM PARA DROPDOWN! --- */
-      .dropdown-menu {
-          background-color: rgba(255, 255, 255, 0.7) !important; /* Vidrio Blanco */
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-          border-radius: 0.5rem;
-          padding: 0.5rem 0;
+      .navbar-dark {
+        background-color: var(--bs-secondary-dark) !important;
       }
-      
-      .dropdown-menu .dropdown-item {
-          background-color: transparent !important;
-          color: var(--bs-dark); /* Texto oscuro sobre vidrio claro */
-          padding: 0.5rem 1rem;
+      .btn-primary {
+        background-color: var(--bs-primary) !important;
+        border-color: var(--bs-primary) !important;
+        color: #fff !important;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(255, 122, 61, 0.25);
+      }
+      .btn-primary:hover {
+        background-color: var(--bs-primary-dark) !important;
+        border-color: var(--bs-primary-dark) !important;
+        box-shadow: 0 4px 14px rgba(194, 87, 34, 0.35);
+      }
+      .btn-secondary {
+        background-color: var(--bs-secondary) !important;
+        border-color: var(--bs-secondary) !important;
+        color: #fff !important;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(74, 111, 165, 0.25);
+      }
+      .btn-secondary:hover {
+        background-color: var(--bs-secondary-dark) !important;
+        border-color: var(--bs-secondary-dark) !important;
+        box-shadow: 0 4px 14px rgba(45, 67, 102, 0.35);
+      }
+      .card {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: none;
+        background-color: transparent;
       }
 
-      .dropdown-item .bi { 
-          opacity: 0.6; 
-          color: var(--bs-dark); /* Iconos oscuros */
+      .alert-success {
+        background-color: var(--bs-success) !important;
+        border-color: var(--bs-success-dark) !important;
+        color: var(--bs-dark) !important;
       }
-      .dropdown-item.text-danger { 
-          color: var(--bs-danger) !important; 
+      .badge.bg-success {
+        background-color: var(--bs-success) !important;
+        color: var(--bs-dark) !important;
+        font-weight: 600;
+        border: 1px solid var(--bs-success-dark);
       }
-      .dropdown-item.text-danger .bi { 
-          color: var(--bs-danger) !important; 
-          opacity: 0.8;
+
+      .badge.bg-primary {
+        background-color: var(--bs-primary) !important;
+        color: #fff !important;
+        font-weight: 500;
+      }
+      .form-check-input:checked {
+        background-color: var(--bs-primary) !important;
+        border-color: var(--bs-primary-dark) !important;
+      }
+      .form-check-input:checked + .form-check-label {
+        color: var(--bs-primary);
+        font-weight: 600;
+      }
+      .btn-outline-primary {
+        color: var(--bs-primary) !important;
+        border-color: var(--bs-primary) !important;
+        font-weight: 600;
+      }
+      .btn-outline-primary:hover {
+        background-color: var(--bs-primary-dark) !important;
+        border-color: var(--bs-primary-dark) !important;
+        color: #fff !important;
+      }
+
+      /* --- ¡MEJORA: ESTILO GLASSMORPHISM PARA DROPDOWN! --- */
+      .dropdown-menu {
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.7
+        ) !important; /* Vidrio Blanco */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0;
+      }
+
+      .dropdown-menu .dropdown-item {
+        background-color: transparent !important;
+        color: var(--bs-dark); /* Texto oscuro sobre vidrio claro */
+        padding: 0.5rem 1rem;
+      }
+
+      .dropdown-item .bi {
+        opacity: 0.6;
+        color: var(--bs-dark); /* Iconos oscuros */
+      }
+      .dropdown-item.text-danger {
+        color: var(--bs-danger) !important;
+      }
+      .dropdown-item.text-danger .bi {
+        color: var(--bs-danger) !important;
+        opacity: 0.8;
       }
 
       /* Hover Naranja (primary) */
       .dropdown-menu .dropdown-item:active,
       .dropdown-menu .dropdown-item:hover {
-          background-color: var(--bs-primary) !important;
-          color: #fff !important;
+        background-color: var(--bs-primary) !important;
+        color: #fff !important;
       }
       .dropdown-menu .dropdown-item:active .bi,
       .dropdown-menu .dropdown-item:hover .bi {
-          opacity: 1.0;
-          color: #fff !important;
+        opacity: 1;
+        color: #fff !important;
       }
-      
+
       /* Hover Rojo (danger) for Logout */
       .dropdown-menu .dropdown-item.text-danger:active,
       .dropdown-menu .dropdown-item.text-danger:hover {
-          background-color: var(--bs-danger) !important;
-          color: #fff !important;
+        background-color: var(--bs-danger) !important;
+        color: #fff !important;
       }
       .dropdown-menu .dropdown-item.text-danger:active .bi,
       .dropdown-menu .dropdown-item.text-danger:hover .bi {
-          color: #fff !important;
-          opacity: 1.0;
+        color: #fff !important;
+        opacity: 1;
       }
       /* --- FIN DE LA MEJORA --- */
 
@@ -125,12 +190,12 @@
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.25);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
-                    0 2px 8px rgba(255, 255, 255, 0.1) inset;
+          0 2px 8px rgba(255, 255, 255, 0.1) inset;
         overflow: hidden;
         min-width: 320px;
         animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       }
-      
+
       @keyframes slideInRight {
         from {
           transform: translateX(400px);
@@ -141,45 +206,55 @@
           opacity: 1;
         }
       }
-      
+
       /* Colores específicos para cada tipo con gradientes */
       .toast.glass-success {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(
+          135deg,
           rgba(var(--bs-success-rgb), 0.85) 0%,
-          rgba(var(--bs-success-rgb), 0.65) 100%);
+          rgba(var(--bs-success-rgb), 0.65) 100%
+        );
         border: 1px solid rgba(88, 167, 126, 0.4);
       }
-      
+
       .toast.glass-danger {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(
+          135deg,
           rgba(var(--bs-danger-rgb), 0.9) 0%,
-          rgba(var(--bs-danger-rgb), 0.75) 100%);
+          rgba(var(--bs-danger-rgb), 0.75) 100%
+        );
         border: 1px solid rgba(177, 60, 77, 0.5);
         color: white;
       }
-      
+
       .toast.glass-warning {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(
+          135deg,
           rgba(var(--bs-warning-rgb), 0.85) 0%,
-          rgba(var(--bs-warning-rgb), 0.65) 100%);
+          rgba(var(--bs-warning-rgb), 0.65) 100%
+        );
         border: 1px solid rgba(182, 143, 62, 0.4);
       }
-      
+
       .toast.glass-info {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(
+          135deg,
           rgba(var(--bs-info-rgb), 0.85) 0%,
-          rgba(var(--bs-info-rgb), 0.65) 100%);
+          rgba(var(--bs-info-rgb), 0.65) 100%
+        );
         border: 1px solid rgba(90, 127, 153, 0.4);
       }
-      
+
       .toast.glass-secondary {
-        background: linear-gradient(135deg, 
+        background: linear-gradient(
+          135deg,
           rgba(var(--bs-secondary-rgb), 0.9) 0%,
-          rgba(var(--bs-secondary-rgb), 0.75) 100%);
+          rgba(var(--bs-secondary-rgb), 0.75) 100%
+        );
         border: 1px solid rgba(45, 67, 102, 0.5);
         color: white;
       }
-      
+
       /* Header del Toast con efecto glassmorphism */
       .toast .toast-header {
         background: rgba(255, 255, 255, 0.15);
@@ -188,18 +263,18 @@
         padding: 12px 16px;
         font-weight: 600;
       }
-      
+
       .toast.glass-success .toast-header,
       .toast.glass-warning .toast-header,
       .toast.glass-info .toast-header {
         color: var(--bs-dark);
       }
-      
+
       .toast.glass-danger .toast-header,
       .toast.glass-secondary .toast-header {
         color: white;
       }
-      
+
       /* Body del Toast */
       .toast .toast-body {
         padding: 16px;
@@ -207,31 +282,31 @@
         line-height: 1.5;
         font-weight: 500;
       }
-      
+
       .toast.glass-success .toast-body,
       .toast.glass-warning .toast-body,
       .toast.glass-info .toast-body {
         color: var(--bs-dark);
       }
-      
+
       .toast.glass-danger .toast-body,
       .toast.glass-secondary .toast-body {
         color: white;
       }
-      
+
       /* Iconos más grandes y llamativos */
       .toast-header .bi {
         font-size: 20px;
         margin-right: 8px;
       }
-      
+
       /* Botón de cierre mejorado con efecto hover */
       .toast .btn-close {
         font-size: 12px;
         opacity: 0.8;
         transition: opacity 0.2s, transform 0.2s;
       }
-      
+
       .toast .btn-close:hover {
         opacity: 1;
         transform: scale(1.1);
@@ -240,61 +315,108 @@
 
       /* Color de Item Activo (para Historial) */
       .list-group-item.active {
-          background-color: var(--bs-secondary-dark) !important;
-          border-color: var(--bs-secondary-dark) !important;
-          color: #fff !important;
+        background-color: var(--bs-secondary-dark) !important;
+        border-color: var(--bs-secondary-dark) !important;
+        color: #fff !important;
       }
       .list-group-item.active a,
       .list-group-item.active a strong {
-          color: #fff !important;
+        color: #fff !important;
       }
       .list-group-item:not(.active) a,
       .list-group-item:not(.active) a strong {
-          color: var(--bs-dark) !important;
-          text-decoration: none;
+        color: var(--bs-dark) !important;
+        text-decoration: none;
       }
       .list-group-item:not(.active):hover a strong {
-          color: var(--bs-primary) !important;
+        color: var(--bs-primary) !important;
       }
       /* ---------------------------------- */
-
     </style>
   </head>
-  
-  <body {% block body_style %}{% endblock %}>
 
+  <body {% block body_style %}{% endblock %}>
     <nav class="navbar navbar-expand-lg navbar-dark mb-4">
       <div class="container">
-        
-        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
-          <img src="{{ url_for('static', filename='img/LogoQV.png') }}" alt="Logo" width="40" height="40" class="d-inline-block align-text-top me-3">
+        <a
+          class="navbar-brand d-flex align-items-center"
+          href="{{ url_for('main.index') }}"
+        >
+          <img
+            src="{{ url_for('static', filename='img/LogoQV.png') }}"
+            alt="Logo"
+            width="40"
+            height="40"
+            class="d-inline-block align-text-top me-3"
+          />
           Automatic Test Case
         </a>
-        
+
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav ms-auto">
             {% if current_user.is_anonymous %}
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar Sesión</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Registrarse</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.login') }}"
+                >Iniciar Sesión</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.register') }}"
+                >Registrarse</a
+              >
+            </li>
             {% else %}
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('core.dashboard') }}"><i class="bi bi-house-door-fill me-1"></i>Inicio</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('core.dashboard') }}"
+                ><i class="bi bi-house-door-fill me-1"></i>Inicio</a
+              >
+            </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
                 <i class="bi bi-diagram-3-fill me-1"></i>Procesos
               </a>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('analysis.analysis_index') }}">Análisis y diseño</a></li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('analysis.analysis_index') }}"
+                    >Análisis y diseño</a
+                  >
+                </li>
                 <li><a class="dropdown-item" href="#">Ejecución</a></li>
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle me-1"></i>¡Hola, {{ current_user.email.split('@')[0] }}!
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="bi bi-person-circle me-1"></i>¡Hola, {{
+                current_user.email.split('@')[0] }}!
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#"><i class="bi bi-person-fill me-2"></i>Ver Perfil</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.profile') }}"
+                    ><i class="bi bi-person-fill me-2"></i>Ver Perfil</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a
+                    class="dropdown-item text-danger"
+                    href="{{ url_for('auth.logout') }}"
+                    ><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a
+                  >
+                </li>
               </ul>
             </li>
             {% endif %}
@@ -303,53 +425,58 @@
       </div>
     </nav>
 
-    <div id="flash-data" data-messages='{{ get_flashed_messages(with_categories=true)|tojson|safe }}' style="display: none;"></div>
-    
-    <div class="container">
-      {% block content %}{% endblock %}
-    </div>
-    
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100"></div>
-    
+    <div
+      id="flash-data"
+      data-messages="{{ get_flashed_messages(with_categories=true)|tojson|safe }}"
+      style="display: none"
+    ></div>
+
+    <div class="container">{% block content %}{% endblock %}</div>
+
+    <div
+      class="toast-container position-fixed bottom-0 end-0 p-3"
+      style="z-index: 1100"
+    ></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     {% block scripts %}
     <script>
-    function showToast(message, category) {
-        const toastContainer = document.querySelector('.toast-container');
+      function showToast(message, category) {
+        const toastContainer = document.querySelector(".toast-container");
         if (!toastContainer) return;
-        
-        let toastClass = 'glass-secondary';
-        let iconClass = 'bi-info-circle-fill';
-        let closeButtonClass = 'btn-close-white';
-        let title = 'Notificación';
 
-        if (category === 'success') {
-            toastClass = 'glass-success';
-            iconClass = 'bi-check-circle-fill';
-            closeButtonClass = '';
-            title = 'Éxito';
-        } else if (category === 'danger') {
-            toastClass = 'glass-danger';
-            iconClass = 'bi-exclamation-triangle-fill';
-            closeButtonClass = 'btn-close-white';
-            title = 'Error';
-        } else if (category === 'warning') {
-            toastClass = 'glass-warning';
-            iconClass = 'bi-exclamation-circle-fill';
-            closeButtonClass = '';
-            title = 'Advertencia';
-        } else if (category === 'info') {
-            toastClass = 'glass-info';
-            iconClass = 'bi-info-circle-fill';
-            closeButtonClass = '';
-            title = 'Información';
-        } else if (category === 'secondary') {
-            closeButtonClass = 'btn-close-white';
-            title = 'Procesando';
+        let toastClass = "glass-secondary";
+        let iconClass = "bi-info-circle-fill";
+        let closeButtonClass = "btn-close-white";
+        let title = "Notificación";
+
+        if (category === "success") {
+          toastClass = "glass-success";
+          iconClass = "bi-check-circle-fill";
+          closeButtonClass = "";
+          title = "Éxito";
+        } else if (category === "danger") {
+          toastClass = "glass-danger";
+          iconClass = "bi-exclamation-triangle-fill";
+          closeButtonClass = "btn-close-white";
+          title = "Error";
+        } else if (category === "warning") {
+          toastClass = "glass-warning";
+          iconClass = "bi-exclamation-circle-fill";
+          closeButtonClass = "";
+          title = "Advertencia";
+        } else if (category === "info") {
+          toastClass = "glass-info";
+          iconClass = "bi-info-circle-fill";
+          closeButtonClass = "";
+          title = "Información";
+        } else if (category === "secondary") {
+          closeButtonClass = "btn-close-white";
+          title = "Procesando";
         }
 
-        const toastId = 'toast-' + Math.random().toString(36).substring(2, 9);
+        const toastId = "toast-" + Math.random().toString(36).substring(2, 9);
         const toastHTML = `
             <div id="${toastId}" class="toast ${toastClass}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
                 <div class="toast-header">
@@ -363,30 +490,31 @@
                 </div>
             </div>
         `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+        toastContainer.insertAdjacentHTML("beforeend", toastHTML);
         const toastElement = document.getElementById(toastId);
         const toast = new bootstrap.Toast(toastElement);
-        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+        toastElement.addEventListener("hidden.bs.toast", () =>
+          toastElement.remove()
+        );
         toast.show();
-    }
-    
-    // Lógica para leer los mensajes de Flask y mostrarlos automáticamente
-    document.addEventListener('DOMContentLoaded', function() {
-        const flashData = document.getElementById('flash-data');
+      }
+
+      // Lógica para leer los mensajes de Flask y mostrarlos automáticamente
+      document.addEventListener("DOMContentLoaded", function () {
+        const flashData = document.getElementById("flash-data");
         if (flashData) {
-            const messages = JSON.parse(flashData.dataset.messages || '[]');
-            if (messages.length > 0) {
-                messages.forEach(function(messagePair) {
-                    const category = messagePair[0];
-                    const message = messagePair[1];
-                    showToast(message, category);
-                });
-            }
+          const messages = JSON.parse(flashData.dataset.messages || "[]");
+          if (messages.length > 0) {
+            messages.forEach(function (messagePair) {
+              const category = messagePair[0];
+              const message = messagePair[1];
+              showToast(message, category);
+            });
+          }
         }
-    });
+      });
     </script>
     {% endblock %}
-    
   </body>
 </html>

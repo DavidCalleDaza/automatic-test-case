@@ -1,68 +1,92 @@
-from flask import render_template, flash, redirect, url_for, request, session # <--- ¡AÑADIDO: 'session'!
-from flask_login import login_user, logout_user, current_user, login_required
+from flask import render_template, flash, redirect, url_for, request, session
+from flask_login import current_user, login_user, logout_user, login_required
 from app import db
 from app.auth import bp
-from app.auth.forms import LoginForm, RegistrationForm
-from app.models import Usuario
+# Asegúrate de importar TODOS los formularios y modelos necesarios
+from app.auth.forms import LoginForm, RegistrationForm, EditProfileForm
+from app.models import Usuario, Analisis, HistorialCambios
 
+# --- RUTA DE LOGIN (Existente) ---
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """Maneja el inicio de sesión del usuario."""
-    # Si el usuario ya está logueado, lo redirigimos al inicio
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
     form = LoginForm()
     if form.validate_on_submit():
-        # Busca al usuario en la base de datos
         user = Usuario.query.filter_by(email=form.email.data).first()
-        
-        # Si el usuario no existe o la contraseña es incorrecta, muestra un error
         if user is None or not user.check_password(form.password.data):
-            flash('Email o contraseña inválidos', 'danger') # 'danger' es una categoría bootstrap
+            flash('Email o contraseña inválidos', 'danger')
             return redirect(url_for('auth.login'))
         
-        # Si todo está bien, loguea al usuario
         login_user(user, remember=form.remember_me.data)
-        flash('¡Inicio de sesión exitoso!', 'success') # 'success' es una categoría bootstrap
         
-        # Redirige al usuario a la página que intentaba ver
         next_page = request.args.get('next')
         if not next_page or not next_page.startswith('/'):
             next_page = url_for('main.index')
+        
         return redirect(next_page)
         
     return render_template('auth/login.html', title='Iniciar Sesión', form=form)
 
+# --- RUTA DE LOGOUT (La que faltaba) ---
+@bp.route('/logout')
+def logout():
+    # Limpiamos datos de sesión (el fix que implementamos)
+    session.pop('ai_result_raw', None)
+    session.pop('plantilla_seleccionada_id', None)
+    
+    logout_user()
+    return redirect(url_for('main.index'))
+
+# --- RUTA DE REGISTRO (Existente) ---
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """Maneja el registro de nuevos usuarios."""
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
-        
+    
     form = RegistrationForm()
     if form.validate_on_submit():
-        # Crea un nuevo usuario con los datos del formulario
         user = Usuario(email=form.email.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('¡Felicidades, te has registrado correctamente!', 'success')
+        flash('¡Felicidades, ahora eres un usuario registrado!', 'success')
         return redirect(url_for('auth.login'))
         
-    return render_template('auth/register.html', title='Registro', form=form)
+    return render_template('auth/register.html', title='Registrarse', form=form)
 
-# --- ¡RUTA DE LOGOUT ACTUALIZADA! ---
-@bp.route('/logout')
+# --- NUEVA RUTA PARA VER PERFIL ---
+@bp.route('/profile', methods=['GET', 'POST'])
 @login_required
-def logout():
-    """Maneja el cierre de sesión del usuario."""
+def profile():
+    """
+    Muestra la página de perfil del usuario y maneja la edición.
+    """
+    # Pasamos el email original al formulario para la validación
+    form = EditProfileForm(current_user.email)
     
-    # --- ¡FIX! Limpiamos nuestros datos de la sesión ANTES de cerrar ---
-    session.pop('ai_result_raw', None)
-    session.pop('plantilla_seleccionada_id', None)
-    # --- FIN DEL FIX ---
+    if form.validate_on_submit():
+        # Actualizar email
+        current_user.email = form.email.data
+        
+        # Actualizar contraseña (solo si el campo 'password' no está vacío)
+        if form.password.data:
+            current_user.set_password(form.password.data)
+            
+        db.session.commit()
+        flash('Tu perfil ha sido actualizado exitosamente.', 'success')
+        return redirect(url_for('auth.profile'))
     
-    logout_user() # Esto borra el login del usuario
-    flash('Has cerrado sesión.', 'info')
-    return redirect(url_for('main.index'))
+    elif request.method == 'GET':
+        # Poblar el formulario con los datos actuales del usuario
+        form.email.data = current_user.email
+
+    # --- Obtener Estadísticas del Usuario ---
+    stats = {
+        'total_analisis': Analisis.query.filter_by(id_usuario=current_user.id).count(),
+        'analisis_activos': Analisis.query.filter_by(id_usuario=current_user.id, is_active=True).count(),
+        'total_ediciones': HistorialCambios.query.filter_by(id_usuario=current_user.id).count()
+    }
+    
+    return render_template('auth/profile.html', title='Mi Perfil', form=form, stats=stats)

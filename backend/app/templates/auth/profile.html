@@ -1,0 +1,122 @@
+{% extends "base.html" %} {% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h2 class="h4 fw-bold">Mi Perfil</h2>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div
+      class="card bg-white"
+      style="
+        border-radius: 0.75rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+      "
+    >
+      <div class="card-body p-4">
+        <h5 class="card-title fw-bold mb-3">
+          <i class="bi bi-person-fill me-2"></i>Información Personal
+        </h5>
+        <p class="text-muted small">Edita tu email o cambia tu contraseña.</p>
+
+        <form action="" method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }} {{
+            form.email(class="form-control", size=32) }} {% for error in
+            form.email.errors %}
+            <span class="text-danger small">{{ error }}</span>
+            {% endfor %}
+          </div>
+          <hr />
+          <p class="text-muted small">
+            Cambiar contraseña (dejar en blanco para no cambiar)
+          </p>
+          <div class="mb-3">
+            {{ form.password.label(class="form-label") }} {{
+            form.password(class="form-control", size=32) }} {% for error in
+            form.password.errors %}
+            <span class="text-danger small">{{ error }}</span>
+            {% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.password2.label(class="form-label") }} {{
+            form.password2(class="form-control", size=32) }} {% for error in
+            form.password2.errors %}
+            <span class="text-danger small">{{ error }}</span>
+            {% endfor %}
+          </div>
+          {{ form.submit(value="Guardar Cambios", class="btn btn-primary w-100")
+          }}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div
+      class="card bg-white"
+      style="
+        border-radius: 0.75rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+      "
+    >
+      <div class="card-body p-4">
+        <h5 class="card-title fw-bold mb-3">
+          <i class="bi bi-graph-up me-2"></i>Estadísticas de Actividad
+        </h5>
+
+        <div class="row g-3 justify-content-center">
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="card h-100"
+              style="border: 1px solid #e9ecef; background: #f8f9fa"
+            >
+              <div class="card-body text-center p-3">
+                <h6 class="text-muted mb-1">Análisis Totales</h6>
+                <h4 class="fw-bold mb-0 text-primary">
+                  {{ stats.total_analisis }}
+                </h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="card h-100"
+              style="border: 1px solid #e9ecef; background: #f8f9fa"
+            >
+              <div class="card-body text-center p-3">
+                <h6 class="text-muted mb-1">Análisis Activos</h6>
+                <h4 class="fw-bold mb-0 text-success">
+                  {{ stats.analisis_activos }}
+                </h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="card h-100"
+              style="border: 1px solid #e9ecef; background: #f8f9fa"
+            >
+              <div class="card-body text-center p-3">
+                <h6 class="text-muted mb-1">Ediciones Guardadas</h6>
+                <h4 class="fw-bold mb-0" style="color: var(--bs-warning-dark)">
+                  {{ stats.total_ediciones }}
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+        <h6 class="fw-bold mb-3">Actividad Reciente</h6>
+        <p class="text-muted text-center small">
+          (Próximamente: Aquí se mostrará una lista de tus últimas ediciones y
+          análisis)
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,62 +1,584 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block content %}
 
-{% block content %}
-<div class="card">
-    <div class="card-body p-4">
-        
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h4 mb-0">Detalle de Plantilla</h2>
-            <a href="{{ url_for('core.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
-            </a>
+<div
+  class="card bg-white"
+  style="
+    border-radius: 0.75rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  "
+>
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="h4 fw-bold mb-0">
+        <i class="bi bi-file-earmark-check me-2"></i>Detalle de Plantilla
+      </h2>
+
+      <div>
+        <a
+          href="{{ url_for('core.dashboard') }}"
+          class="btn btn-outline-secondary btn-sm"
+        >
+          <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+        </a>
+        <a
+          href="{{ url_for('analysis.analysis_index') }}"
+          class="btn btn-primary btn-sm ms-2"
+        >
+          <i class="bi bi-play-circle me-1"></i> Realizar análisis
+        </a>
+      </div>
+    </div>
+
+    <div class="template-info-card mb-4">
+      <h3 class="h5 fw-bold mb-3">
+        <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+        {{ plantilla.nombre_plantilla }}
+      </h3>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="info-item">
+            <i class="bi bi-file-earmark-code me-2 text-muted"></i>
+            <span class="text-muted">Tipo:</span>
+            <strong class="ms-1">{{ plantilla.tipo_archivo }}</strong>
+          </div>
         </div>
-        
-        <h3 class="h5">{{ plantilla.nombre_plantilla }}</h3>
-        <p class="text-muted small">
-            Tipo: <strong>{{ plantilla.tipo_archivo }}</strong> | 
-            Subida: <strong>{{ plantilla.timestamp.strftime('%Y-%m-%d') }}</strong> |
-            Hoja: <strong>{{ plantilla.sheet_name or 'N/A' }}</strong> |
-            Fila: <strong>{{ plantilla.header_row or 'N/A' }}</strong>
-        </p>
-        <hr>
+        <div class="col-md-3">
+          <div class="info-item">
+            <i class="bi bi-calendar-event me-2 text-muted"></i>
+            <span class="text-muted">Subida:</span>
+            <strong class="ms-1"
+              >{{ plantilla.timestamp.strftime('%Y-%m-%d') }}</strong
+            >
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="info-item">
+            <i class="bi bi-table me-2 text-muted"></i>
+            <span class="text-muted">Hoja:</span>
+            <strong class="ms-1">{{ plantilla.sheet_name or 'N/A' }}</strong>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="info-item">
+            <i class="bi bi-list-ol me-2 text-muted"></i>
+            <span class="text-muted">Fila:</span>
+            <strong class="ms-1">{{ plantilla.header_row or 'N/A' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <h4 class="h5">Etiquetas (Mapa) Aprendido</h4>
-        <p class="text-muted">Esta es la estructura que el sistema ha guardado en la base de datos.</p>
+    <hr class="my-4" />
+
+    <div class="card bg-white" style="border: 1px solid #e9ecef">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="h5 fw-bold mb-0">
+            <i class="bi bi-diagram-3 me-2"></i>
+            Etiquetas (Mapa) Aprendido
+          </h4>
+
+          <div class="btn-group" role="group">
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#auditCamposModal"
+              title="Auditar Estructura"
+            >
+              <i class="bi bi-shield-check"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#previewPlantillaModal"
+              title="Ver previsualización"
+            >
+              <i class="bi bi-layout-text-window-reverse"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#infoMapeoModal"
+              title="¿Qué significa esto?"
+            >
+              <i class="bi bi-info-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <p class="text-muted mb-4">
+          Esta es la estructura que el sistema ha guardado en la base de datos.
+        </p>
 
         {% if mapas %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    
-                    <thead style="background-color: var(--bs-dark); color: white;">
-                        <tr>
-                            <th scope="col" style="padding-left: 1.5rem;">Etiqueta Encontrada</th>
-                            <th scope="col">Coordenada (Columna)</th>
-                            <th scope="col">Tipo de Mapa</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for mapa in mapas %}
-                        <tr>
-                            <td style="padding-left: 1.5rem;">
-                                <span class="badge bg-primary fs-6 rounded-pill">{{ mapa.etiqueta }}</span>
-                            </td>
-                            <td>
-                                <strong>{{ mapa.coordenada }}</strong>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border">{{ mapa.tipo_mapa }}</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div
+          class="table-responsive"
+          style="max-height: 400px; overflow-y: auto"
+        >
+          <table class="table table-hover align-middle bg-white">
+            <thead class="table-light" style="position: sticky; top: 0">
+              <tr>
+                <th
+                  scope="col"
+                  class="text-center"
+                  style="padding: 1rem 1.5rem"
+                >
+                  <i class="bi bi-tag me-2"></i>Etiqueta Encontrada
+                </th>
+                <th scope="col" class="text-center" style="padding: 1rem">
+                  <i class="bi bi-grid-3x3 me-2"></i>Coordenada (Columna)
+                </th>
+                <th scope="col" class="text-center" style="padding: 1rem">
+                  <i class="bi bi-type me-2"></i>Tipo de Mapa
+                </th>
+                <th scope="col" class="text-center" style="padding: 1rem">
+                  <i class="bi bi-tools me-2"></i>Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for mapa in mapas %}
+              <tr>
+                <td class="text-center" style="padding: 1rem 1.5rem">
+                  <span
+                    class="badge bg-success badge-truncate"
+                    title="{{ mapa.etiqueta }}"
+                  >
+                    {{ mapa.etiqueta }}
+                  </span>
+                </td>
+
+                <td class="text-center" style="padding: 1rem">
+                  <strong class="text-dark fs-5">{{ mapa.coordenada }}</strong>
+                </td>
+
+                <td class="text-center" style="padding: 1rem">
+                  <span class="badge bg-light text-dark border">
+                    {{ mapa.tipo_mapa }}
+                  </span>
+                </td>
+
+                <td class="text-center" style="padding: 1rem">
+                  <a
+                    href="{{ url_for('core.edit_mapa', mapa_id=mapa.id) }}"
+                    class="btn btn-sm btn-outline-primary me-1"
+                    title="Editar Etiqueta"
+                  >
+                    <i class="bi bi-pencil-fill"></i>
+                  </a>
+                  <form
+                    id="form-delete-mapa-{{ mapa.id }}"
+                    action="{{ url_for('core.delete_mapa', mapa_id=mapa.id) }}"
+                    method="POST"
+                    style="display: inline-block"
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteMapaConfirmModal"
+                      data-form-id="form-delete-mapa-{{ mapa.id }}"
+                      title="Eliminar Mapeo"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% else %}
-            <div class="alert alert-warning" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                No se encontraron etiquetas mapeadas para esta plantilla.
-            </div>
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+          <i class="bi bi-exclamation-triangle me-3 fs-4"></i>
+          <div>
+            <strong>No se encontraron etiquetas mapeadas</strong><br />
+            <span class="small"
+              >Para esta plantilla aún no se han configurado las columnas.</span
+            >
+          </div>
+        </div>
         {% endif %}
+      </div>
     </div>
+  </div>
 </div>
+
+<div
+  class="modal fade"
+  id="previewPlantillaModal"
+  tabindex="-1"
+  aria-labelledby="previewPlantillaModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewPlantillaModalLabel">
+          <i class="bi bi-layout-text-window-reverse me-2"></i> Previsualización
+          de Plantilla Mapeada
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">
+          Así es como se generará la tabla de resultados en
+          <strong>Análisis y Diseño</strong> usando las etiquetas que mapeaste.
+        </p>
+        <div
+          class="card"
+          style="
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem;
+            background-color: white;
+          "
+        >
+          <div class="table-responsive">
+            <table
+              class="table table-hover align-middle"
+              style="font-size: 0.9rem"
+            >
+              <thead class="table-light">
+                <tr style="white-space: nowrap">
+                  {% if mapas %} {% for mapa in mapas %}
+                  <th scope="col" class="py-3 px-3">{{ mapa.etiqueta }}</th>
+                  {% endfor %} {% else %}
+                  <th scope="col" class="py-3 px-3">Etiqueta 1</th>
+                  <th scope="col" class="py-3 px-3">Etiqueta 2</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {% if mapas %} {% for mapa in mapas %}
+                  <td class="px-3">
+                    <span class="small"
+                      >(Dato de ejemplo para {{ mapa.etiqueta }})</span
+                    >
+                  </td>
+                  {% endfor %} {% else %}
+                  <td class="px-3">
+                    <span class="small">(Dato de ejemplo 1)</span>
+                  </td>
+                  <td class="px-3">
+                    <span class="small">(Dato de ejemplo 2)</span>
+                  </td>
+                  {% endif %}
+                </tr>
+                <tr>
+                  {% if mapas %} {% for mapa in mapas %}
+                  <td class="px-3">
+                    <span class="small">(Dato de ejemplo...)</span>
+                  </td>
+                  {% endfor %} {% else %}
+                  <td class="px-3">
+                    <span class="small">(Dato de ejemplo...)</span>
+                  </td>
+                  <td class="px-3">
+                    <span class="small">(Dato de ejemplo...)</span>
+                  </td>
+                  {% endif %}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="infoMapeoModal"
+  tabindex="-1"
+  aria-labelledby="infoMapeoModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="infoMapeoModalLabel">
+          <i class="bi bi-info-circle-fill me-2"></i> ¿Qué es el Mapeo de
+          Etiquetas?
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          El mapeo le enseña al sistema cómo "leer" tu plantilla de Excel para
+          que la IA sepa exactamente dónde debe escribir cada dato.
+        </p>
+        <h6 class="mt-4">Campos de la Tabla:</h6>
+        <dl class="row">
+          <dt class="col-sm-3">
+            <i class="bi bi-tag me-2"></i>Etiqueta Encontrada
+          </dt>
+          <dd class="col-sm-9">
+            Es el <strong>título de la columna</strong> que el sistema encontró
+            en la fila de encabezados que seleccionaste (ej. "Descripción del
+            Caso").
+          </dd>
+
+          <dt class="col-sm-3">
+            <i class="bi bi-grid-3x3 me-2"></i>Coordenada
+          </dt>
+          <dd class="col-sm-9">
+            Es la <strong>letra de la columna</strong> de Excel donde se
+            encontró esa etiqueta (ej. "B").
+          </dd>
+
+          <dt class="col-sm-3"><i class="bi bi-type me-2"></i>Tipo de Mapa</dt>
+          <dd class="col-sm-9">Indica el tipo de mapeo (ej. "fila_tabla").</dd>
+        </dl>
+        <hr />
+        <h6>
+          <i class="bi bi-check-circle text-success me-2"></i>Resultado Esperado
+        </h6>
+        <p>
+          Cuando la IA genere los casos de prueba, usará este mapa para rellenar
+          tu archivo Excel. Por ejemplo, todos los "Resultados Esperados"
+          generados por la IA se escribirán en la columna que hayas mapeado con
+          la etiqueta "Resultado Esperado".
+        </p>
+        <div class="alert alert-info">
+          <strong>Nota:</strong> Solo las etiquetas que seleccionaste en el Paso
+          3 del asistente (Mapear Columnas) serán utilizadas por la IA.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="deleteMapaConfirmModal"
+  tabindex="-1"
+  aria-labelledby="deleteMapaLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div
+      class="modal-content"
+      style="
+        border-left: 6px solid var(--bs-danger);
+        border-radius: 0.75rem;
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+        background-color: white;
+      "
+    >
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="deleteMapaLabel">
+          <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i
+          >Confirmar Eliminación de Mapeo
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro de que quieres eliminar esta etiqueta del mapeo?</p>
+        <p class="text-danger small">
+          Esta acción no se puede deshacer y tendrás que volver a mapear esta
+          columna desde el asistente.
+        </p>
+      </div>
+      <div class="modal-footer border-0">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-dismiss="modal"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          id="confirmDeleteMapaButton"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="auditCamposModal"
+  tabindex="-1"
+  aria-labelledby="auditCamposModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="auditCamposModalLabel">
+          <i class="bi bi-shield-check me-2 text-primary"></i> Auditoría de
+          Estructura de Mapeo
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Esta función (aún no implementada) analizará las etiquetas mapeadas
+          contra estándares de calidad (como
+          <strong>ISO/IEC/IEEE 29119</strong>) para asegurar una estructura de
+          alta calidad para los casos de prueba.
+        </p>
+
+        <h6 class="mt-4">Verificación de Estándares</h6>
+        <p>
+          La auditoría verificará la presencia de campos clave recomendados:
+        </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <ul class="list-group">
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                Identificador (ID)
+              </li>
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                Descripción / Propósito
+              </li>
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                Precondiciones
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <ul class="list-group">
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-check-circle-fill text-success me-2"></i> Pasos
+                de Ejecución
+              </li>
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-x-circle-fill text-danger me-2"></i> Resultado
+                Esperado
+              </li>
+              <li class="list-group-item d-flex align-items-center">
+                <i class="bi bi-question-circle-fill text-warning me-2"></i>
+                Estado (Post-ejecución)
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-4">
+          <strong>Resultado de tu Plantilla (Ejemplo):</strong>
+          <br />
+          <i class="bi bi-check-circle text-success"></i> Tienes
+          <strong>3 de 6</strong> campos estándar.
+          <br />
+          <i class="bi bi-exclamation-triangle text-danger"></i> Faltan campos
+          críticos como <strong>"Precondiciones"</strong> y
+          <strong>"Resultado Esperado"</strong>.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Estilos locales (Sin cambios) */
+  .template-info-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+  }
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+  }
+
+  /* REQ 1 (CORREGIDO): Truncar etiquetas con ancho FIJO */
+  .badge-truncate {
+    display: inline-block;
+    width: 250px; /* ANCHO FIJO para uniformidad */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+</style>
+
+{% endblock %} {% block scripts %} {{ super() }}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Seleccionamos el NUEVO modal
+    var deleteMapaModal = document.getElementById("deleteMapaConfirmModal");
+
+    if (deleteMapaModal) {
+      // Alcance seguro del botón de confirmación
+      var confirmMapaButton = deleteMapaModal.querySelector(
+        "#confirmDeleteMapaButton"
+      );
+      var formToSubmit;
+
+      // Cuando el modal está a punto de mostrarse...
+      deleteMapaModal.addEventListener("show.bs.modal", function (event) {
+        // 1. Obtener el botón que disparó el modal
+        var button = event.relatedTarget;
+
+        // 2. Extraer el ID del formulario del atributo 'data-form-id' del botón
+        var formId = button.getAttribute("data-form-id");
+
+        // 3. Guardar el formulario en nuestra variable
+        formToSubmit = document.getElementById(formId);
+      });
+
+      // Cuando el usuario hace clic en el botón "Eliminar" (el rojo)...
+      confirmMapaButton.addEventListener("click", function () {
+        if (formToSubmit) {
+          // 4. ...enviar el formulario guardado.
+          formToSubmit.submit();
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
