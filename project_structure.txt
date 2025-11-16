@@ -1,15 +1,22 @@
 🌳 Análisis de Estructura del Proyecto: automatic-test-case
 
 └── 📂 /
+    └── 📄 common_commands.txt
+    └── 📄 project_context.txt
     └── 📄 README.md
+    └── 📄 project_structure.txt
+    └── 📄 tech_report.txt
     └── 📄 analyze_project.py
 └── 📂 frontend/
 └── 📂 backend/
+        └── 📄 app.db.backup_20251115_010416
         └── 📄 main.py
         └── 📄 config.py
+        └── 📄 .env
         └── 📄 app.db
     └── 📂 app/
             └── 📄 __init__.py
+            └── 📄 models.py.backup
             └── 📄 models.py
         └── 📂 core/
                 └── 📄 __init__.py
@@ -36,9 +43,11 @@
                     └── 📄 register.html
                     └── 📄 login.html
             └── 📂 analysis/
+                    └── 📄 analysis.html.backup
                     └── 📄 analysis.html
         └── 📂 analysis/
                 └── 📄 __init__.py
+                └── 📄 routes.py.backup
                 └── 📄 routes.py
                 └── 📄 forms.py
     └── 📂 migrations/
@@ -47,15 +56,20 @@
             └── 📄 README
             └── 📄 env.py
         └── 📂 versions/
-                └── 📄 cce774ff580f_creación_inicial_de_tablas_versión_.py
-                └── 📄 bdd92b2ba39f_añade_sheet_name_y_header_row_a_.py
-                └── 📄 e16a1aaf9517_añade_desglosar_pasos_a_plantilla.py
-                └── 📄 64e7f783b780_añade_tabla_analisis_para_historial.py
     └── 📂 uploads/
-            └── 📄 plantilla3.xlsx
-            └── 📄 plantilla_maestra.xlsx
             └── 📄 mod_test.xlsx
+            └── 📄 FT-629_ARTMDP_DocumentoContratoServicio_SrvAPIPSE_V002_20251104_1.xlsx
+            └── 📄 plantilla2.xlsx
             └── 📄 plantilla.xlsx
+        └── 📂 temp/
+                └── 📄 entregable_33.xlsx
+                └── 📄 entregable_32.xlsx
+                └── 📄 entregable_33.xml
+                └── 📄 entregable_34.xlsx
+                └── 📄 entregable_35.xlsx
+                └── 📄 entregable_38.xlsx
+                └── 📄 entregable_36.xlsx
+                └── 📄 entregable_37.xlsx
 
 
 ==============================
@@ -86,7 +100,3 @@ backend/app/templates/core/ver_plantilla.html
 backend/config.py
 backend/main.py
 backend/migrations/env.py
-backend/migrations/versions/64e7f783b780_añade_tabla_analisis_para_historial.py
-backend/migrations/versions/bdd92b2ba39f_añade_sheet_name_y_header_row_a_.py
-backend/migrations/versions/cce774ff580f_creación_inicial_de_tablas_versión_.py
-backend/migrations/versions/e16a1aaf9517_añade_desglosar_pasos_a_plantilla.py
