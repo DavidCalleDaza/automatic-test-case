@@ -94,12 +94,27 @@ def analizar_complejidad_requerimiento(texto):
     horas_diseño = tiempo_estimado_por_caso * casos_totales_estimados
     horas_ejecucion = tiempo_estimado_por_caso * casos_totales_estimados
 
+    # Formatear criterios detectados para mostrar en modales
+    criterios_ca_lista = [f"{match[0]}-{match[1]}" for match in set(criterios_funcionales)]
+    criterios_cnf_lista = [f"{match[0]}-{match[1]}" for match in set(criterios_no_funcionales)]
+    
     return {
-        "palabras": conteo_palabras, "criterios": conteo_criterios_funcionales,
-        "criterios_no_funcionales": conteo_criterios_no_funcionales, "nivel": nivel,
+        "palabras": conteo_palabras, 
+        "criterios": conteo_criterios_funcionales,
+        "criterios_no_funcionales": conteo_criterios_no_funcionales, 
+        "nivel": nivel,
         "casos_estimados": casos_totales_estimados,
         "horas_diseño_estimadas": horas_diseño,
-        "horas_ejecucion_estimadas": horas_ejecucion
+        "horas_ejecucion_estimadas": horas_ejecucion,
+        # Datos adicionales para modales informativos
+        "criterios_ca_lista": criterios_ca_lista,
+        "criterios_cnf_lista": criterios_cnf_lista,
+        "pert_to": To,
+        "pert_tm": Tm,
+        "pert_tp": Tp,
+        "tiempo_estimado_por_caso": tiempo_estimado_por_caso,
+        "casos_base": casos_base,
+        "casos_no_funcionales": casos_no_funcionales
     }
 
 # --- Funciones de Ayuda: Lógica de IA (Gemini) (sin cambios) ---
@@ -380,13 +395,26 @@ def analysis_index():
                 except Exception as e:
                     ai_result_xml_string = f"Error al generar XML: {e}"
 
+                # Recalcular datos adicionales para los modales
+                datos_completos = analizar_complejidad_requerimiento(analisis_obj.texto_requerimiento_raw)
+                
                 analisis_info = {
-                    'nivel': analisis_obj.nivel_complejidad, 'casos': analisis_obj.casos_generados,
+                    'nivel': analisis_obj.nivel_complejidad, 
+                    'casos': analisis_obj.casos_generados,
                     'criterios': analisis_obj.criterios_detectados,
                     'criterios_no_funcionales': analisis_obj.criterios_no_funcionales,
                     'palabras': analisis_obj.palabras_analizadas,
                     'horas_diseño': analisis_obj.horas_diseño_estimadas,
-                    'horas_ejecucion': analisis_obj.horas_ejecucion_estimadas
+                    'horas_ejecucion': analisis_obj.horas_ejecucion_estimadas,
+                    # Datos adicionales para modales informativos
+                    'criterios_ca_lista': datos_completos.get('criterios_ca_lista', []),
+                    'criterios_cnf_lista': datos_completos.get('criterios_cnf_lista', []),
+                    'pert_to': datos_completos.get('pert_to', 0),
+                    'pert_tm': datos_completos.get('pert_tm', 0),
+                    'pert_tp': datos_completos.get('pert_tp', 0),
+                    'tiempo_estimado_por_caso': datos_completos.get('tiempo_estimado_por_caso', 0),
+                    'casos_base': datos_completos.get('casos_base', 0),
+                    'casos_no_funcionales': datos_completos.get('casos_no_funcionales', 0)
                 }
                 texto_requerimiento = analisis_obj.texto_requerimiento_raw
             elif not analisis_obj:

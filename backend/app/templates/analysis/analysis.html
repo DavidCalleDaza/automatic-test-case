@@ -160,7 +160,12 @@
                 <div class="col-md-4 col-sm-6">
                     <div class="card h-100 metric-card-light">
                         <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">Complejidad</h6>
+                            <h6 class="text-muted mb-1">
+                                Complejidad
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#complejidadInfoModal" class="text-info text-decoration-none">
+                                    <i class="bi bi-info-circle-fill small"></i>
+                                </a>
+                            </h6>
                             {% if analisis_info.nivel == 'Alta' %}
                                 <span class="badge bg-danger fs-6">{{ analisis_info.nivel }}</span>
                             {% elif analisis_info.nivel == 'Media' %}
@@ -174,7 +179,12 @@
                 <div class="col-md-4 col-sm-6">
                     <div class="card h-100 metric-card-light">
                         <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">Casos Generados</h6>
+                            <h6 class="text-muted mb-1">
+                                Casos Generados
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#casosInfoModal" class="text-info text-decoration-none">
+                                    <i class="bi bi-info-circle-fill small"></i>
+                                </a>
+                            </h6>
                             <h4 class="fw-bold mb-0 text-success">{{ analisis_info.casos }}</h4>
                         </div>
                     </div>
@@ -182,7 +192,12 @@
                 <div class="col-md-4 col-sm-6">
                     <div class="card h-100 metric-card-light">
                         <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">Criterios (CA / CNF)</h6>
+                            <h6 class="text-muted mb-1">
+                                Criterios (CA / CNF)
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#criteriosInfoModal" class="text-info text-decoration-none">
+                                    <i class="bi bi-info-circle-fill small"></i>
+                                </a>
+                            </h6>
                             <h4 class="fw-bold mb-0">{{ analisis_info.criterios }} / {{ analisis_info.criterios_no_funcionales }}</h4>
                         </div>
                     </div>
@@ -334,17 +349,18 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="jsonModalLabel">Resultado JSON (Raw)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="jsonModalLabel">
+                        <i class="bi bi-filetype-json me-2"></i>Resultado JSON (Raw)
+                    </h5>
+                    <div class="ms-auto d-flex align-items-center">
+                        <button type="button" class="btn btn-primary me-2" id="copyJsonBtn">
+                            <i class="bi bi-clipboard me-1"></i> Copiar JSON
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body" style="background-color: #2F3237; color: #F5F7FA;">
                     <pre id="json-pre-content" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ analisis_obj.ai_result_json }}</code></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" id="copyJsonBtn">
-                        <i class="bi bi-clipboard me-1"></i> Copiar JSON
-                    </button>
                 </div>
             </div>
         </div>
@@ -354,17 +370,18 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="xmlModalLabel">Resultado XML (TestLink)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="xmlModalLabel">
+                        <i class="bi bi-filetype-xml me-2"></i>Resultado XML (TestLink)
+                    </h5>
+                    <div class="ms-auto d-flex align-items-center">
+                        <button type="button" class="btn btn-primary me-2" id="copyXmlBtn">
+                            <i class="bi bi-clipboard me-1"></i> Copiar XML
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body" style="background-color: #2F3237; color: #F5F7FA;">
                     <pre id="xml-pre-content" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ ai_result_xml_string|escape }}</code></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" id="copyXmlBtn">
-                        <i class="bi bi-clipboard me-1"></i> Copiar XML
-                    </button>
                 </div>
             </div>
         </div>
@@ -384,6 +401,42 @@
                     <p>Este es un método estándar en la gestión de proyectos, respaldado por el <strong>PMBOK© del Project Management Institute (PMI)</strong>.</p>
                     <h6 class="mt-4">Fórmula Aplicada</h6>
                     <p><code>Te = (To + 4Tm + Tp) / 6</code></p>
+                    
+                    <!-- Toggle para mostrar valores reales -->
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#valoresRealesCollapse" aria-expanded="false">
+                            <i class="bi bi-calculator me-1"></i> Ver valores reales aplicados
+                        </button>
+                    </div>
+                    
+                    <div class="collapse" id="valoresRealesCollapse">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Valores Reales Aplicados (Complejidad: {{ analisis_info.nivel }})</h6>
+                            <table class="table table-sm table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>To (Optimista)</strong></td>
+                                        <td>{{ "%.2f"|format(analisis_info.pert_to) }} horas/caso</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tm (Más Probable)</strong></td>
+                                        <td>{{ "%.2f"|format(analisis_info.pert_tm) }} horas/caso</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tp (Pesimista)</strong></td>
+                                        <td>{{ "%.2f"|format(analisis_info.pert_tp) }} horas/caso</td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td><strong>Te (Estimado)</strong></td>
+                                        <td><strong>{{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }} horas/caso</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p class="mb-0"><strong>Cálculo:</strong> <code>Te = ({{ "%.2f"|format(analisis_info.pert_to) }} + 4×{{ "%.2f"|format(analisis_info.pert_tm) }} + {{ "%.2f"|format(analisis_info.pert_tp) }}) / 6 = {{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }}</code></p>
+                            <p class="mb-0"><strong>Total:</strong> <code>{{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }} × {{ analisis_info.casos }} casos = {{ "%.2f"|format(analisis_info.horas_diseño) }} horas</code></p>
+                        </div>
+                    </div>
+                    
                     <table class="table table-bordered table-sm">
                         <thead class="table-dark">
                             <tr><th>Variable</th><th>Descripción</th><th>Valor Asignado (por Caso)</th></tr>
@@ -410,6 +463,175 @@
                     <p class="text-center fs-5 fw-bold text-primary bg-light p-3 rounded">
                         Horas Totales = (Te por Caso) × (Nro. Casos Generados)
                     </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQ #5: MODAL COMPLEJIDAD -->
+    <div class="modal fade" id="complejidadInfoModal" tabindex="-1" aria-labelledby="complejidadInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="complejidadInfoModalLabel">
+                        <i class="bi bi-speedometer2 me-2"></i>Cálculo de Complejidad
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>La complejidad del requerimiento se calcula automáticamente usando dos criterios:</p>
+                    
+                    <h6 class="mt-3">Estándar Aplicado</h6>
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Complejidad</th>
+                                <th>Condición</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-danger">
+                                <td><strong>Alta</strong></td>
+                                <td>Más de 800 palabras <strong>O</strong> más de 15 criterios (CA)</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td><strong>Media</strong></td>
+                                <td>Más de 300 palabras <strong>O</strong> más de 7 criterios (CA)</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Baja</strong></td>
+                                <td>Resto de casos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading"><i class="bi bi-graph-up me-2"></i>Tu Requerimiento</h6>
+                        <ul class="mb-0">
+                            <li><strong>Total Palabras:</strong> {{ analisis_info.palabras }}</li>
+                            <li><strong>Criterios de Aceptación (CA):</strong> {{ analisis_info.criterios }}</li>
+                            <li><strong>Criterios No Funcionales (CNF):</strong> {{ analisis_info.criterios_no_funcionales }}</li>
+                            <li class="mt-2"><strong>Resultado:</strong> <span class="badge 
+                                {% if analisis_info.nivel == 'Alta' %}bg-danger
+                                {% elif analisis_info.nivel == 'Media' %}bg-warning
+                                {% else %}bg-success{% endif %}">{{ analisis_info.nivel }}</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQ #5: MODAL CASOS GENERADOS -->
+    <div class="modal fade" id="casosInfoModal" tabindex="-1" aria-labelledby="casosInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="casosInfoModalLabel">
+                        <i class="bi bi-list-check me-2"></i>Normativa de Generación de Casos
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>El número de casos de prueba se calcula usando la siguiente fórmula estándar:</p>
+                    
+                    <div class="alert alert-primary">
+                        <h6 class="text-center mb-0">
+                            <code class="fs-5">Casos Totales = (CA × 3) + (CNF × 5)</code>
+                        </h6>
+                    </div>
+                    
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Criterio</th>
+                                <th>Factor</th>
+                                <th>Justificación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Criterios de Aceptación (CA)</strong></td>
+                                <td class="text-center">×3</td>
+                                <td>Cada CA requiere al menos 3 casos: camino feliz, error, y borde</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Criterios No Funcionales (CNF)</strong></td>
+                                <td class="text-center">×5</td>
+                                <td>CNF requieren más casos (performance, seguridad, usabilidad, etc.)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6 class="alert-heading"><i class="bi bi-calculator me-2"></i>Cálculo Aplicado</h6>
+                        <p><strong>Casos Base (CA):</strong> {{ analisis_info.criterios }} CA × 3 = {{ analisis_info.casos_base }} casos</p>
+                        <p><strong>Casos No Funcionales (CNF):</strong> {{ analisis_info.criterios_no_funcionales }} CNF × 5 = {{ analisis_info.casos_no_funcionales }} casos</p>
+                        <p class="mb-0"><strong>Total Estimado:</strong> {{ analisis_info.casos_base }} + {{ analisis_info.casos_no_funcionales }} = <span class="badge bg-success fs-6">{{ analisis_info.casos }} casos</span></p>
+                        {% if analisis_info.casos_base == 0 and analisis_info.casos_no_funcionales == 0 and analisis_info.palabras > 50 %}
+                        <p class="text-muted small mt-2"><em>Nota: Se asignó un mínimo de 5 casos porque el requerimiento tiene más de 50 palabras pero no se detectaron criterios explícitos.</em></p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQ #5: MODAL CRITERIOS -->
+    <div class="modal fade" id="criteriosInfoModal" tabindex="-1" aria-labelledby="criteriosInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="criteriosInfoModalLabel">
+                        <i class="bi bi-tags me-2"></i>Criterios Detectados
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6><i class="bi bi-check-circle text-success me-2"></i>Criterios de Aceptación (CA)</h6>
+                    {% if analisis_info.criterios_ca_lista %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for criterio in analisis_info.criterios_ca_lista %}
+                        <span class="badge bg-primary">{{ criterio }}</span>
+                        {% endfor %}
+                    </div>
+                    <p class="text-muted small">Total: {{ analisis_info.criterios }} CA detectados</p>
+                    {% else %}
+                    <p class="text-muted">No se detectaron criterios de aceptación en el requerimiento.</p>
+                    {% endif %}
+                    
+                    <hr class="my-3">
+                    
+                    <h6><i class="bi bi-shield-check text-warning me-2"></i>Criterios No Funcionales (CNF)</h6>
+                    {% if analisis_info.criterios_cnf_lista %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for criterio in analisis_info.criterios_cnf_lista %}
+                        <span class="badge bg-warning text-dark">{{ criterio }}</span>
+                        {% endfor %}
+                    </div>
+                    <p class="text-muted small">Total: {{ analisis_info.criterios_no_funcionales }} CNF detectados</p>
+                    {% else %}
+                    <p class="text-muted">No se detectaron criterios no funcionales en el requerimiento.</p>
+                    {% endif %}
+                    
+                    <hr class="my-3">
+                    
+                    <h6><i class="bi bi-search me-2"></i>Patrones de Detección</h6>
+                    <p class="small">El sistema usa expresiones regulares para detectar criterios:</p>
+                    <ul class="small">
+                        <li><strong>CA:</strong> <code>CA</code>, <code>C.A.</code>, <code>Criterio de Aceptación</code> seguido de número</li>
+                        <li><strong>CNF:</strong> <code>CNF</code>, <code>C.N.F.</code>, <code>Requerimiento No Funcional</code> seguido de número</li>
+                    </ul>
+                    <p class="small text-muted">Ejemplo: "CA-01", "C.A. 15", "Criterio de Aceptación 3"</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
@@ -624,22 +846,65 @@
         setupDropZone(dropZone, fileInput, dropZoneText);
         setupDropZone(dropZoneMobile, fileInputMobile, dropZoneTextMobile);
 
-        // --- Lógica del Modal de Borrado (AJUSTE 3) ---
+        // --- ERROR #2 CORRECCIÓN: Lógica del Modal de Borrado ---
         var deleteModal = document.getElementById('deleteConfirmModal');
         var confirmButton = document.getElementById('confirmDeleteButton');
         var formToSubmit; 
-        if (deleteModal) {
+        
+        if (deleteModal && confirmButton) {
             deleteModal.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget;
-                var formId = button.getAttribute('data-form-id');
-                formToSubmit = document.getElementById(formId);
+                if (button) {
+                    var formId = button.getAttribute('data-form-id');
+                    if (formId) {
+                        formToSubmit = document.getElementById(formId);
+                    }
+                }
             });
-        }
-        if (confirmButton) {
+            
             confirmButton.addEventListener('click', function () {
                 if (formToSubmit) {
                     formToSubmit.submit();
                 }
+            });
+        } else {
+            console.warn('Modal de confirmación de eliminación no encontrado en el DOM');
+        }
+
+        // --- ERROR #4 CORRECCIÓN: Lógica del Botón Ver Plantilla Seleccionada ---
+        const viewTemplateBtnForm = document.getElementById('viewTemplateBtnForm');
+        const viewTemplateBtnFormMobile = document.getElementById('viewTemplateBtnFormMobile');
+        const plantillaSelect = document.getElementById('plantilla');
+        const plantillaSelectMobile = document.querySelector('.d-lg-none #plantilla');
+        
+        function mostrarPlantillaSeleccionada(selectElement) {
+            if (!selectElement) {
+                showToast('No se encontró el selector de plantilla', 'danger');
+                return;
+            }
+            
+            const plantillaId = selectElement.value;
+            
+            if (!plantillaId) {
+                showToast('Por favor, selecciona una plantilla primero', 'warning');
+                return;
+            }
+            
+            // Redirigir a la vista de plantilla
+            window.location.href = `/ver_plantilla/${plantillaId}`;
+        }
+        
+        if (viewTemplateBtnForm && plantillaSelect) {
+            viewTemplateBtnForm.addEventListener('click', function(e) {
+                e.preventDefault();
+                mostrarPlantillaSeleccionada(plantillaSelect);
+            });
+        }
+        
+        if (viewTemplateBtnFormMobile && plantillaSelectMobile) {
+            viewTemplateBtnFormMobile.addEventListener('click', function(e) {
+                e.preventDefault();
+                mostrarPlantillaSeleccionada(plantillaSelectMobile);
             });
         }
 
@@ -977,23 +1242,23 @@
                 });
 
             } else {
-                // --- ¡SOLUCIÓN AJUSTE 5: MODO CANCELAR! ---
+                // --- ¡CORRECCIÓN ERROR #1: MODO CANCELAR SIEMPRE REVIERTE! ---
                 editBtn.innerHTML = `<i class="bi bi-pencil-square me-1"></i> Activar edición`;
                 editBtn.classList.add("btn-warning");
                 editBtn.classList.remove("btn-secondary");
                 saveBtn.classList.add("d-none");
 
+                // SIEMPRE revertir celdas al HTML original (tengan o no cambios)
+                table.querySelectorAll("tbody td").forEach((cell, index) => {
+                    if (originalData.hasOwnProperty(index)) {
+                        cell.innerHTML = originalData[index];
+                    } else {
+                        cell.innerHTML = "Error al revertir";
+                    }
+                });
+                
+                // Resetear estados
                 if (changesPending) {
-                    // Revertir celdas al HTML original
-                    table.querySelectorAll("tbody td").forEach((cell, index) => {
-                        // Comprobar si el índice existe en originalData
-                        if (originalData.hasOwnProperty(index)) {
-                            cell.innerHTML = originalData[index];
-                        } else {
-                            // Fallback por si algo falló (no debería pasar)
-                            cell.innerHTML = "Error al revertir";
-                        }
-                    });
                     changesPending = false;
                     saveBtn.classList.remove("btn-danger");
                     saveBtn.classList.add("btn-primary");

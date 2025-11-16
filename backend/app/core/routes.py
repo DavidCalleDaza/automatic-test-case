@@ -277,7 +277,7 @@ def map_step_3_columns(plantilla_id):
                 etiqueta=etiqueta_texto,
                 coordenada=col_letra,
                 tipo_mapa='fila_tabla',
-                plantilla_padre=plantilla
+                id_plantilla=plantilla.id
             )
             db.session.add(nuevo_mapa)
             
