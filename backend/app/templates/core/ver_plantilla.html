@@ -1,3 +1,6 @@
+{# ============================================================================
+   ARCHIVO: backend/app/templates/core/ver_plantilla.html (CORRECCIÓN MODAL EDICIÓN)
+   ============================================================================ #}
 {% extends "base.html" %} {% block content %}
 
 <div
@@ -523,43 +526,14 @@
   </div>
 </div>
 
-<style>
-  /* Estilos locales (Sin cambios) */
-  .template-info-card {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 1.5rem;
-    border: 1px solid #e9ecef;
-  }
-
-  .info-item {
-    display: flex;
-    align-items: center;
-    font-size: 0.95rem;
-  }
-
-  /* REQ 1 (CORREGIDO): Truncar etiquetas con ancho FIJO */
-  .badge-truncate {
-    display: inline-block;
-    width: 250px; /* ANCHO FIJO para uniformidad */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: middle;
-  }
-</style>
-
-<!-- ========================================
-     REQ #1: MODAL EDITAR ETIQUETA
-     ======================================== -->
 <div class="modal fade" id="editMapaModal" tabindex="-1" aria-labelledby="editMapaModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header" style="background: linear-gradient(135deg, var(--bs-primary), var(--bs-info)); color: white;">
+      <div class="modal-header">
         <h5 class="modal-title" id="editMapaModalLabel">
           <i class="bi bi-pencil-square me-2"></i>Editar Etiqueta
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="editMapaForm" method="POST">
         <div class="modal-body">
@@ -577,7 +551,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-circle me-1"></i>Guardar Cambios
           </button>
@@ -587,36 +561,52 @@
   </div>
 </div>
 
+<style>
+  .template-info-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+  }
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+  }
+
+  /* REQ #1: Truncar etiquetas con ancho FIJO */
+  .badge-truncate {
+    display: inline-block;
+    width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+</style>
+
 {% endblock %} {% block scripts %} {{ super() }}
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // Seleccionamos el NUEVO modal
+    // Modal de eliminación
     var deleteMapaModal = document.getElementById("deleteMapaConfirmModal");
 
     if (deleteMapaModal) {
-      // Alcance seguro del botón de confirmación
       var confirmMapaButton = deleteMapaModal.querySelector(
         "#confirmDeleteMapaButton"
       );
       var formToSubmit;
 
-      // Cuando el modal está a punto de mostrarse...
       deleteMapaModal.addEventListener("show.bs.modal", function (event) {
-        // 1. Obtener el botón que disparó el modal
         var button = event.relatedTarget;
-
-        // 2. Extraer el ID del formulario del atributo 'data-form-id' del botón
         var formId = button.getAttribute("data-form-id");
-
-        // 3. Guardar el formulario en nuestra variable
         formToSubmit = document.getElementById(formId);
       });
 
-      // Cuando el usuario hace clic en el botón "Eliminar" (el rojo)...
       confirmMapaButton.addEventListener("click", function () {
         if (formToSubmit) {
-          // 4. ...enviar el formulario guardado.
           formToSubmit.submit();
         }
       });
@@ -631,14 +621,10 @@
     
     if (editMapaModal) {
       editMapaModal.addEventListener('show.bs.modal', function(event) {
-        // Obtener el botón que disparó el modal
         var button = event.relatedTarget;
-        
-        // Extraer información del botón
         var mapaId = button.getAttribute('data-mapa-id');
         var etiquetaActual = button.getAttribute('data-etiqueta-actual');
         
-        // Actualizar el formulario
         editMapaEtiqueta.value = etiquetaActual;
         editMapaForm.action = '/edit_mapa/' + mapaId;
       });

@@ -4,7 +4,6 @@ from app import db
 from app.core import bp
 import os
 import openpyxl
-# ¡Importante! Necesitamos 'openpyxl.utils' para la corrección
 from openpyxl.utils import get_column_letter
 from werkzeug.utils import secure_filename
 from app.models import Plantilla, MapaPlantilla
@@ -156,7 +155,7 @@ def map_step_1_sheet(plantilla_id):
     )
 
 # ==============================================================================
-# RUTA 5: ASISTENTE PASO 2 (¡ACTUALIZADA CON VALIDACIÓN DE FILA VACÍA!)
+# RUTA 5: ASISTENTE PASO 2 (CORREGIDO PARA EVITAR CRASH DE CHOICES)
 # ==============================================================================
 @bp.route('/map_step_2_row/<int:plantilla_id>', methods=['GET', 'POST'])
 @login_required
@@ -180,17 +179,23 @@ def map_step_2_row(plantilla_id):
     MAX_PREVIEW_COLS = 20 
     column_headers = [] 
 
+    # --- LÓGICA DE LECTURA DE ARCHIVO (DEBE EJECUTARSE EN GET/POST) ---
     try:
         path_archivo = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla.filename_seguro)
+        
+        # Usamos data_only=True para obtener valores calculados, read_only=True para eficiencia
         workbook = openpyxl.load_workbook(path_archivo, read_only=True, data_only=True)
         sheet = workbook[plantilla.sheet_name]
 
+        # 1. Obtener encabezados de columna
         for i in range(1, MAX_PREVIEW_COLS + 1):
             column_headers.append(get_column_letter(i))
 
+        # 2. Obtener datos de vista previa y choices
         row_index = 1
         for row in sheet.iter_rows(min_row=1, max_row=MAX_PREVIEW_ROWS, max_col=MAX_PREVIEW_COLS):
             
+            # Asegurar que el row_choices se base en filas que realmente existen
             row_choices.append((row_index, f'Fila {row_index}'))
             cells_data = [cell.value for cell in row]
             preview_data.append(cells_data)
@@ -199,22 +204,29 @@ def map_step_2_row(plantilla_id):
         workbook.close()
     
     except Exception as e:
+        # En caso de error de lectura (ej. archivo corrupto, hoja inexistente)
         flash(f"Error al leer la hoja de Excel para la vista previa: {str(e)}", "danger")
         return redirect(url_for('core.map_step_1_sheet', plantilla_id=plantilla.id))
 
+    # --- ASIGNACIÓN DE CHOICES (IMPRESCINDIBLE ANTES DE validate_on_submit) ---
+    # Esto soluciona el TypeError: Choices cannot be None. al hacer POST.
     form.header_row.choices = row_choices
 
     if form.validate_on_submit():
         selected_row_num = form.header_row.data
 
-        # --- INICIO DE NUEVA VALIDACIÓN (REQ 2) ---
+        # --- INICIO DE NUEVA VALIDACIÓN (REQ 2 - Confirmado en V6) ---
         try:
             path_archivo_val = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla.filename_seguro)
+            # Volver a cargar el archivo para la validación de la fila seleccionada
             workbook_val = openpyxl.load_workbook(path_archivo_val, read_only=True, data_only=True)
             sheet_val = workbook_val[plantilla.sheet_name]
             
             # Leer la fila seleccionada por el usuario
-            selected_row_cells = sheet_val[selected_row_num]
+            # Usamos iter_rows para asegurar que no exceda el límite MAX_PREVIEW_COLS
+            selected_row_cells = []
+            for row_tuple in sheet_val.iter_rows(min_row=selected_row_num, max_row=selected_row_num, max_col=MAX_PREVIEW_COLS):
+                selected_row_cells.extend(row_tuple)
             
             # Comprobar si TODAS las celdas de esa fila están vacías
             is_row_empty = all(cell.value is None or str(cell.value).strip() == "" for cell in selected_row_cells)
@@ -222,8 +234,8 @@ def map_step_2_row(plantilla_id):
             workbook_val.close()
 
             if is_row_empty:
+                # Este flash es capturado por el Toast System (Req 2 confirmado)
                 flash("La fila que seleccionaste está vacía. Por favor, selecciona una fila que contenga encabezados.", "danger")
-                # Recargamos la página (GET) para mostrar el error
                 return redirect(url_for('core.map_step_2_row', plantilla_id=plantilla.id))
 
         except Exception as e:
@@ -385,9 +397,9 @@ def delete_mapa(mapa_id):
     try:
         db.session.delete(mapa)
         db.session.commit()
-        flash(f'Mapeo "{etiqueta_eliminada}" eliminado correctamente.', 'success')
+        flash(f'Mapeo "{etiqueta_eliminada}" eliminado correctamente.', "success")
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al eliminar el mapeo: {str(e)}', 'danger')
+        flash(f'Error al eliminar el mapeo: {str(e)}', "danger")
     
     return redirect(url_for('core.ver_plantilla', plantilla_id=plantilla_id))

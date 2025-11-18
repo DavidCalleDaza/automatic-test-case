@@ -1,3 +1,6 @@
+# ============================================================================
+# ARCHIVO: backend/app/analysis/routes.py (CORRECCIÓN DE IMPORTACIONES)
+# ============================================================================
 import os
 import json
 import openpyxl
@@ -8,7 +11,7 @@ import xml.dom.minidom
 import google.generativeai as genai
 from openpyxl.comments import Comment
 from openpyxl.styles import Alignment
-from openpyxl.utils import get_column_letter  # <-- ¡SOLUCIÓN AJUSTE 2 y 4!
+from openpyxl.utils import get_column_letter
 from flask import (
     render_template, flash, redirect, url_for, request, 
     session, jsonify, send_file, current_app
@@ -18,20 +21,23 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.analysis import bp
 from app.analysis.forms import AnalysisForm
-from app.models import (
+from app.models import ( # <- BLOQUE DE IMPORTACIÓN CORREGIDO
     Usuario, Plantilla, MapaPlantilla, Analisis, AnalisisDato, HistorialCambios
 )
 
-# --- Sinónimos (sin cambios) ---
+# --- Sinónimos ---
 OBSERVACIONES_SYNONYMS = [
     'observa', 'comenta', 'nota', 'aclara', 'anota', 'apunte', 
     'considera', 'indica', 'adverten'
 ]
 ID_CASO_SYNONYMS = ['id', 'caso', 'cp', 'identificador']
 
-# --- Funciones de Ayuda: Lectura y Métricas (PERT) (sin cambios) ---
+# ==============================================================================
+# FUNCIONES DE AYUDA: LECTURA Y ANÁLISIS
+# ==============================================================================
 
 def leer_requerimiento(filepath):
+    """Lee archivos .txt, .docx, .xlsx y retorna el texto completo."""
     _, extension = os.path.splitext(filepath)
     texto_completo = ""
     try:
@@ -57,14 +63,18 @@ def leer_requerimiento(filepath):
         return None
     return texto_completo.strip()
 
+
 def analizar_complejidad_requerimiento(texto):
+    """Analiza complejidad usando PERT y detecta criterios CA/CNF."""
     palabras = texto.split()
     conteo_palabras = len(palabras)
+    
     criterios_funcionales = re.findall(
         r'\b(CA|C\.A\.|\bCriterio de Aceptaci[oó]n)[\s\-]?[–_]?(\d{1,3})\b', 
         texto, re.IGNORECASE
     )
     conteo_criterios_funcionales = len(set(criterios_funcionales))
+    
     criterios_no_funcionales = re.findall(
         r'\b(CNF|C\.N\.F\.|Requerimiento No Funcional)[\s\-]?[–_]?(\d{1,3})\b',
         texto, re.IGNORECASE
@@ -94,7 +104,6 @@ def analizar_complejidad_requerimiento(texto):
     horas_diseño = tiempo_estimado_por_caso * casos_totales_estimados
     horas_ejecucion = tiempo_estimado_por_caso * casos_totales_estimados
 
-    # Formatear criterios detectados para mostrar en modales
     criterios_ca_lista = [f"{match[0]}-{match[1]}" for match in set(criterios_funcionales)]
     criterios_cnf_lista = [f"{match[0]}-{match[1]}" for match in set(criterios_no_funcionales)]
     
@@ -106,7 +115,6 @@ def analizar_complejidad_requerimiento(texto):
         "casos_estimados": casos_totales_estimados,
         "horas_diseño_estimadas": horas_diseño,
         "horas_ejecucion_estimadas": horas_ejecucion,
-        # Datos adicionales para modales informativos
         "criterios_ca_lista": criterios_ca_lista,
         "criterios_cnf_lista": criterios_cnf_lista,
         "pert_to": To,
@@ -117,9 +125,13 @@ def analizar_complejidad_requerimiento(texto):
         "casos_no_funcionales": casos_no_funcionales
     }
 
-# --- Funciones de Ayuda: Lógica de IA (Gemini) (sin cambios) ---
+
+# ==============================================================================
+# FUNCIONES DE IA (GEMINI)
+# ==============================================================================
 
 def generar_prompt_dinamico(texto_requerimiento, plantilla_obj):
+    """Genera prompt dinámico basado en las columnas mapeadas."""
     mapas = plantilla_obj.mapas.all()
     if not mapas: return None 
     nombres_columnas = [mapa.etiqueta for mapa in mapas]
@@ -156,7 +168,9 @@ def generar_prompt_dinamico(texto_requerimiento, plantilla_obj):
     """
     return prompt
 
+
 def llamar_api_gemini(prompt):
+    """Llama a Gemini 2.0 Flash Exp para generar casos de prueba."""
     try:
         genai.configure(api_key=current_app.config['GEMINI_API_KEY'])
         model = genai.GenerativeModel('gemini-2.0-flash-exp')
@@ -178,9 +192,12 @@ def llamar_api_gemini(prompt):
         return None, f"Error: Ocurrió un problema al contactar la API de Gemini. {e}"
 
 
-# --- Funciones de Ayuda: Generación de Entregables (sin cambios) ---
+# ==============================================================================
+# FUNCIONES DE GENERACIÓN DE ENTREGABLES
+# ==============================================================================
 
 def _traducir_complejidad_a_numero(valor_texto):
+    """Traduce texto de complejidad a número para TestLink."""
     if isinstance(valor_texto, str):
         valor_lower = valor_texto.strip().lower()
         if valor_lower == 'alta': return 1
@@ -188,17 +205,21 @@ def _traducir_complejidad_a_numero(valor_texto):
         elif valor_lower == 'baja': return 3
     return valor_texto
 
+
 @bp.route('/generate_file/<int:view_id>/<type>')
 @login_required
 def generar_excel_entregable(view_id, type):
+    """Genera archivos Excel o XML para descarga."""
     analisis = Analisis.query.get_or_404(view_id)
     if analisis.autor != current_user:
         flash('No tienes permiso para acceder a este recurso.', 'danger')
         return redirect(url_for('analysis.analysis_index'))
+    
     plantilla_obj = analisis.plantilla_usada
     if not plantilla_obj:
         flash('No se encontró la plantilla asociada a este análisis.', 'danger')
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
+    
     try:
         data = json.loads(analisis.ai_result_json)
         if not data or not isinstance(data, list):
@@ -207,20 +228,21 @@ def generar_excel_entregable(view_id, type):
     except (json.JSONDecodeError, TypeError):
         flash('Error al leer los datos de la IA. El formato JSON es inválido.', 'danger')
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
+    
     mapas = plantilla_obj.mapas.all()
     if not mapas:
         flash('La plantilla no tiene columnas mapeadas.', 'danger')
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
 
-    # === Lógica de Generación de EXCEL ===
+    # === GENERACIÓN DE EXCEL ===
     if type == 'excel':
+        # REQ #7: CHEQUEO DE ARCHIVO FÍSICO
         plantilla_path = os.path.join(current_app.config['UPLOAD_FOLDER'], plantilla_obj.filename_seguro)
         
-        # REQ #7: Validar existencia del archivo físico
         if not os.path.exists(plantilla_path):
             flash(
                 f'Error: El archivo de plantilla "{plantilla_obj.nombre_plantilla}" no se encuentra en el servidor. '
-                'Es posible que haya sido eliminado. Contacta al administrador.',
+                'Es posible que haya sido eliminado.',
                 'danger'
             )
             return redirect(url_for('analysis.analysis_index', view_id=view_id))
@@ -239,6 +261,7 @@ def generar_excel_entregable(view_id, type):
         col_indices = {mapa.etiqueta: openpyxl.utils.column_index_from_string(mapa.coordenada) for mapa in mapas}
         fila_actual = plantilla_obj.header_row + 1
         
+        # --- Lógica de Desglose de Pasos (sin cambios) ---
         if plantilla_obj.desglosar_pasos:
             etiqueta_pasos = next((c for c in cabeceras_mapeadas if 'paso' in c.lower()), None)
             etiqueta_resultados = next((c for c in cabeceras_mapeadas if 'resultado' in c.lower()), None)
@@ -254,7 +277,6 @@ def generar_excel_entregable(view_id, type):
                     
                     for i in range(max_len):
                         for col_idx_num, cabecera_actual in enumerate(cabeceras_mapeadas, 1):
-                            # ¡AQUÍ ESTABA EL ERROR (Ajuste 2/4)!
                             col_letter = get_column_letter(col_idx_num) 
                             col_idx = col_indices[cabecera_actual]
                             celda = ws.cell(row=fila_actual, column=col_idx)
@@ -274,12 +296,10 @@ def generar_excel_entregable(view_id, type):
                             if import_source and col_idx == 1 and i == 0:
                                 celda.comment = Comment(import_source, "Q-Vision")
                         fila_actual += 1
-                pass 
             
         if not plantilla_obj.desglosar_pasos or (plantilla_obj.desglosar_pasos and (not etiqueta_pasos or not etiqueta_resultados)):
             for fila in data: 
                 for col_idx_num, cabecera_actual in enumerate(cabeceras_mapeadas, 1):
-                    # ¡AQUÍ ESTABA EL ERROR (Ajuste 2/4)!
                     col_letter = get_column_letter(col_idx_num)
                     col_idx = col_indices[cabecera_actual]
                     celda = ws.cell(row=fila_actual, column=col_idx)
@@ -307,8 +327,9 @@ def generar_excel_entregable(view_id, type):
             download_name=f"{analisis.nombre_requerimiento or 'casos'}_generados.xlsx"
         )
     
-    # === Lógica de Generación de XML ===
+    # === GENERACIÓN DE XML ===
     elif type == 'xml':
+        cabeceras_mapeadas = [mapa.etiqueta for mapa in mapas]
         try:
             xml_string = generar_xml_entregable(data, cabeceras_mapeadas)
             temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
@@ -330,17 +351,19 @@ def generar_excel_entregable(view_id, type):
 
 
 def generar_xml_entregable(data, cabeceras_mapeadas):
-    # (Esta función no tenía el bug de 'get_column_letter', así que no necesita cambios)
+    """Genera XML compatible con TestLink."""
     def find_key(keywords):
         for key in cabeceras_mapeadas:
             if any(kw in key.lower() for kw in keywords): return key
         return None
+    
     key_nombre = find_key(['nombre', 'título', 'titulo', 'name'])
     key_resumen = find_key(['resumen', 'descripción', 'descripcion', 'summary'])
     key_precondiciones = find_key(['precondicion', 'precondition'])
     key_pasos = find_key(['pasos', 'steps', 'ejecución', 'ejecucion'])
     key_resultados = find_key(['resultado', 'results', 'esperado'])
     key_importancia = find_key(['importancia', 'complejidad', 'priority'])
+    
     root = ET.Element("testsuite")
     for i, caso in enumerate(data, 1):
         testcase = ET.SubElement(root, "testcase", name=caso.get(key_nombre, f"Caso de Prueba {i}"))
@@ -348,12 +371,14 @@ def generar_xml_entregable(data, cabeceras_mapeadas):
         summary.text = caso.get(key_resumen, "N/A")
         preconditions = ET.SubElement(testcase, "preconditions")
         preconditions.text = caso.get(key_precondiciones, "N/A")
+        
         importancia_texto = caso.get(key_importancia, "media").lower()
         if 'alta' in importancia_texto: importancia_num = "3"
         elif 'baja' in importancia_texto: importancia_num = "1"
         else: importancia_num = "2"
         importance = ET.SubElement(testcase, "importance")
         importance.text = importancia_num
+        
         pasos_str = caso.get(key_pasos, "")
         resultados_str = caso.get(key_resultados, "")
         pasos_lista = str(pasos_str).split('\n') if pasos_str else ["N/A"]
@@ -361,6 +386,7 @@ def generar_xml_entregable(data, cabeceras_mapeadas):
         max_len = max(len(pasos_lista), len(resultados_lista))
         pasos_lista.extend([''] * (max_len - len(pasos_lista)))
         resultados_lista.extend([''] * (max_len - len(resultados_lista)))
+        
         steps = ET.SubElement(testcase, "steps")
         for idx, (paso, resultado) in enumerate(zip(pasos_lista, resultados_lista), 1):
             step = ET.SubElement(steps, "step")
@@ -371,17 +397,21 @@ def generar_xml_entregable(data, cabeceras_mapeadas):
             expectedresults = ET.SubElement(step, "expectedresults")
             expectedresults.text = resultado if resultado else " "
             execution_type = ET.SubElement(step, "execution_type")
-            execution_type.text = "1" # 1 = Manual
+            execution_type.text = "1"
+    
     xml_str = ET.tostring(root, encoding='utf-8', method='xml')
     dom = xml.dom.minidom.parseString(xml_str)
     return dom.toprettyxml(indent="  ", encoding='utf-8').decode('utf-8')
 
 
-# --- Rutas Principales del Blueprint (sin cambios) ---
+# ==============================================================================
+# RUTAS PRINCIPALES
+# ==============================================================================
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
 def analysis_index():
+    """Ruta principal del módulo de análisis."""
     form = AnalysisForm()
     form.plantilla.choices = [
         (p.id, p.nombre_plantilla) for p in current_user.plantillas.all()
@@ -395,12 +425,12 @@ def analysis_index():
     if request.method == 'GET':
         view_id = request.args.get('view_id')
         if view_id:
+            # REQ #6: Asegurar que solo se carguen análisis activos.
             analisis_obj = Analisis.query.filter_by(id=view_id, is_active=True).first()
             if analisis_obj and analisis_obj.autor == current_user:
                 try:
                     ai_result_data = json.loads(analisis_obj.ai_result_json)
                     cabeceras_mapeadas = [m.etiqueta for m in analisis_obj.plantilla_usada.mapas]
-                    # ¡Generamos el XML aquí para el nuevo modal!
                     ai_result_xml_string = generar_xml_entregable(ai_result_data, cabeceras_mapeadas)
                 except (json.JSONDecodeError, TypeError):
                     ai_result_data = None
@@ -408,7 +438,6 @@ def analysis_index():
                 except Exception as e:
                     ai_result_xml_string = f"Error al generar XML: {e}"
 
-                # Recalcular datos adicionales para los modales
                 datos_completos = analizar_complejidad_requerimiento(analisis_obj.texto_requerimiento_raw)
                 
                 analisis_info = {
@@ -417,9 +446,8 @@ def analysis_index():
                     'criterios': analisis_obj.criterios_detectados,
                     'criterios_no_funcionales': analisis_obj.criterios_no_funcionales,
                     'palabras': analisis_obj.palabras_analizadas,
-                    'horas_diseño': analisis_obj.horas_diseño_estimadas,
+                    'horas_diseno': analisis_obj.horas_diseño_estimadas,
                     'horas_ejecucion': analisis_obj.horas_ejecucion_estimadas,
-                    # Datos adicionales para modales informativos
                     'criterios_ca_lista': datos_completos.get('criterios_ca_lista', []),
                     'criterios_cnf_lista': datos_completos.get('criterios_cnf_lista', []),
                     'pert_to': datos_completos.get('pert_to', 0),
@@ -431,8 +459,8 @@ def analysis_index():
                 }
                 texto_requerimiento = analisis_obj.texto_requerimiento_raw
             elif not analisis_obj:
-                 flash('Este análisis ya no existe o fue eliminado.', 'warning')
-                 return redirect(url_for('analysis.analysis_index'))
+                flash('Este análisis ya no existe o fue eliminado.', 'warning')
+                return redirect(url_for('analysis.analysis_index'))
             else:
                 flash('No tienes permiso para ver este análisis.', 'danger')
                 return redirect(url_for('analysis.analysis_index'))
@@ -453,8 +481,8 @@ def analysis_index():
         if texto_requerimiento is None:
             os.remove(filepath) 
             return redirect(url_for('analysis.analysis_index'))
-            
-        # --- ¡Validación de Duplicados (AJUSTE 4)! ---
+        
+        # REQ #4: Validación de Duplicados
         existing = Analisis.query.filter_by(
             id_usuario=current_user.id,
             texto_requerimiento_raw=texto_requerimiento,
@@ -467,13 +495,13 @@ def analysis_index():
             return redirect(url_for('analysis.analysis_index', view_id=existing.id))
         
         os.remove(filepath) 
-            
+        
         analisis_info = analizar_complejidad_requerimiento(texto_requerimiento)
         prompt = generar_prompt_dinamico(texto_requerimiento, plantilla_obj)
         if prompt is None:
             flash('La plantilla seleccionada no tiene columnas mapeadas.', 'danger')
             return redirect(url_for('analysis.analysis_index'))
-            
+        
         ai_result_data, ai_result_raw = llamar_api_gemini(prompt)
         
         if ai_result_data is None:
@@ -513,17 +541,18 @@ def analysis_index():
                            ai_result_xml_string=ai_result_xml_string,
                            texto_requerimiento=texto_requerimiento,
                            analisis_obj=analisis_obj,
-                           historial_analisis=historial_analisis
-                          )
+                           historial_analisis=historial_analisis)
 
 
 @bp.route('/re_analyze/<int:view_id>', methods=['POST'])
 @login_required
 def re_analyze(view_id):
+    """Re-analiza un requerimiento modificado."""
     analisis = Analisis.query.get_or_404(view_id)
     if analisis.autor != current_user:
         flash('No tienes permiso.', 'danger')
         return redirect(url_for('analysis.analysis_index'))
+    
     texto_requerimiento_modificado = request.form.get('texto_requerimiento')
     if not texto_requerimiento_modificado:
         flash('El texto del requerimiento no puede estar vacío.', 'warning')
@@ -547,7 +576,7 @@ def re_analyze(view_id):
     if ai_result_data is None:
         flash(f"Error de la IA al re-analizar: {ai_result_raw}", 'danger')
         return redirect(url_for('analysis.analysis_index', view_id=view_id))
-        
+    
     try:
         casos_generados = len(ai_result_data)
         analisis.texto_requerimiento_raw = texto_requerimiento_modificado
@@ -572,35 +601,42 @@ def re_analyze(view_id):
 @bp.route('/delete_analysis/<int:view_id>', methods=['POST'])
 @login_required
 def delete_analysis(view_id):
+    """Elimina un análisis (soft delete)."""
     analisis = Analisis.query.get_or_404(view_id)
     if analisis.autor != current_user:
         flash('No tienes permiso para eliminar este análisis.', 'danger')
         return redirect(url_for('analysis.analysis_index'))
     try:
-        analisis.is_active = False # Soft Delete
+        analisis.is_active = False
         db.session.commit()
         flash('Análisis movido al historial (oculto).', 'info')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al eliminar el análisis: {e}', 'danger')
+    
+    # REQ #6: Forzar redirect para actualizar UI
     return redirect(url_for('analysis.analysis_index'))
 
 
 @bp.route('/clear_analysis', methods=['POST'])
 @login_required
 def clear_analysis():
+    """Limpia el análisis actual."""
     return redirect(url_for('analysis.analysis_index'))
 
 
 @bp.route('/update_results/<int:view_id>', methods=['POST'])
 @login_required
 def update_results(view_id):
+    """Actualiza los resultados de un análisis vía AJAX."""
     analisis = Analisis.query.get_or_404(view_id)
     if analisis.autor != current_user:
         return jsonify({'status': 'error', 'message': 'Permiso denegado'}), 403
+    
     new_data = request.get_json()
     if not isinstance(new_data, list):
         return jsonify({'status': 'error', 'message': 'Datos inválidos. Se esperaba una lista.'}), 400
+    
     try:
         historial = HistorialCambios(
             id_analisis=analisis.id, id_usuario=current_user.id,
@@ -620,35 +656,26 @@ def update_results(view_id):
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Error al guardar en la BD: {e}'}), 500
 
-# --- RUTA 'reuse_analysis' ELIMINADA ---
 
-
-# ============================================================================
-# 🆕 REQUERIMIENTO #3: API para obtener información de plantilla
-# ============================================================================
+# ==============================================================================
+# REQ #3: API PARA OBTENER INFORMACIÓN DE PLANTILLA
+# ==============================================================================
 @bp.route('/api/plantilla/<int:plantilla_id>/info', methods=['GET'])
 @login_required
 def get_plantilla_info(plantilla_id):
-    """
-    Endpoint AJAX para obtener información detallada de una plantilla.
-    Usado por el modal "Ver Plantilla Seleccionada" en analysis.html
-    """
+    """Endpoint AJAX para obtener información detallada de una plantilla."""
     from app.models import Plantilla, MapaPlantilla
     
-    # Buscar plantilla
     plantilla = Plantilla.query.get_or_404(plantilla_id)
     
-    # Validar ownership
     if plantilla.autor != current_user:
         return jsonify({
             'success': False,
             'error': 'No tienes permiso para ver esta plantilla'
         }), 403
     
-    # Obtener mapas
     mapas = plantilla.mapas.all()
     
-    # Construir respuesta
     plantilla_data = {
         'id': plantilla.id,
         'nombre': plantilla.nombre_plantilla,
@@ -676,17 +703,13 @@ def get_plantilla_info(plantilla_id):
     })
 
 
-# ============================================================================
-# 🆕 REQUERIMIENTO #5: API para obtener historial de cambios
-# ============================================================================
+# ==============================================================================
+# REQ #5: API PARA OBTENER HISTORIAL DE CAMBIOS
+# ==============================================================================
 @bp.route('/api/historial/<int:analisis_id>', methods=['GET'])
 @login_required
 def get_historial_cambios(analisis_id):
-    """
-    Endpoint AJAX para obtener el historial de cambios de un análisis.
-    Soporta paginación y filtrado por tipo de cambio.
-    """
-    # Validar parámetros
+    """Endpoint AJAX para obtener el historial de cambios de un análisis."""
     try:
         limit = int(request.args.get('limit', 20))
         offset = int(request.args.get('offset', 0))
@@ -701,14 +724,11 @@ def get_historial_cambios(analisis_id):
     except ValueError:
         return jsonify({'success': False, 'error': 'Parámetros inválidos'}), 400
     
-    # Buscar análisis
     analisis = Analisis.query.get_or_404(analisis_id)
     
-    # Validar ownership
     if analisis.autor != current_user:
         return jsonify({'success': False, 'error': 'No autorizado'}), 403
     
-    # Construir query
     from app.models import Usuario
     query = HistorialCambios.query.join(Usuario).filter(
         HistorialCambios.id_analisis == analisis_id
@@ -717,25 +737,20 @@ def get_historial_cambios(analisis_id):
     if tipo_filtro:
         query = query.filter(HistorialCambios.tipo_cambio == tipo_filtro)
     
-    # Total de registros
     total_cambios = query.count()
     
-    # Obtener registros con paginación
     historial = query.order_by(
         HistorialCambios.timestamp.desc()
     ).limit(limit).offset(offset).all()
     
-    # Construir respuesta
     cambios_data = []
     for h in historial:
-        # Preview del JSON
         preview_json = None
         if h.datos_json_antiguos:
             preview_json = h.datos_json_antiguos[:200]
             if len(h.datos_json_antiguos) > 200:
                 preview_json += '...'
         
-        # Badge color según tipo
         tipo_badge = {
             'REQUERIMIENTO_MODIFICADO': 'warning',
             'CASOS_MODIFICADOS': 'info',
@@ -755,7 +770,6 @@ def get_historial_cambios(analisis_id):
             'tamano_json': len(h.datos_json_antiguos) if h.datos_json_antiguos else 0
         })
     
-    # Datos del análisis
     analisis_data = {
         'id': analisis.id,
         'nombre': analisis.nombre_requerimiento,
@@ -782,17 +796,12 @@ def get_historial_cambios(analisis_id):
 @bp.route('/api/historial/<int:historial_id>/json', methods=['GET'])
 @login_required
 def get_historial_json_completo(historial_id):
-    """
-    Endpoint para obtener el JSON completo de un cambio específico.
-    """
-    # Buscar registro
+    """Endpoint para obtener el JSON completo de un cambio específico."""
     historial = HistorialCambios.query.get_or_404(historial_id)
     
-    # Validar ownership
     if historial.analisis.autor != current_user:
         return jsonify({'success': False, 'error': 'No autorizado'}), 403
     
-    # Parsear JSON
     try:
         if historial.datos_json_antiguos:
             json_data = json.loads(historial.datos_json_antiguos)

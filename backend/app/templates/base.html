@@ -121,6 +121,19 @@
         color: #fff !important;
       }
 
+      /* --- AJUSTE MODALES (REQ #9) --- */
+      .modal-header {
+        /* Fuerza el color oscuro del modal (Dark Blue) */
+        background-color: var(--bs-secondary-dark); 
+        color: #fff;
+      }
+      .modal-header .btn-close {
+        /* Fuerza el botón de cierre a ser blanco */
+        filter: invert(1);
+      }
+      /* --- FIN AJUSTE MODALES --- */
+
+
       /* --- ¡MEJORA: ESTILO GLASSMORPHISM PARA DROPDOWN! --- */
       .dropdown-menu {
         background-color: rgba(
@@ -332,6 +345,119 @@
         color: var(--bs-primary) !important;
       }
       /* ---------------------------------- */
+      /* Navbar base - siempre fijo en la parte superior */
+.navbar-dark {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  background-color: var(--bs-secondary-dark) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estado inicial - navbar sólido (MÁS ALTO/GRUESO) */
+.navbar-dark.navbar-solid {
+  background-color: var(--bs-secondary-dark) !important;
+  backdrop-filter: none;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* Estado al hacer scroll - navbar transparente con glassmorphism (REDUCIDO) */
+.navbar-dark.navbar-transparent {
+  background: rgba(45, 67, 102, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Animación suave para los elementos del navbar */
+.navbar-dark .navbar-brand,
+.navbar-dark .nav-link {
+  transition: all 0.3s ease;
+}
+
+/* Logo con efecto de escala al hacer scroll */
+.navbar-dark.navbar-transparent .navbar-brand img {
+  width: 40px;
+  height: 40px;
+  transition: all 0.3s ease;
+}
+
+.navbar-dark.navbar-solid .navbar-brand img {
+  width: 48px;
+  height: 48px;
+}
+
+/* Asegurar que el contenido no quede debajo del navbar */
+body {
+  padding-top: 90px; /* Aumentado para navbar más alto */
+}
+
+/* HACER EL NAVBAR MÁS ANCHO */
+.navbar-dark .container {
+  max-width: 100% !important;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Opción alternativa: usar container-fluid completo */
+/* .navbar-dark .container {
+  max-width: 1400px !important;
+} */
+
+/* Aumentar tamaño de elementos del navbar */
+.navbar-dark .navbar-brand {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.navbar-dark .nav-link {
+  font-size: 1.05rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Hover effects mejorados */
+.navbar-dark .nav-link:hover {
+  color: var(--bs-primary) !important;
+  transform: translateY(-1px);
+}
+
+.navbar-dark .dropdown-menu {
+  margin-top: 0.5rem;
+  animation: dropdownSlide 0.3s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive: ajuste para móviles */
+@media (max-width: 991px) {
+  body {
+    padding-top: 110px;
+  }
+  
+  .navbar-dark.navbar-transparent {
+    background: rgba(45, 67, 102, 0.95) !important;
+  }
+  
+  .navbar-dark.navbar-solid {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
     </style>
   </head>
 
@@ -515,6 +641,50 @@
         }
       });
     </script>
+    <!-- SCRIPT JAVASCRIPT PARA EL EFECTO DE SCROLL -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const navbar = document.querySelector('.navbar-dark');
+    let lastScrollTop = 0;
+    let scrollThreshold = 50; // Píxeles antes de activar el efecto
+    
+    // Función para manejar el scroll
+    function handleNavbarScroll() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > scrollThreshold) {
+            // Usuario ha hecho scroll hacia abajo
+            navbar.classList.remove('navbar-solid');
+            navbar.classList.add('navbar-transparent');
+        } else {
+            // Usuario está en la parte superior
+            navbar.classList.remove('navbar-transparent');
+            navbar.classList.add('navbar-solid');
+        }
+        
+        lastScrollTop = scrollTop;
+    }
+    
+    // Inicializar con el estado sólido
+    navbar.classList.add('navbar-solid');
+    
+    // Escuchar el evento scroll con throttling para mejor rendimiento
+    let ticking = false;
+    
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            window.requestAnimationFrame(function() {
+                handleNavbarScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+    
+    // Ejecutar una vez al cargar para establecer el estado inicial
+    handleNavbarScroll();
+});
+</script>
     {% endblock %}
   </body>
 </html>
