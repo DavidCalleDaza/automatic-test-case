@@ -1,1370 +1,3093 @@
-{% extends "base.html" %}
-
-{% block content %}
+{# -*- coding: utf-8 -*- #} {% extends "base.html" %} {% block content %}
 
 <div class="row">
+  <div class="col-lg-4 col-xl-3">
+    <!-- CARD UNIFICADA CON TODOS LOS ELEMENTOS (Desktop) -->
+    <div
+      class="card d-none d-lg-block sticky-top"
+      style="
+        top: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+      "
+    >
+      <!-- Título de la Card -->
+      <div
+        class="card-header bg-white border-bottom"
+        style="padding: 1rem 1.5rem"
+      >
+        <h4 class="h5 mb-0 fw-bold">
+          <i class="bi bi-box-seam me-2" style="color: var(--bs-primary)"></i>
+          Generar Casos de Prueba
+        </h4>
+      </div>
 
-    <div class="col-lg-4 col-xl-3">
-        
-        <div class="card d-none d-lg-block sticky-top" style="top: 20px;
-             background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(245,247,250,0.8)), url('{{ url_for('static', filename='img/LogoQV.png') }}');
-                    background-size: 200px;
-                    background-repeat: no-repeat;
-                    background-position: bottom -50px right -50px;
-                    background-blend-mode: screen;">
-            <div class="card-body p-4">
-                <h4 class="h5 mb-3">Generar Casos de Prueba</h4>
-                <form action="{{ url_for('analysis.analysis_index') }}" method="post" enctype="multipart/form-data" novalidate>
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.plantilla.label(class="form-label fw-bold") }}
-                        {{ form.plantilla(class="form-select") }}
-                        {% for error in form.plantilla.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Requerimiento</label>
-                        <div id="drop-zone" class="drop-zone">
-                            <span id="drop-zone-text" class="drop-zone-text">
-                                <i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)
-                            </span>
-                            {{ form.archivo_requerimiento(class="d-none", id="file-input") }}
-                        </div>
-                        {% for error in form.archivo_requerimiento.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    {{ form.submit(value="Analizar y Generar Casos", class="btn btn-primary w-100") }}
-                    
-                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnForm">
-                        <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla Seleccionada
-                    </button>
-                </form>
+      <div class="card-body p-4">
+        <form
+          action="{{ url_for('analysis.analysis_index') }}"
+          method="post"
+          enctype="multipart/form-data"
+          novalidate
+        >
+          {{ form.hidden_tag() }}
+
+          <!-- Selector de Plantilla -->
+          <div class="mb-3">
+            {{ form.plantilla.label(class="form-label fw-bold") }} {{
+            form.plantilla(class="form-select") }} {% for error in
+            form.plantilla.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Drop Zone para Requerimiento -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Requerimiento</label>
+            <div id="drop-zone" class="drop-zone">
+              <span id="drop-zone-text" class="drop-zone-text">
+                <i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt,
+                .docx, .xlsx)
+              </span>
+              {{ form.archivo_requerimiento(class="d-none", id="file-input") }}
             </div>
+            {% for error in form.archivo_requerimiento.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Botón Principal -->
+          {{ form.submit(value="Analizar y Generar Casos", class="btn
+          btn-primary w-100 mb-2") }}
+
+          <!-- Botón Ver Plantilla -->
+          <button
+            type="button"
+            class="btn btn-outline-info w-100 mb-3"
+            id="viewTemplateBtnForm"
+            data-bs-toggle="modal"
+            data-bs-target="#verPlantillaModal"
+          >
+            <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla
+            Seleccionada
+          </button>
+        </form>
+
+        <!-- Separador Visual -->
+        <hr class="my-3" />
+
+        <!-- Herramientas de Calidad -->
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-tools me-2"></i>Herramientas de Calidad
+        </h6>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-info" id="auditarBtn">
+            <i class="bi bi-shield-check me-2"></i>Auditar
+          </button>
+          <button class="btn btn-outline-info" id="compararBtn">
+            <i class="bi bi-bar-chart me-2"></i>Comparar
+          </button>
+          <button class="btn btn-outline-info" id="mejorasBtn">
+            <i class="bi bi-lightbulb me-2"></i>Mejoras
+          </button>
         </div>
+      </div>
+    </div>
 
-        {% if not analisis_obj %}
-        <div class="card d-lg-none">
-            <div class="card-body p-4">
-                <h4 class="h5 mb-3">Generar Casos de Prueba</h4>
-                <form action="{{ url_for('analysis.analysis_index') }}" method="post" enctype="multipart/form-data" novalidate>
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ form.plantilla.label(class="form-label fw-bold") }}
-                        {{ form.plantilla(class="form-select") }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Requerimiento</label>
-                        <div id="drop-zone-mobile" class="drop-zone">
-                            <span id="drop-zone-text-mobile" class="drop-zone-text">
-                                <i class="bi bi-upload me-2"></i>Arrastra o selecciona
-                            </span>
-                            {{ form.archivo_requerimiento(class="d-none", id="file-input-mobile") }}
-                        </div>
-                    </div>
-                    {{ form.submit(value="Analizar y Generar Casos", class="btn btn-primary w-100") }}
-                    
-                    <button type="button" class="btn btn-outline-info w-100 mt-2" id="viewTemplateBtnFormMobile">
-                        <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla Seleccionada
-                    </button>
-                </form>
+    <!-- VERSION MÓVIL -->
+    {% if not analisis_obj %}
+    <div
+      class="card d-lg-none"
+      style="
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+      "
+    >
+      <!-- Título de la Card Móvil -->
+      <div
+        class="card-header bg-white border-bottom"
+        style="padding: 1rem 1.5rem"
+      >
+        <h4 class="h5 mb-0 fw-bold">
+          <i class="bi bi-box-seam me-2" style="color: var(--bs-primary)"></i>
+          Generar Casos de Prueba
+        </h4>
+      </div>
+
+      <div class="card-body p-4">
+        <form
+          action="{{ url_for('analysis.analysis_index') }}"
+          method="post"
+          enctype="multipart/form-data"
+          novalidate
+        >
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.plantilla.label(class="form-label fw-bold") }} {{
+            form.plantilla(class="form-select") }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Requerimiento</label>
+            <div id="drop-zone-mobile" class="drop-zone">
+              <span id="drop-zone-text-mobile" class="drop-zone-text">
+                <i class="bi bi-upload me-2"></i>Arrastra o selecciona
+              </span>
+              {{ form.archivo_requerimiento(class="d-none",
+              id="file-input-mobile") }}
             </div>
+          </div>
+          {{ form.submit(value="Analizar y Generar Casos", class="btn
+          btn-primary w-100") }}
+
+          <button
+            type="button"
+            class="btn btn-outline-info w-100 mt-2"
+            id="viewTemplateBtnFormMobile"
+            data-bs-toggle="modal"
+            data-bs-target="#verPlantillaModal"
+          >
+            <i class="bi bi-layout-text-sidebar-reverse"></i> Ver Plantilla
+            Seleccionada
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <style>
+      /* Estilos adicionales para mejorar la apariencia */
+      .card hr {
+        border-color: rgba(0, 0, 0, 0.1);
+        opacity: 0.5;
+      }
+
+      .btn-outline-info {
+        transition: all 0.3s ease;
+      }
+
+      .btn-outline-info:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Asegurar que los botones de herramientas tengan el mismo ancho */
+      .d-grid.gap-2 .btn {
+        width: 100%;
+      }
+    </style>
+  </div>
+  <div class="col-lg-8 col-xl-9">
+    {% if not analisis_obj %}
+    <div class="d-lg-none mt-3">
+      <button
+        class="btn btn-outline-secondary w-100"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#historialOffcanvasMobile"
+        aria-controls="historialOffcanvasMobile"
+      >
+        <i class="bi bi-clock-history me-2"></i> Ver Historial de Análisis
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- HISTORIAL DE ANÁLISIS EN CARD BLANCA -->
+    <div
+      class="card mb-4 d-none d-lg-block"
+      style="
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+      "
+    >
+      <!-- Header del Historial -->
+      <div
+        class="card-header bg-white border-bottom d-flex justify-content-between align-items-center"
+        style="padding: 1rem 1.5rem"
+      >
+        <h5 class="mb-0 fw-bold">
+          <i
+            class="bi bi-clock-history me-2"
+            style="color: var(--bs-primary)"
+          ></i>
+          Historial de Análisis
+        </h5>
+        <a
+          href="{{ url_for('analysis.analysis_index') }}"
+          class="btn btn-sm btn-outline-secondary"
+        >
+          <i class="bi bi-plus-circle me-1"></i> Nuevo Análisis
+        </a>
+      </div>
+
+      <!-- Lista de Análisis con Scroll -->
+      <div
+        class="list-group list-group-flush"
+        style="max-height: 320px; overflow-y: auto"
+      >
+        {% if historial_analisis %} {% for item in historial_analisis %}
+        <div
+          class="list-group-item list-group-item-action p-3 historial-item {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}"
+          aria-current="{% if analisis_obj and analisis_obj.id == item.id %}true{% else %}false{% endif %}"
+          data-view-id="{{ item.id }}"
+          style="cursor: pointer"
+        >
+          <div class="d-flex w-100 justify-content-between">
+            <h6
+              class="mb-1 text-truncate"
+              title="{{ item.nombre_requerimiento }}"
+            >
+              {{ item.nombre_requerimiento }}
+            </h6>
+            <small class="text-muted"
+              >{{ item.timestamp.strftime('%d/%m/%y') }}</small
+            >
+          </div>
+          <small class="mb-1 text-muted">
+            {{ item.plantilla_usada.nombre_plantilla }} | {{
+            item.casos_generados }} casos
+          </small>
+
+          <div class="d-flex justify-content-end align-items-center mt-2">
+            <a
+              href="{{ url_for('analysis.analysis_index', view_id=item.id) }}"
+              class="btn btn-sm btn-outline-info ms-2 action-btn"
+              title="Cargar este análisis en la vista principal"
+              onclick="event.stopPropagation();"
+            >
+              <i class="bi bi-eye-fill"></i>
+            </a>
+            <form
+              id="form-delete-{{ item.id }}"
+              action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}"
+              method="POST"
+              class="ms-2"
+              style="position: relative; z-index: 5"
+            >
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger action-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteConfirmModal"
+                data-form-id="form-delete-{{ item.id }}"
+                title="Eliminar (Ocultar) este análisis"
+                onclick="event.stopPropagation();"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="p-5 text-center">
+          <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc"></i>
+          <p class="text-muted small mt-3 mb-0">
+            No tienes análisis guardados.
+          </p>
         </div>
         {% endif %}
+      </div>
+    </div>
 
-    </div> <div class="col-lg-8 col-xl-9">
-        
-        {% if not analisis_obj %}
-            <div class="d-lg-none mt-3">
-                <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#historialOffcanvasMobile" aria-controls="historialOffcanvasMobile">
-                    <i class="bi bi-clock-history me-2"></i> Ver Historial de Análisis
-                </button>
-            </div>
-        {% endif %}
+    <style>
+      /* Mejoras visuales para el historial */
+      .list-group-item-action:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+      }
 
-        <div class="card mb-4 d-none d-lg-block"> <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i> Historial de Análisis</h5>
-                <a href="{{ url_for('analysis.analysis_index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-plus-circle me-1"></i> Nuevo Análisis
+      .list-group-item.active {
+        background-color: var(--bs-secondary-dark) !important;
+        border-color: var(--bs-secondary-dark) !important;
+        color: #fff !important;
+      }
+
+      .list-group-item.active .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+
+      .list-group-item:not(.active):hover h6 {
+        color: var(--bs-primary) !important;
+        transition: color 0.2s ease;
+      }
+
+      /* Scrollbar personalizado para el historial */
+      .list-group-flush::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .list-group-flush::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+
+      .list-group-flush::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+      }
+
+      .list-group-flush::-webkit-scrollbar-thumb:hover {
+        background: #999;
+      }
+    </style>
+
+    {% if not analisis_obj %}
+    <div
+      class="d-none d-lg-flex align-items-center justify-content-center"
+      style="
+        min-height: 80vh;
+        border: 3px dashed #e0e0e0;
+        border-radius: 0.75rem;
+      "
+    >
+      <div class="text-center text-muted">
+        <i class="bi bi-boxes" style="font-size: 4rem"></i>
+        <h3 class="h4 mt-3">Inicia un nuevo análisis</h3>
+        <p>... o selecciona un análisis del historial.</p>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- CARD BLANCA PARA INFORMACIÓN DEL ANÁLISIS -->
+    <div
+      class="card mb-4"
+      style="
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+      "
+    >
+      <!-- Header con Nombre del Análisis y Botones -->
+      <div
+        class="card-header bg-white border-bottom"
+        style="padding: 1rem 1.5rem"
+      >
+        <div
+          class="d-flex justify-content-between align-items-start flex-wrap gap-3"
+        >
+          <div>
+            <h2
+              class="h4 mb-1 fw-bold"
+              title="{{ analisis_obj.nombre_requerimiento }}"
+            >
+              {{ (analisis_obj.nombre_requerimiento[:50] + '...') if
+              analisis_obj.nombre_requerimiento|length > 50 else
+              analisis_obj.nombre_requerimiento }}
+            </h2>
+            <small class="text-muted">
+              Usando plantilla:
+              <strong
+                >{{ analisis_obj.plantilla_usada.nombre_plantilla }}</strong
+              >
+            </small>
+          </div>
+
+          <div class="btn-group" role="group">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              data-bs-toggle="modal"
+              data-bs-target="#requerimientoModal"
+            >
+              <i class="bi bi-file-text me-1"></i> Ver/Editar Requerimiento
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-info"
+              id="verHistorialBtn"
+              data-analisis-id="{{ analisis_obj.id }}"
+            >
+              <i class="bi bi-clock-history me-1"></i> Ver Historial
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body con Métricas en Grid -->
+      <div class="card-body p-4">
+        <div class="row g-3 justify-content-center">
+          <!-- Métrica: Complejidad -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">
+                Complejidad
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#complejidadInfoModal"
+                  class="text-info text-decoration-none"
+                >
+                  <i class="bi bi-info-circle-fill small"></i>
                 </a>
+              </h6>
+              {% if analisis_info.nivel == 'Alta' %}
+              <span class="badge bg-danger fs-5 px-3 py-2"
+                >{{ analisis_info.nivel }}</span
+              >
+              {% elif analisis_info.nivel == 'Media' %}
+              <span class="badge bg-warning fs-5 px-3 py-2"
+                >{{ analisis_info.nivel }}</span
+              >
+              {% else %}
+              <span class="badge bg-success fs-5 px-3 py-2"
+                >{{ analisis_info.nivel }}</span
+              >
+              {% endif %}
             </div>
-            <div class="list-group list-group-flush" style="max-height: 320px; overflow-y: auto;">
-                {% if historial_analisis %}
-                    {% for item in historial_analisis %}
-                    <div class="list-group-item list-group-item-action p-3 {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}" 
-                         aria-current="{% if analisis_obj and analisis_obj.id == item.id %}true{% else %}false{% endif %}"
-                         style="cursor: pointer;" 
-                         onclick="window.location.href='{{ url_for('analysis.analysis_index', view_id=item.id) }}';">
-                        
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1 text-truncate" title="{{ item.nombre_requerimiento }}">{{ item.nombre_requerimiento }}</h6>
-                            <small class="text-muted">{{ item.timestamp.strftime('%d/%m/%y') }}</Ssmall>
-                        </div>
-                        <small class="mb-1 text-muted">
-                            {{ item.plantilla_usada.nombre_plantilla }} | {{ item.casos_generados }} casos
-                        </small>
-                        
-                        <div class="d-flex justify-content-end align-items-center mt-2">
-                            <a href="{{ url_for('analysis.analysis_index', view_id=item.id) }}" 
-                               class="btn btn-sm btn-outline-info ms-2" 
-                               title="Cargar este análisis en la vista principal">
-                                <i class="bi bi-eye-fill"></i>
-                            </a>
-                            <form id="form-delete-{{ item.id }}" 
-                                  action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}" 
-                                  method="POST" class="ms-2" style="position: relative; z-index: 5;">
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteConfirmModal"
-                                        data-form-id="form-delete-{{ item.id }}"
-                                        title="Eliminar (Ocultar) este análisis">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <p class="text-center text-muted small p-3">No tienes análisis guardados.</p>
-                {% endif %}
-            </div>
-        </div> {% if not analisis_obj %}
-            <div class="d-none d-lg-flex align-items-center justify-content-center" style="min-height: 80vh; border: 3px dashed #e0e0e0; border-radius: .75rem;">
-                <div class="text-center text-muted">
-                    <i class="bi bi-boxes" style="font-size: 4rem;"></i>
-                    <h3 class="h4 mt-3">Inicia un nuevo análisis</h3>
-                    <p>... o selecciona un análisis del historial.</p>
-                </div>
-            </div>
+          </div>
 
-        {% else %}
-            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
-                <div>
-                    <h2 class="h4 mb-0" title="{{ analisis_obj.nombre_requerimiento }}">
-                        {{ (analisis_obj.nombre_requerimiento[:50] + '...') if analisis_obj.nombre_requerimiento|length > 50 else analisis_obj.nombre_requerimiento }}
-                    </h2>
-                    <small class="text-muted">
-                        Usando plantilla: <strong>{{ analisis_obj.plantilla_usada.nombre_plantilla }}</strong>
-                    </small>
-                </div>
-                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#requerimientoModal">
-                    <i class="bi bi-file-text me-1"></i> Ver/Editar Requerimiento
-                </button>
+          <!-- Métrica: Casos Generados -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">
+                Casos Generados
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#casosInfoModal"
+                  class="text-info text-decoration-none"
+                >
+                  <i class="bi bi-info-circle-fill small"></i>
+                </a>
+              </h6>
+              <h4 class="fw-bold mb-0" style="color: #10b981; font-size: 2rem">
+                {{ analisis_info.casos }}
+              </h4>
             </div>
-            
-            <div class="row g-3 mb-4 justify-content-center">
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">
-                                Complejidad
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#complejidadInfoModal" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle-fill small"></i>
-                                </a>
-                            </h6>
-                            {% if analisis_info.nivel == 'Alta' %}
-                                <span class="badge bg-danger fs-6">{{ analisis_info.nivel }}</span>
-                            {% elif analisis_info.nivel == 'Media' %}
-                                <span class="badge bg-warning fs-6">{{ analisis_info.nivel }}</span>
-                            {% else %}
-                                <span class="badge bg-success fs-6">{{ analisis_info.nivel }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">
-                                Casos Generados
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#casosInfoModal" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle-fill small"></i>
-                                </a>
-                            </h6>
-                            <h4 class="fw-bold mb-0 text-success">{{ analisis_info.casos }}</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">
-                                Criterios (CA / CNF)
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#criteriosInfoModal" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle-fill small"></i>
-                                </a>
-                            </h6>
-                            <h4 class="fw-bold mb-0">{{ analisis_info.criterios }} / {{ analisis_info.criterios_no_funcionales }}</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">Total Palabras</h6>
-                            <h4 class="fw-bold mb-0">{{ analisis_info.palabras }}</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                            <h6 class="text-muted mb-1">
-                                Horas de Diseño (Est.)
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#estimacionInfoModal" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle-fill small"></i>
-                                </a>
-                            </h6>
-                            <h4 class="fw-bold mb-0 text-primary">{{ "%.2f"|format(analisis_info.horas_diseño) }} h</h4>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 metric-card-light">
-                        <div class="card-body text-center p-3">
-                             <h6 class="text-muted mb-1">
-                                Horas de Ejecución (Est.)
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#estimacionInfoModal" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle-fill small"></i>
-                                </a>
-                            </h6>
-                            <h4 class="fw-bold mb-0 text-primary">{{ "%.2f"|format(analisis_info.horas_ejecucion) }} h</h4>
-                        </div>
-                    </div>
-                </div>
-            </div> <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
-                <div class="btn-group" role="group">
-                    <a href="{{ url_for('analysis.generar_excel_entregable', view_id=analisis_obj.id, type='excel') }}" class="btn btn-success">
-                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
-                    </a>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#xmlModal">
-                        <i class="bi bi-filetype-xml me-1"></i> Ver XML
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#jsonModal">
-                        <i class="bi bi-filetype-json me-1"></i> Ver JSON
-                    </button>
-                </div>
-                <div class="btn-group" role="group">
-                    <button id="resultsEditToggle" type="button" class="btn btn-warning">
-                        <i class="bi bi-pencil-square me-1"></i> Activar edición
-                    </button>
-                    <button id="save-results-btn" type="button" class="btn btn-primary d-none">
-                        <i class="bi bi-save me-1"></i> Guardar cambios
-                    </button>
-                </div>
+          </div>
+
+          <!-- Métrica: Criterios -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">
+                Criterios (CA / CNF)
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#criteriosInfoModal"
+                  class="text-info text-decoration-none"
+                >
+                  <i class="bi bi-info-circle-fill small"></i>
+                </a>
+              </h6>
+              <h4 class="fw-bold mb-0" style="font-size: 1.75rem">
+                {{ analisis_info.criterios }} / {{
+                analisis_info.criterios_no_funcionales }}
+              </h4>
             </div>
-            
-            <div class="row justify-content-center">
-                <div class="col-12">
-                    <div class="card" style="box-shadow: 0 0.5rem 1rem rgba(0,0,0,.05); border-radius: .75rem; background-color: white;">
-                        <div class="table-responsive">
-                            <table id="resultsTable" class="table table-hover align-middle" style="font-size: 0.9rem;">
-                                <thead class="table-light">
-                                    <tr style="white-space: nowrap;">
-                                        {% if ai_result_data %}
-                                            {% for key in ai_result_data[0].keys() %}
-                                                {% if not key.startswith('__') %}
-                                                    <th scope="col" class="py-3 px-3">{{ key }}</th>
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if ai_result_data %}
-                                        {% for fila in ai_result_data %}
-                                        <tr>
-                                            {% for key, valor in fila.items() %}
-                                                {% if not key.startswith('__') %}
-                                                <td class="px-3" data-header="{{ key }}">
-                                                    {% set valor_str = valor|string %}
-                                                    {% set max_length = 120 %}
-                                                    
-                                                    {% if valor_str|length > max_length %}
-                                                        <div class="text-container">
-                                                            <div class="text-preview small">{{ valor_str[:max_length] }}...</div>
-                                                            <div class="text-full small" style="display: none;"><pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;">{{ valor_str }}</pre></div>
-                                                            <button class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100" type="button">Ver más</button>
-                                                        </div>
-                                                    {% else %}
-                                                        <span class="small">{{ valor_str }}</span>
-                                                    {% endif %}
-                                                </td>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="100%" class="text-center p-5 text-muted">
-                                                No se generaron casos de prueba.
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+          </div>
+
+          <!-- Métrica: Total Palabras -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">Total Palabras</h6>
+              <h4 class="fw-bold mb-0" style="font-size: 1.75rem">
+                {{ analisis_info.palabras }}
+              </h4>
+            </div>
+          </div>
+
+          <!-- Métrica: Horas de Diseño -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">
+                Horas de Diseño (Est.)
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#estimacionInfoModal"
+                  class="text-info text-decoration-none"
+                >
+                  <i class="bi bi-info-circle-fill small"></i>
+                </a>
+              </h6>
+              <h4
+                class="fw-bold mb-0"
+                style="color: var(--bs-primary); font-size: 1.75rem"
+              >
+                {{ "%.2f"|format(analisis_info.horas_diseno) }} h
+              </h4>
+            </div>
+          </div>
+
+          <!-- Métrica: Horas de Ejecución -->
+          <div class="col-md-4 col-sm-6">
+            <div
+              class="metric-box text-center p-3"
+              style="
+                background-color: #f8f9fa;
+                border-radius: 0.5rem;
+                border: 1px solid #e9ecef;
+              "
+            >
+              <h6 class="text-muted mb-2 fw-semibold">
+                Horas de Ejecución (Est.)
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#estimacionInfoModal"
+                  class="text-info text-decoration-none"
+                >
+                  <i class="bi bi-info-circle-fill small"></i>
+                </a>
+              </h6>
+              <h4
+                class="fw-bold mb-0"
+                style="color: var(--bs-primary); font-size: 1.75rem"
+              >
+                {{ "%.2f"|format(analisis_info.horas_ejecucion) }} h
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      /* Hover effect para las métricas */
+      .metric-box {
+        transition: all 0.3s ease;
+      }
+
+      .metric-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: var(--bs-primary) !important;
+      }
+
+      /* Responsive para métricas */
+      @media (max-width: 768px) {
+        .metric-box h4 {
+          font-size: 1.5rem !important;
+        }
+
+        .metric-box h6 {
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+    <div
+      class="d-flex justify-content-between align-items-center flex-wrap mb-3"
+    >
+      <div class="btn-group" role="group">
+        <a
+          href="{{ url_for('analysis.generar_excel_entregable', view_id=analisis_obj.id, type='excel') }}"
+          class="btn btn-success"
+        >
+          <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
+        </a>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-toggle="modal"
+          data-bs-target="#xmlModal"
+        >
+          <i class="bi bi-filetype-xml me-1"></i> Ver XML
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-toggle="modal"
+          data-bs-target="#jsonModal"
+        >
+          <i class="bi bi-filetype-json me-1"></i> Ver JSON
+        </button>
+      </div>
+      <div class="btn-group" role="group">
+        <button id="resultsEditToggle" type="button" class="btn btn-warning">
+          <i class="bi bi-pencil-square me-1"></i> Activar edición
+        </button>
+        <button
+          id="save-results-btn"
+          type="button"
+          class="btn btn-primary d-none"
+        >
+          <i class="bi bi-save me-1"></i> Guardar cambios
+        </button>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12">
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <!-- REQ #10: Card con estructura mejorada -->
+            <div
+              class="card shadow-sm mb-4"
+              style="border-radius: 0.75rem; border: 1px solid #e9ecef"
+            >
+              <!-- Header con contador -->
+              <div
+                class="card-header bg-white border-bottom"
+                style="padding: 1rem 1.5rem"
+              >
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-table me-2"></i>
+                    Casos de Prueba Generados
+                  </h5>
                 </div>
-            </div> {% endif %}
-    </div> </div> {% if analisis_obj %}
-    <button id="scroll-toggle-btn" class="btn btn-primary btn-lg rounded-circle" 
-            style="position: fixed; bottom: 20px; right: 20px; z-index: 1050; width: 50px; height: 50px; padding: 0; font-size: 1.5rem;"
-            title="Ir al final">
-        <i id="scroll-toggle-icon" class="bi bi-arrow-down"></i>
+              </div>
+
+              <!-- Body con scroll interno -->
+              <div class="card-body p-0">
+                <div
+                  class="table-responsive"
+                  style="max-height: 500px; overflow-y: auto"
+                >
+                  <table
+                    id="resultsTable"
+                    class="table table-hover table-striped mb-0 align-middle"
+                    style="font-size: 1rem"
+                  >
+                    <!-- REQ #10: Header fijo -->
+                    <thead
+                      class="table-light sticky-top"
+                      style="
+                        position: sticky;
+                        top: 0;
+                        z-index: 10;
+                        background-color: #f8f9fa;
+                      "
+                    >
+                      <tr style="white-space: nowrap">
+                        {% if ai_result_data %} {% for key in
+                        ai_result_data[0].keys() %} {% if not
+                        key.startswith('__') %}
+                        <th scope="col" class="py-3 px-3">{{ key }}</th>
+                        {% endif %} {% endfor %} {% endif %}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% if ai_result_data %} {% for fila in ai_result_data %}
+                      <tr>
+                        {% for key, valor in fila.items() %} {% if not
+                        key.startswith('__') %}
+                        <td class="px-3" data-header="{{ key }}">
+                          {% set valor_str = valor|string %} {% set max_length =
+                          120 %} {% if valor_str|length > max_length %}
+                          <div class="text-container">
+                            <div class="text-preview small">
+                              {{ valor_str[:max_length] }}...
+                            </div>
+                            <div class="text-full small" style="display: none">
+                              <pre
+                                class="mb-0"
+                                style="
+                                  white-space: pre-wrap;
+                                  word-wrap: break-word;
+                                "
+                              >
+{{ valor_str }}</pre
+                              >
+                            </div>
+                            <button
+                              class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100"
+                              type="button"
+                            >
+                              Ver más
+                            </button>
+                          </div>
+                          {% else %}
+                          <span class="small">{{ valor_str }}</span>
+                          {% endif %}
+                        </td>
+                        {% endif %} {% endfor %}
+                      </tr>
+                      {% endfor %} {% else %}
+                      <tr>
+                        <td colspan="100%" class="text-center p-5 text-muted">
+                          <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                          No se generaron casos de prueba.
+                        </td>
+                      </tr>
+                      {% endif %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- REQ #10: Footer con botones de descarga -->
+              {% if ai_result_data %}
+              <div
+                class="card-footer bg-light border-top"
+                style="padding: 1rem 1.5rem"
+              >
+                <div
+                  class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+                >
+                  <span class="text-muted">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Total: <strong>{{ ai_result_data|length }}</strong> casos
+                    generados
+                  </span>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- REQ #10: CSS adicional para scroll shadow -->
+        <style>
+          /* Asegurar que el header permanezca fijo */
+          .sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8f9fa;
+          }
+
+          /* Sombra al hacer scroll */
+          .table-responsive {
+            box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.1);
+          }
+
+          /* Responsive para móviles */
+          @media (max-width: 768px) {
+            .table-responsive {
+              max-height: 400px !important;
+            }
+
+            .card-footer .btn-group {
+              width: 100%;
+            }
+
+            .card-footer .btn-group .btn {
+              flex: 1;
+            }
+          }
+        </style>
+      </div>
+    </div>
+    {% if analisis_obj %}
+    <button
+      id="scroll-toggle-btn"
+      class="btn btn-primary btn-lg rounded-circle"
+      style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1050;
+        width: 50px;
+        height: 50px;
+        padding: 0;
+        font-size: 1.7rem;
+      "
+      title="Ir al final"
+    >
+      <i id="scroll-toggle-icon" class="bi bi-arrow-down"></i>
     </button>
-    
-    <div class="modal fade" id="requerimientoModal" tabindex="-1" aria-labelledby="requerimientoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content glassmorphism-modal">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="requerimientoModalLabel">Requerimiento: {{ analisis_obj.nombre_requerimiento }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="form-re-analyze" action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}" method="POST">
-                    <div class="modal-body">
-                        <div id="viewModeToggleContainer" class="form-check form-switch mb-2" style="display: none;">
-                            <input class="form-check-input" type="checkbox" role="switch" id="viewModeToggle">
-                            <label class="form-check-label" for="viewModeToggle">Activar edición de celdas</label>
-                            <button type="button" class="btn btn-sm btn-outline-success ms-3 d-none" id="save-changes-btn"><i class="bi bi-check-circle me-1"></i> Guardar cambios en editor</button>
-                        </div>
-                        <ul class="nav nav-tabs" id="excelTabsContainer" role="tablist"></ul>
-                        <div class="tab-content" id="excelTabsContentContainer"></div>
-                        <textarea name="texto_requerimiento" id="main-req-textarea" class="form-control" rows="20" style="display: none;">{{ texto_requerimiento }}</textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i> Guardar y Re-analizar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="jsonModal" tabindex="-1" aria-labelledby="jsonModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="jsonModalLabel">
-                        <i class="bi bi-filetype-json me-2"></i>Resultado JSON (Raw)
-                    </h5>
-                    <div class="ms-auto d-flex align-items-center">
-                        <button type="button" class="btn btn-primary me-2" id="copyJsonBtn">
-                            <i class="bi bi-clipboard me-1"></i> Copiar JSON
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body" style="background-color: #2F3237; color: #F5F7FA;">
-                    <pre id="json-pre-content" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ analisis_obj.ai_result_json }}</code></pre>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="xmlModal" tabindex="-1" aria-labelledby="xmlModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="xmlModalLabel">
-                        <i class="bi bi-filetype-xml me-2"></i>Resultado XML (TestLink)
-                    </h5>
-                    <div class="ms-auto d-flex align-items-center">
-                        <button type="button" class="btn btn-primary me-2" id="copyXmlBtn">
-                            <i class="bi bi-clipboard me-1"></i> Copiar XML
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body" style="background-color: #2F3237; color: #F5F7FA;">
-                    <pre id="xml-pre-content" style="white-space: pre-wrap; word-wrap: break-word;"><code>{{ ai_result_xml_string|escape }}</code></pre>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal fade" id="estimacionInfoModal" tabindex="-1" aria-labelledby="estimacionInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="estimacionInfoModalLabel">
-                        <i class="bi bi-calculator-fill me-2"></i>Justificación de la Estimación (Estándar PERT)
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Las estimaciones de esfuerzo (Horas de Diseño y Ejecución) se calculan automáticamente utilizando la <strong>Técnica de Estimación de 3 Puntos (PERT)</strong>.</p>
-                    <p>Este es un método estándar en la gestión de proyectos, respaldado por el <strong>PMBOK© del Project Management Institute (PMI)</strong>.</p>
-                    <h6 class="mt-4">Fórmula Aplicada</h6>
-                    <p><code>Te = (To + 4Tm + Tp) / 6</code></p>
-                    
-                    <!-- Toggle para mostrar valores reales -->
-                    <div class="mb-3">
-                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#valoresRealesCollapse" aria-expanded="false">
-                            <i class="bi bi-calculator me-1"></i> Ver valores reales aplicados
-                        </button>
-                    </div>
-                    
-                    <div class="collapse" id="valoresRealesCollapse">
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Valores Reales Aplicados (Complejidad: {{ analisis_info.nivel }})</h6>
-                            <table class="table table-sm table-bordered">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>To (Optimista)</strong></td>
-                                        <td>{{ "%.2f"|format(analisis_info.pert_to) }} horas/caso</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Tm (Más Probable)</strong></td>
-                                        <td>{{ "%.2f"|format(analisis_info.pert_tm) }} horas/caso</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Tp (Pesimista)</strong></td>
-                                        <td>{{ "%.2f"|format(analisis_info.pert_tp) }} horas/caso</td>
-                                    </tr>
-                                    <tr class="table-primary">
-                                        <td><strong>Te (Estimado)</strong></td>
-                                        <td><strong>{{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }} horas/caso</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <p class="mb-0"><strong>Cálculo:</strong> <code>Te = ({{ "%.2f"|format(analisis_info.pert_to) }} + 4×{{ "%.2f"|format(analisis_info.pert_tm) }} + {{ "%.2f"|format(analisis_info.pert_tp) }}) / 6 = {{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }}</code></p>
-                            <p class="mb-0"><strong>Total:</strong> <code>{{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }} × {{ analisis_info.casos }} casos = {{ "%.2f"|format(analisis_info.horas_diseño) }} horas</code></p>
-                        </div>
-                    </div>
-                    
-                    <table class="table table-bordered table-sm">
-                        <thead class="table-dark">
-                            <tr><th>Variable</th><th>Descripción</th><th>Valor Asignado (por Caso)</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>To</strong></td>
-                                <td>Tiempo Optimista</td>
-                                <td rowspan="3">
-                                    Los valores (To, Tm, Tp) se asignan según la <strong>Complejidad (Baja, Media, Alta)</strong> detectada por la IA.
-                                </td>
-                            </tr>
-                            <tr><td><strong>Tm</strong></td><td>Tiempo Más Probable</td></tr>
-                            <tr><td><strong>Tp</strong></td><td>Tiempo Pesimista</td></tr>
-                            <tr>
-                                <td><strong>Te</strong></td>
-                                <td><strong>Tiempo Estimado</strong></td>
-                                <td>Resultado de la fórmula PERT.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <hr class="my-4">
-                    <h6 class="h5">Cálculo Final</h6>
-                    <p class="text-center fs-5 fw-bold text-primary bg-light p-3 rounded">
-                        Horas Totales = (Te por Caso) × (Nro. Casos Generados)
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- REQ #5: MODAL COMPLEJIDAD -->
-    <div class="modal fade" id="complejidadInfoModal" tabindex="-1" aria-labelledby="complejidadInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="complejidadInfoModalLabel">
-                        <i class="bi bi-speedometer2 me-2"></i>Cálculo de Complejidad
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>La complejidad del requerimiento se calcula automáticamente usando dos criterios:</p>
-                    
-                    <h6 class="mt-3">Estándar Aplicado</h6>
-                    <table class="table table-bordered table-sm">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Complejidad</th>
-                                <th>Condición</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="table-danger">
-                                <td><strong>Alta</strong></td>
-                                <td>Más de 800 palabras <strong>O</strong> más de 15 criterios (CA)</td>
-                            </tr>
-                            <tr class="table-warning">
-                                <td><strong>Media</strong></td>
-                                <td>Más de 300 palabras <strong>O</strong> más de 7 criterios (CA)</td>
-                            </tr>
-                            <tr class="table-success">
-                                <td><strong>Baja</strong></td>
-                                <td>Resto de casos</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
-                    <div class="alert alert-info mt-3">
-                        <h6 class="alert-heading"><i class="bi bi-graph-up me-2"></i>Tu Requerimiento</h6>
-                        <ul class="mb-0">
-                            <li><strong>Total Palabras:</strong> {{ analisis_info.palabras }}</li>
-                            <li><strong>Criterios de Aceptación (CA):</strong> {{ analisis_info.criterios }}</li>
-                            <li><strong>Criterios No Funcionales (CNF):</strong> {{ analisis_info.criterios_no_funcionales }}</li>
-                            <li class="mt-2"><strong>Resultado:</strong> <span class="badge 
-                                {% if analisis_info.nivel == 'Alta' %}bg-danger
-                                {% elif analisis_info.nivel == 'Media' %}bg-warning
-                                {% else %}bg-success{% endif %}">{{ analisis_info.nivel }}</span></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- REQ #5: MODAL CASOS GENERADOS -->
-    <div class="modal fade" id="casosInfoModal" tabindex="-1" aria-labelledby="casosInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="casosInfoModalLabel">
-                        <i class="bi bi-list-check me-2"></i>Normativa de Generación de Casos
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>El número de casos de prueba se calcula usando la siguiente fórmula estándar:</p>
-                    
-                    <div class="alert alert-primary">
-                        <h6 class="text-center mb-0">
-                            <code class="fs-5">Casos Totales = (CA × 3) + (CNF × 5)</code>
-                        </h6>
-                    </div>
-                    
-                    <table class="table table-sm table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Criterio</th>
-                                <th>Factor</th>
-                                <th>Justificación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Criterios de Aceptación (CA)</strong></td>
-                                <td class="text-center">×3</td>
-                                <td>Cada CA requiere al menos 3 casos: camino feliz, error, y borde</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Criterios No Funcionales (CNF)</strong></td>
-                                <td class="text-center">×5</td>
-                                <td>CNF requieren más casos (performance, seguridad, usabilidad, etc.)</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
-                    <div class="alert alert-info mt-3">
-                        <h6 class="alert-heading"><i class="bi bi-calculator me-2"></i>Cálculo Aplicado</h6>
-                        <p><strong>Casos Base (CA):</strong> {{ analisis_info.criterios }} CA × 3 = {{ analisis_info.casos_base }} casos</p>
-                        <p><strong>Casos No Funcionales (CNF):</strong> {{ analisis_info.criterios_no_funcionales }} CNF × 5 = {{ analisis_info.casos_no_funcionales }} casos</p>
-                        <p class="mb-0"><strong>Total Estimado:</strong> {{ analisis_info.casos_base }} + {{ analisis_info.casos_no_funcionales }} = <span class="badge bg-success fs-6">{{ analisis_info.casos }} casos</span></p>
-                        {% if analisis_info.casos_base == 0 and analisis_info.casos_no_funcionales == 0 and analisis_info.palabras > 50 %}
-                        <p class="text-muted small mt-2"><em>Nota: Se asignó un mínimo de 5 casos porque el requerimiento tiene más de 50 palabras pero no se detectaron criterios explícitos.</em></p>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- REQ #5: MODAL CRITERIOS -->
-    <div class="modal fade" id="criteriosInfoModal" tabindex="-1" aria-labelledby="criteriosInfoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="criteriosInfoModalLabel">
-                        <i class="bi bi-tags me-2"></i>Criterios Detectados
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6><i class="bi bi-check-circle text-success me-2"></i>Criterios de Aceptación (CA)</h6>
-                    {% if analisis_info.criterios_ca_lista %}
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        {% for criterio in analisis_info.criterios_ca_lista %}
-                        <span class="badge bg-primary">{{ criterio }}</span>
-                        {% endfor %}
-                    </div>
-                    <p class="text-muted small">Total: {{ analisis_info.criterios }} CA detectados</p>
-                    {% else %}
-                    <p class="text-muted">No se detectaron criterios de aceptación en el requerimiento.</p>
-                    {% endif %}
-                    
-                    <hr class="my-3">
-                    
-                    <h6><i class="bi bi-shield-check text-warning me-2"></i>Criterios No Funcionales (CNF)</h6>
-                    {% if analisis_info.criterios_cnf_lista %}
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        {% for criterio in analisis_info.criterios_cnf_lista %}
-                        <span class="badge bg-warning text-dark">{{ criterio }}</span>
-                        {% endfor %}
-                    </div>
-                    <p class="text-muted small">Total: {{ analisis_info.criterios_no_funcionales }} CNF detectados</p>
-                    {% else %}
-                    <p class="text-muted">No se detectaron criterios no funcionales en el requerimiento.</p>
-                    {% endif %}
-                    
-                    <hr class="my-3">
-                    
-                    <h6><i class="bi bi-search me-2"></i>Patrones de Detección</h6>
-                    <p class="small">El sistema usa expresiones regulares para detectar criterios:</p>
-                    <ul class="small">
-                        <li><strong>CA:</strong> <code>CA</code>, <code>C.A.</code>, <code>Criterio de Aceptación</code> seguido de número</li>
-                        <li><strong>CNF:</strong> <code>CNF</code>, <code>C.N.F.</code>, <code>Requerimiento No Funcional</code> seguido de número</li>
-                    </ul>
-                    <p class="small text-muted">Ejemplo: "CA-01", "C.A. 15", "Criterio de Aceptación 3"</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endif %}
-
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-left: 6px solid var(--bs-danger); border-radius: .75rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.15); background-color: white;">
-            <div class="modal-header border-0">
-                <h5 class="modal-title" id="deleteModalLabel">
-                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Confirmar Eliminación
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+    <div
+      class="modal fade"
+      id="requerimientoModal"
+      tabindex="-1"
+      aria-labelledby="requerimientoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="requerimientoModalLabel">
+              Requerimiento: {{ analisis_obj.nombre_requerimiento }}
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <form
+            id="form-re-analyze"
+            action="{{ url_for('analysis.re_analyze', view_id=analisis_obj.id) }}"
+            method="POST"
+          >
             <div class="modal-body">
-                <p>¿Estás seguro de que quieres eliminar (ocultar) este análisis?</p>
-                <p class="text-danger small">Esta acción no se puede deshacer, pero los datos se mantendrán para auditoría.</p>
+              <div
+                id="viewModeToggleContainer"
+                class="form-check form-switch mb-2"
+                style="display: none"
+              >
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="viewModeToggle"
+                />
+                <label class="form-check-label" for="viewModeToggle"
+                  >Activar edición de celdas</label
+                >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-success ms-3 d-none"
+                  id="save-changes-btn"
+                >
+                  <i class="bi bi-check-circle me-1"></i> Guardar cambios en
+                  editor
+                </button>
+              </div>
+              <ul
+                class="nav nav-tabs"
+                id="excelTabsContainer"
+                role="tablist"
+              ></ul>
+              <div class="tab-content" id="excelTabsContentContainer"></div>
+              <textarea
+                name="texto_requerimiento"
+                id="main-req-textarea"
+                class="form-control"
+                rows="20"
+                style="display: none"
+              >
+{{ texto_requerimiento }}</textarea
+              >
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cerrar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat me-1"></i> Guardar y Re-analizar
+              </button>
             </div>
+          </form>
         </div>
+      </div>
     </div>
-</div>
 
-<div class="offcanvas-lg offcanvas-start d-lg-none" tabindex="-1" id="historialOffcanvasMobile" aria-labelledby="historialOffcanvasMobileLabel">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="historialOffcanvasMobileLabel"><i class="bi bi-clock-history me-2"></i> Historial de Análisis</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#historialOffcanvasMobile" aria-label="Close"></button>
+    <div
+      class="modal fade"
+      id="jsonModal"
+      tabindex="-1"
+      aria-labelledby="jsonModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="jsonModalLabel">
+              <i class="bi bi-filetype-json me-2"></i>Resultado JSON (Raw)
+            </h5>
+            <div class="ms-auto d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-primary me-2"
+                id="copyJsonBtn"
+              >
+                <i class="bi bi-clipboard me-1"></i> Copiar JSON
+              </button>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+          </div>
+          <div
+            class="modal-body"
+            style="background-color: #2f3237; color: #f5f7fa"
+          >
+            <pre
+              id="json-pre-content"
+              style="white-space: pre-wrap; word-wrap: break-word"
+            ><code>{{ analisis_obj.ai_result_json }}</code></pre>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="offcanvas-body">
+
+    <div
+      class="modal fade"
+      id="xmlModal"
+      tabindex="-1"
+      aria-labelledby="xmlModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="xmlModalLabel">
+              <i class="bi bi-filetype-xml me-2"></i>Resultado XML (TestLink)
+            </h5>
+            <div class="ms-auto d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-primary me-2"
+                id="copyXmlBtn"
+              >
+                <i class="bi bi-clipboard me-1"></i> Copiar XML
+              </button>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+          </div>
+          <div
+            class="modal-body"
+            style="background-color: #2f3237; color: #f5f7fa"
+          >
+            <pre
+              id="xml-pre-content"
+              style="white-space: pre-wrap; word-wrap: break-word"
+            ><code>{{ ai_result_xml_string|escape }}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="estimacionInfoModal"
+      tabindex="-1"
+      aria-labelledby="estimacionInfoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="estimacionInfoModalLabel">
+              <i class="bi bi-calculator-fill me-2"></i>Justificación de la
+              Estimación (Estándar PERT)
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Las estimaciones de esfuerzo (Horas de Diseño y Ejecución) se
+              calculan automáticamente utilizando la
+              <strong>Técnica de Estimación de 3 Puntos (PERT)</strong>.
+            </p>
+            <p>
+              Este es un método estándar en la gestión de proyectos, respaldado
+              por el
+              <strong>PMBOK© del Project Management Institute (PMI)</strong>.
+            </p>
+            <h6 class="mt-4">Fórmula Aplicada</h6>
+            <p><code>Te = (To + 4Tm + Tp) / 6</code></p>
+
+            <div class="mb-3">
+              <button
+                class="btn btn-sm btn-outline-primary"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#valoresRealesCollapse"
+                aria-expanded="false"
+              >
+                <i class="bi bi-calculator me-1"></i> Ver valores reales
+                aplicados
+              </button>
+            </div>
+
+            <div class="collapse" id="valoresRealesCollapse">
+              <div class="alert alert-info">
+                <h6 class="alert-heading">
+                  <i class="bi bi-info-circle me-2"></i>Valores Reales Aplicados
+                  (Complejidad: {{ analisis_info.nivel }})
+                </h6>
+                <table class="table table-sm table-bordered">
+                  <tbody>
+                    <tr>
+                      <td><strong>To (Optimista)</strong></td>
+                      <td>
+                        {{ "%.2f"|format(analisis_info.pert_to) }} horas/caso
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Tm (Más Probable)</strong></td>
+                      <td>
+                        {{ "%.2f"|format(analisis_info.pert_tm) }} horas/caso
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Tp (Pesimista)</strong></td>
+                      <td>
+                        {{ "%.2f"|format(analisis_info.pert_tp) }} horas/caso
+                      </td>
+                    </tr>
+                    <tr class="table-primary">
+                      <td><strong>Te (Estimado)</strong></td>
+                      <td>
+                        <strong
+                          >{{
+                          "%.3f"|format(analisis_info.tiempo_estimado_por_caso)
+                          }} horas/caso</strong
+                        >
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="mb-0">
+                  <strong>Cálculo:</strong>
+                  <code
+                    >Te = ({{ "%.2f"|format(analisis_info.pert_to) }} + 4×{{
+                    "%.2f"|format(analisis_info.pert_tm) }} + {{
+                    "%.2f"|format(analisis_info.pert_tp) }}) / 6 = {{
+                    "%.3f"|format(analisis_info.tiempo_estimado_por_caso)
+                    }}</code
+                  >
+                </p>
+                <p class="mb-0">
+                  <strong>Total:</strong>
+                  <code
+                    >{{ "%.3f"|format(analisis_info.tiempo_estimado_por_caso) }}
+                    × {{ analisis_info.casos }} casos = {{
+                    "%.2f"|format(analisis_info.horas_diseno) }} horas</code
+                  >
+                </p>
+              </div>
+            </div>
+
+            <table class="table table-bordered table-sm">
+              <thead class="table-dark">
+                <tr>
+                  <th>Variable</th>
+                  <th>Descripción</th>
+                  <th>Valor Asignado (por Caso)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>To</strong></td>
+                  <td>Tiempo Optimista</td>
+                  <td rowspan="3">
+                    Los valores (To, Tm, Tp) se asignan según la
+                    <strong>Complejidad (Baja, Media, Alta)</strong> detectada
+                    por la IA.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Tm</strong></td>
+                  <td>Tiempo Más Probable</td>
+                </tr>
+                <tr>
+                  <td><strong>Tp</strong></td>
+                  <td>Tiempo Pesimista</td>
+                </tr>
+                <tr>
+                  <td><strong>Te</strong></td>
+                  <td><strong>Tiempo Estimado</strong></td>
+                  <td>Resultado de la fórmula PERT.</td>
+                </tr>
+              </tbody>
+            </table>
+            <hr class="my-4" />
+            <h6 class="h5">Cálculo Final</h6>
+            <p
+              class="text-center fs-5 fw-bold text-primary bg-light p-3 rounded"
+            >
+              Horas Totales = (Te por Caso) × (Nro. Casos Generados)
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="complejidadInfoModal"
+      tabindex="-1"
+      aria-labelledby="complejidadInfoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="complejidadInfoModalLabel">
+              <i class="bi bi-speedometer2 me-2"></i>Cálculo de Complejidad
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              La complejidad del requerimiento se calcula automáticamente usando
+              dos criterios:
+            </p>
+
+            <h6 class="mt-3">Estándar Aplicado</h6>
+            <table class="table table-bordered table-sm">
+              <thead class="table-dark">
+                <tr>
+                  <th>Complejidad</th>
+                  <th>Condición</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-danger">
+                  <td><strong>Alta</strong></td>
+                  <td>
+                    Más de 800 palabras <strong>O</strong> más de 15 criterios
+                    (CA)
+                  </td>
+                </tr>
+                <tr class="table-warning">
+                  <td><strong>Media</strong></td>
+                  <td>
+                    Más de 300 palabras <strong>O</strong> más de 7 criterios
+                    (CA)
+                  </td>
+                </tr>
+                <tr class="table-success">
+                  <td><strong>Baja</strong></td>
+                  <td>Resto de casos</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="alert alert-info mt-3">
+              <h6 class="alert-heading">
+                <i class="bi bi-graph-up me-2"></i>Tu Requerimiento
+              </h6>
+              <ul class="mb-0">
+                <li>
+                  <strong>Total Palabras:</strong> {{ analisis_info.palabras }}
+                </li>
+                <li>
+                  <strong>Criterios de Aceptación (CA):</strong> {{
+                  analisis_info.criterios }}
+                </li>
+                <li>
+                  <strong>Criterios No Funcionales (CNF):</strong> {{
+                  analisis_info.criterios_no_funcionales }}
+                </li>
+                <li class="mt-2">
+                  <strong>Resultado:</strong>
+                  <span
+                    class="badge {% if analisis_info.nivel == 'Alta' %}bg-danger {% elif analisis_info.nivel == 'Media' %}bg-warning {% else %}bg-success{% endif %}"
+                    >{{ analisis_info.nivel }}</span
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="casosInfoModal"
+      tabindex="-1"
+      aria-labelledby="casosInfoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="casosInfoModalLabel">
+              <i class="bi bi-list-check me-2"></i>Normativa de Generación de
+              Casos
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              El número de casos de prueba se calcula usando la siguiente
+              fórmula estándar:
+            </p>
+
+            <div class="alert alert-primary">
+              <h6 class="text-center mb-0">
+                <code class="fs-5">Casos Totales = (CA × 3) + (CNF × 5)</code>
+              </h6>
+            </div>
+
+            <table class="table table-sm table-bordered">
+              <thead class="table-dark">
+                <tr>
+                  <th>Criterio</th>
+                  <th>Factor</th>
+                  <th>Justificación</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Criterios de Aceptación (CA)</strong></td>
+                  <td class="text-center">×3</td>
+                  <td>
+                    Cada CA requiere al menos 3 casos: camino feliz, error, y
+                    borde
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Criterios No Funcionales (CNF)</strong></td>
+                  <td class="text-center">×5</td>
+                  <td>
+                    CNF requieren más casos (performance, seguridad, usabilidad,
+                    etc.)
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="alert alert-info mt-3">
+              <h6 class="alert-heading">
+                <i class="bi bi-calculator me-2"></i>Cálculo Aplicado
+              </h6>
+              <p>
+                <strong>Casos Base (CA):</strong> {{ analisis_info.criterios }}
+                CA × 3 = {{ analisis_info.casos_base }} casos
+              </p>
+              <p>
+                <strong>Casos No Funcionales (CNF):</strong> {{
+                analisis_info.criterios_no_funcionales }} CNF × 5 = {{
+                analisis_info.casos_no_funcionales }} casos
+              </p>
+              <p class="mb-0">
+                <strong>Total Estimado:</strong> {{ analisis_info.casos_base }}
+                + {{ analisis_info.casos_no_funcionales }} =
+                <span class="badge bg-success fs-6"
+                  >{{ analisis_info.casos }} casos</span
+                >
+              </p>
+              {% if analisis_info.casos_base == 0 and
+              analisis_info.casos_no_funcionales == 0 and analisis_info.palabras
+              > 50 %}
+              <p class="text-muted small mt-2">
+                <em
+                  >Nota: Se asignó un mínimo de 5 casos porque el requerimiento
+                  tiene más de 50 palabras pero no se detectaron criterios
+                  explícitos.</em
+                >
+              </p>
+              {% endif %}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="criteriosInfoModal"
+      tabindex="-1"
+      aria-labelledby="criteriosInfoModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="criteriosInfoModalLabel">
+              <i class="bi bi-tags me-2"></i>Criterios Detectados
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <h6>
+              <i class="bi bi-check-circle text-success me-2"></i>Criterios de
+              Aceptación (CA)
+            </h6>
+            {% if analisis_info.criterios_ca_lista %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              {% for criterio in analisis_info.criterios_ca_lista %}
+              <span class="badge bg-primary">{{ criterio }}</span>
+              {% endfor %}
+            </div>
+            <p class="text-muted small">
+              Total: {{ analisis_info.criterios }} CA detectados
+            </p>
+            {% else %}
+            <p class="text-muted">
+              No se detectaron criterios de aceptación en el requerimiento.
+            </p>
+            {% endif %}
+
+            <hr class="my-3" />
+
+            <h6>
+              <i class="bi bi-shield-check text-warning me-2"></i>Criterios No
+              Funcionales (CNF)
+            </h6>
+            {% if analisis_info.criterios_cnf_lista %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              {% for criterio in analisis_info.criterios_cnf_lista %}
+              <span class="badge bg-warning text-dark">{{ criterio }}</span>
+              {% endfor %}
+            </div>
+            <p class="text-muted small">
+              Total: {{ analisis_info.criterios_no_funcionales }} CNF detectados
+            </p>
+            {% else %}
+            <p class="text-muted">
+              No se detectaron criterios no funcionales en el requerimiento.
+            </p>
+            {% endif %}
+
+            <hr class="my-3" />
+
+            <h6><i class="bi bi-search me-2"></i>Patrones de Detección</h6>
+            <p class="small">
+              El sistema usa expresiones regulares para detectar criterios:
+            </p>
+            <ul class="small">
+              <li>
+                <strong>CA:</strong> <code>CA</code>, <code>C.A.</code>,
+                <code>Criterio de Aceptación</code> seguido de número
+              </li>
+              <li>
+                <strong>CNF:</strong> <code>CNF</code>, <code>C.N.F.</code>,
+                <code>Requerimiento No Funcional</code> seguido de número
+              </li>
+            </ul>
+            <p class="small text-muted">
+              Ejemplo: "CA-01", "C.A. 15", "Criterio de Aceptación 3"
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div
+      class="modal fade"
+      id="deleteConfirmModal"
+      tabindex="-1"
+      aria-labelledby="deleteModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div
+          class="modal-content"
+          style="
+            border-left: 6px solid var(--bs-danger);
+            border-radius: 0.75rem;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+            background-color: white;
+          "
+        >
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="deleteModalLabel">
+              <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i
+              >Confirmar Eliminación
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              ¿Estás seguro de que quieres eliminar (ocultar) este análisis?
+            </p>
+            <p class="text-danger small">
+              Esta acción no se puede deshacer, pero los datos se mantendrán
+              para auditoría.
+            </p>
+          </div>
+          <div class="modal-footer border-0">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="confirmDeleteButton"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="offcanvas-lg offcanvas-start d-lg-none"
+      tabindex="-1"
+      id="historialOffcanvasMobile"
+      aria-labelledby="historialOffcanvasMobileLabel"
+    >
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="historialOffcanvasMobileLabel">
+          <i class="bi bi-clock-history me-2"></i> Historial de Análisis
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="offcanvas"
+          data-bs-target="#historialOffcanvasMobile"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="offcanvas-body">
         <p class="text-muted small">Análisis anteriores (activos).</p>
         <div class="list-group list-group-flush">
-            {% if historial_analisis %}
-                {% for item in historial_analisis %}
-                <div class="list-group-item list-group-item-action p-3 {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}" 
-                     aria-current="{% if analisis_obj and analisis_obj.id == item.id %}true{% else %}false{% endif %}"
-                     style="cursor: pointer;" 
-                     onclick="window.location.href='{{ url_for('analysis.analysis_index', view_id=item.id) }}';">
-                    
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1 text-truncate" title="{{ item.nombre_requerimiento }}">{{ item.nombre_requerimiento }}</h6>
-                        <small class="text-muted">{{ item.timestamp.strftime('%d/%m/%y') }}</Ssmall>
-                    </div>
-                    <small class="mb-1 text-muted">
-                        {{ item.plantilla_usada.nombre_plantilla }} | {{ item.casos_generados }} casos
-                    </small>
-                    
-                    <div class="d-flex justify-content-end align-items-center mt-2">
-                        <a href="{{ url_for('analysis.analysis_index', view_id=item.id) }}" 
-                           class="btn btn-sm btn-outline-info ms-2" 
-                           title="Cargar este análisis en la vista principal">
-                            <i class="bi bi-eye-fill"></i>
-                        </a>
-                        <form id="form-delete-{{ item.id }}-mobile" 
-                              action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}" 
-                              method="POST" class="ms-2" style="position: relative; z-index: 5;">
-                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#deleteConfirmModal"
-                                    data-form-id="form-delete-{{ item.id }}-mobile"
-                                    title="Eliminar (Ocultar) este análisis">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-            <p class="text-center text-muted small p-3">No tienes análisis guardados.</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
+          {% if historial_analisis %} {% for item in historial_analisis %}
+          <div
+            class="list-group-item list-group-item-action p-3 historial-item-mobile {% if analisis_obj and analisis_obj.id == item.id %}active{% endif %}"
+            aria-current="{% if analisis_obj and analisis_obj.id == item.id %}true{% else %}false{% endif %}"
+            style="cursor: pointer"
+            data-view-id="{{ item.id }}"
+          >
+            <div class="d-flex w-100 justify-content-between">
+              <h6
+                class="mb-1 text-truncate"
+                title="{{ item.nombre_requerimiento }}"
+              >
+                {{ item.nombre_requerimiento }}
+              </h6>
+              <small class="text-muted"
+                >{{ item.timestamp.strftime('%d/%m/%y') }}</small
+              >
+            </div>
+            <small class="mb-1 text-muted">
+              {{ item.plantilla_usada.nombre_plantilla }} | {{
+              item.casos_generados }} casos
+            </small>
 
-<style>
-    .glassmorphism-modal .modal-content {
+            <div class="d-flex justify-content-end align-items-center mt-2">
+              <a
+                href="{{ url_for('analysis.analysis_index', view_id=item.id) }}"
+                class="btn btn-sm btn-outline-info ms-2 action-btn"
+                title="Cargar este análisis en la vista principal"
+                onclick="event.stopPropagation();"
+              >
+                <i class="bi bi-eye-fill"></i>
+              </a>
+              <form
+                id="form-delete-{{ item.id }}-mobile"
+                action="{{ url_for('analysis.delete_analysis', view_id=item.id) }}"
+                method="POST"
+                class="ms-2"
+                style="position: relative; z-index: 5"
+              >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger action-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteConfirmModal"
+                  data-form-id="form-delete-{{ item.id }}-mobile"
+                  title="Eliminar (Ocultar) este análisis"
+                  onclick="event.stopPropagation();"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <p class="text-center text-muted small p-3">
+            No tienes análisis guardados.
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="verPlantillaModal"
+      tabindex="-1"
+      aria-labelledby="verPlantillaModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="verPlantillaModalLabel">
+              <i class="bi bi-layout-text-sidebar-reverse me-2"></i>
+              Información de la Plantilla
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div id="plantillaModalLoading" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-3 text-muted">
+                Cargando información de la plantilla...
+              </p>
+            </div>
+
+            <div id="plantillaModalContent" style="display: none">
+              <div class="card mb-3 border-0" style="background-color: #f8f9fa">
+                <div class="card-body">
+                  <h6 class="card-subtitle mb-3 text-muted">
+                    <i class="bi bi-info-circle me-2"></i>Información General
+                  </h6>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i
+                          class="bi bi-file-earmark-text text-primary me-2"
+                          style="font-size: 1.2rem"
+                        ></i>
+                        <div>
+                          <small class="text-muted d-block">Nombre</small>
+                          <strong id="plantillaNombre">-</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i
+                          class="bi bi-file-earmark-spreadsheet text-success me-2"
+                          style="font-size: 1.2rem"
+                        ></i>
+                        <div>
+                          <small class="text-muted d-block"
+                            >Tipo de Archivo</small
+                          >
+                          <strong id="plantillaTipoArchivo">-</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i
+                          class="bi bi-table text-info me-2"
+                          style="font-size: 1.2rem"
+                        ></i>
+                        <div>
+                          <small class="text-muted d-block"
+                            >Hoja Seleccionada</small
+                          >
+                          <strong id="plantillaSheetName">-</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="d-flex align-items-center">
+                        <i
+                          class="bi bi-hash text-warning me-2"
+                          style="font-size: 1.2rem"
+                        ></i>
+                        <div>
+                          <small class="text-muted d-block"
+                            >Fila de Encabezados</small
+                          >
+                          <strong id="plantillaHeaderRow">-</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card border-0">
+                <div class="card-body">
+                  <h6 class="card-subtitle mb-3 text-muted">
+                    <i class="bi bi-diagram-3 me-2"></i>Mapeo de Columnas
+                  </h6>
+
+                  <div class="table-responsive">
+                    <table
+                      class="table table-sm table-hover"
+                      id="plantillaMapasTable"
+                    >
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 10%">#</th>
+                          <th style="width: 60%">Etiqueta</th>
+                          <th style="width: 30%">Coordenada</th>
+                        </tr>
+                      </thead>
+                      <tbody id="plantillaMapasTbody"></tbody>
+                    </table>
+                  </div>
+
+                  <div
+                    id="plantillaNoMapas"
+                    style="display: none"
+                    class="alert alert-warning"
+                    role="alert"
+                  >
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    No se encontraron mapeos de columnas para esta plantilla.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="plantillaModalError"
+              style="display: none"
+              class="alert alert-danger"
+              role="alert"
+            >
+              <i class="bi bi-x-circle me-2"></i>
+              <span id="plantillaModalErrorMessage"
+                >Error al cargar la información de la plantilla.</span
+              >
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              <i class="bi bi-x-lg me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="historialCambiosModal"
+      tabindex="-1"
+      aria-labelledby="historialCambiosModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="historialCambiosModalLabel">
+              <i class="bi bi-clock-history me-2"></i>
+              Historial de Cambios
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="card mb-3 border-0" style="background-color: #f8f9fa">
+              <div class="card-body">
+                <div class="row align-items-center">
+                  <div class="col-md-8">
+                    <h6 class="mb-1">
+                      <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                      <strong id="historialAnalisisNombre">-</strong>
+                    </h6>
+                    <small class="text-muted">
+                      <i class="bi bi-calendar-event me-1"></i>
+                      <span id="historialAnalisisFecha">-</span>
+                      <span class="ms-3">
+                        <i class="bi bi-list-check me-1"></i>
+                        <span id="historialAnalisisCasos">-</span> casos
+                      </span>
+                    </small>
+                  </div>
+                  <div class="col-md-4 text-end">
+                    <span class="badge bg-info fs-6">
+                      <span id="historialTotalCambios">0</span> cambios
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select
+                    class="form-select form-select-sm"
+                    id="historialFiltroTipo"
+                  >
+                    <option value="">Todos los tipos</option>
+                    <option value="REQUERIMIENTO_MODIFICADO">
+                      Requerimiento Modificado
+                    </option>
+                    <option value="CASOS_MODIFICADOS">Casos Modificados</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-secondary"
+                    id="historialAplicarFiltro"
+                  >
+                    <i class="bi bi-funnel me-1"></i>Aplicar
+                  </button>
+                </div>
+                <div class="col-md-4">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary w-100"
+                    id="historialRefresh"
+                  >
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="historialModalLoading" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-3 text-muted">Cargando historial...</p>
+            </div>
+
+            <div id="historialModalContent" style="display: none">
+              <div class="table-responsive">
+                <table class="table table-hover" id="historialCambiosTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Fecha</th>
+                      <th>Usuario</th>
+                      <th>Tipo</th>
+                      <th>Detalles</th>
+                      <th>Ver</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historialCambiosTbody"></tbody>
+                </table>
+              </div>
+
+              <nav id="historialPaginacion" style="display: none">
+                <ul class="pagination pagination-sm justify-content-center">
+                  <li class="page-item" id="historialPaginaPrev">
+                    <a class="page-link" href="#">«</a>
+                  </li>
+                  <li class="page-item active">
+                    <span class="page-link">
+                      <span id="historialPaginaActual">1</span>/<span
+                        id="historialPaginaTotal"
+                        >1</span
+                      >
+                    </span>
+                  </li>
+                  <li class="page-item" id="historialPaginaNext">
+                    <a class="page-link" href="#">»</a>
+                  </li>
+                </ul>
+              </nav>
+
+              <div
+                id="historialNoCambios"
+                style="display: none"
+                class="alert alert-info"
+                role="alert"
+              >
+                No se encontraron cambios para este análisis.
+              </div>
+            </div>
+
+            <div
+              id="historialModalError"
+              style="display: none"
+              class="alert alert-danger"
+              role="alert"
+            >
+              <span id="historialModalErrorMessage"></span>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              <i class="bi bi-x-lg me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="jsonBackupModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-code-square me-2"></i>JSON Backup
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <small class="text-muted d-block mb-2">
+              Fecha: <span id="jsonBackupFecha">-</span>
+            </small>
+            <pre
+              id="jsonBackupContent"
+              style="
+                background-color: #f8f9fa;
+                padding: 1rem;
+                border-radius: 0.375rem;
+                max-height: 500px;
+                overflow-y: auto;
+              "
+            ><code></code></pre>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+      .glassmorphism-modal .modal-content {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .glassmorphism-modal .modal-header,
-    .glassmorphism-modal .modal-footer {
+      }
+      .glassmorphism-modal .modal-header,
+      .glassmorphism-modal .modal-footer {
         background: rgba(255, 255, 255, 0.5);
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .excel-grid-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
-    .excel-grid-table th, 
-    .excel-grid-table td { border: 1px solid #ccc; padding: 4px 8px; min-width: 100px; }
-    .excel-grid-table th { background-color: #f0f0f0; text-align: center; position: sticky; top: 0; }
-    .grid-view { max-height: 60vh; overflow: auto; }
-    .editable-cell { background-color: #fff9e6; cursor: cell; }
-    .cell-data.editing { padding: 0; position: relative; }
-    textarea.cell-editor {
-        width: 100%; height: 100%; min-height: 50px;
-        border: 2px solid var(--bs-primary); box-shadow: none;
-        outline: none; resize: vertical; padding: 4px 8px;
-        font-size: 0.85rem; position: absolute; top: 0; left: 0; z-index: 10;
-    }
+      }
+      .excel-grid-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 1rem;
+      }
+      .excel-grid-table th,
+      .excel-grid-table td {
+        border: 1px solid #ccc;
+        padding: 4px 8px;
+        min-width: 100px;
+      }
+      .excel-grid-table th {
+        background-color: #f0f0f0;
+        text-align: center;
+        position: sticky;
+        top: 0;
+      }
+      .grid-view {
+        max-height: 60vh;
+        overflow: auto;
+      }
+      .editable-cell {
+        background-color: #fff9e6;
+        cursor: cell;
+      }
+      .cell-data.editing {
+        padding: 0;
+        position: relative;
+      }
+      textarea.cell-editor {
+        width: 100%;
+        height: 100%;
+        min-height: 50px;
+        border: 2px solid var(--bs-primary);
+        box-shadow: none;
+        outline: none;
+        resize: vertical;
+        padding: 4px 8px;
+        font-size: 1rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+      }
 
-    /* ¡ESTILO PARA AJUSTE 5! (Edición usable) */
-    #resultsTable.edit-mode tbody td {
+      #resultsTable.edit-mode tbody td {
         background-color: #fffdf0;
         outline: 1px dashed var(--bs-primary);
         cursor: cell;
-        padding: 0; 
-    }
-    #resultsTable.edit-mode tbody td textarea {
+        padding: 0;
+      }
+      #resultsTable.edit-mode tbody td textarea {
         width: 100%;
-        height: 100%; 
-        min-height: 100px; 
+        height: 100%;
+        min-height: 100px;
         border: none;
         box-shadow: none;
         outline: none;
         padding: 0.5rem;
-        font-size: 0.9rem;
+        font-size: 1.1rem;
         background-color: transparent;
         resize: vertical;
-    }
-</style>
-{% endblock %}
-
-
-
-{% block scripts %}
-
-    {{ super() }}
+      }
+    </style>
+    {% endif %} {% endblock %} {% block scripts %} {{ super() }}
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        
+      document.addEventListener("DOMContentLoaded", function () {
         // --- Lógica de Toasts ---
-        const flashData = document.getElementById('flash-data');
+        const flashData = document.getElementById("flash-data");
         if (flashData) {
-            const messages = JSON.parse(flashData.dataset.messages || '[]');
-            if (messages.length > 0) {
-                // Filtramos duplicados (Bug de Alerta Doble)
-                const uniqueMessages = [...new Set(messages.map(m => JSON.stringify(m)))].map(m => JSON.parse(m));
-                uniqueMessages.forEach(messagePair => showToast(messagePair[1], messagePair[0]));
-            }
+          const messages = JSON.parse(flashData.dataset.messages || "[]");
+          if (messages.length > 0) {
+            const uniqueMessages = [
+              ...new Set(messages.map((m) => JSON.stringify(m))),
+            ].map((m) => JSON.parse(m));
+            uniqueMessages.forEach((messagePair) =>
+              showToast(messagePair[1], messagePair[0])
+            );
+          }
         }
 
         // --- Lógica de "Ver más" (Delegación de eventos) ---
-        document.body.addEventListener('click', function(event) {
-            if (event.target.classList.contains('btn-toggle-text')) {
-                const button = event.target;
-                const container = button.closest('.text-container');
-                const preview = container.querySelector('.text-preview');
-                const full = container.querySelector('.text-full');
-                if (full.style.display === 'none') {
-                    preview.style.display = 'none';
-                    full.style.display = 'block';
-                    button.textContent = 'Ver menos';
-                    button.classList.remove('btn-outline-primary');
-                    button.classList.add('btn-outline-secondary');
-                } else {
-                    preview.style.display = 'block';
-                    full.style.display = 'none';
-                    button.textContent = 'Ver más';
-                    button.classList.remove('btn-outline-secondary');
-                    button.classList.add('btn-outline-primary');
-                }
+        document.body.addEventListener("click", function (event) {
+          if (event.target.classList.contains("btn-toggle-text")) {
+            const button = event.target;
+            const container = button.closest(".text-container");
+            const preview = container.querySelector(".text-preview");
+            const full = container.querySelector(".text-full");
+            if (full.style.display === "none") {
+              preview.style.display = "none";
+              full.style.display = "block";
+              button.textContent = "Ver menos";
+              button.classList.remove("btn-outline-primary");
+              button.classList.add("btn-outline-secondary");
+            } else {
+              preview.style.display = "block";
+              full.style.display = "none";
+              button.textContent = "Ver más";
+              button.classList.remove("btn-outline-secondary");
+              button.classList.add("btn-outline-primary");
             }
+          }
         });
 
         // --- Lógica de "Drag-Drop" ---
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const dropZoneText = document.getElementById('drop-zone-text');
-        const dropZoneMobile = document.getElementById('drop-zone-mobile');
-        const fileInputMobile = document.getElementById('file-input-mobile');
-        const dropZoneTextMobile = document.getElementById('drop-zone-text-mobile');
+        const dropZone = document.getElementById("drop-zone");
+        const fileInput = document.getElementById("file-input");
+        const dropZoneText = document.getElementById("drop-zone-text");
+        const dropZoneMobile = document.getElementById("drop-zone-mobile");
+        const fileInputMobile = document.getElementById("file-input-mobile");
+        const dropZoneTextMobile = document.getElementById(
+          "drop-zone-text-mobile"
+        );
         function setupDropZone(dz, input, textEl) {
-            if (dz && input && textEl) {
-                dz.addEventListener('click', () => input.click());
-                dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-over'); });
-                dz.addEventListener('dragleave', (e) => { e.preventDefault(); dz.classList.remove('drag-over'); });
-                dz.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dz.classList.remove('drag-over');
-                    if (e.dataTransfer.files.length) {
-                        input.files = e.dataTransfer.files;
-                        updateFileDisplay(input.files[0], textEl);
-                    }
-                });
-                input.addEventListener('change', () => {
-                    if (input.files.length) {
-                        updateFileDisplay(input.files[0], textEl);
-                    } else {
-                        textEl.innerHTML = '<i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)';
-                        textEl.classList.remove('file-selected');
-                    }
-                });
-            }
+          if (dz && input && textEl) {
+            dz.addEventListener("click", () => input.click());
+            dz.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              dz.classList.add("drag-over");
+            });
+            dz.addEventListener("dragleave", (e) => {
+              e.preventDefault();
+              dz.classList.remove("drag-over");
+            });
+            dz.addEventListener("drop", (e) => {
+              e.preventDefault();
+              dz.classList.remove("drag-over");
+              if (e.dataTransfer.files.length) {
+                input.files = e.dataTransfer.files;
+                updateFileDisplay(input.files[0], textEl);
+              }
+            });
+            input.addEventListener("change", () => {
+              if (input.files.length) {
+                updateFileDisplay(input.files[0], textEl);
+              } else {
+                textEl.innerHTML =
+                  '<i class="bi bi-upload me-2"></i>Arrastra o selecciona (.txt, .docx, .xlsx)';
+                textEl.classList.remove("file-selected");
+              }
+            });
+          }
         }
         function updateFileDisplay(file, textEl) {
-            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            let fileName = file.name;
-            if (fileName.length > 35) {
-                fileName = fileName.substring(0, 20) + '...' + fileName.substring(fileName.length - 12);
-            }
-            textEl.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${fileName} <small class="ms-2">(${sizeMB} MB)</small>`;
-            textEl.classList.add('file-selected');
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          let fileName = file.name;
+          if (fileName.length > 35) {
+            fileName =
+              fileName.substring(0, 20) +
+              "..." +
+              fileName.substring(fileName.length - 12);
+          }
+          textEl.innerHTML = `<i class="bi bi-file-earmark-text me-2"></i>${fileName} <small class="ms-2">(${sizeMB} MB)</small>`;
+          textEl.classList.add("file-selected");
         }
         setupDropZone(dropZone, fileInput, dropZoneText);
         setupDropZone(dropZoneMobile, fileInputMobile, dropZoneTextMobile);
 
-        // --- ERROR #2 CORRECCIÓN: Lógica del Modal de Borrado ---
-        var deleteModal = document.getElementById('deleteConfirmModal');
-        var confirmButton = document.getElementById('confirmDeleteButton');
-        var formToSubmit; 
-        
-        if (deleteModal && confirmButton) {
-            deleteModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                if (button) {
-                    var formId = button.getAttribute('data-form-id');
-                    if (formId) {
-                        formToSubmit = document.getElementById(formId);
-                    }
-                }
-            });
-            
-            confirmButton.addEventListener('click', function () {
-                if (formToSubmit) {
-                    formToSubmit.submit();
-                }
-            });
-        } else {
-            console.warn('Modal de confirmación de eliminación no encontrado en el DOM');
-        }
+        // --- Lógica de Clic Delegado para Historial ---
+        document.querySelectorAll(".historial-item").forEach((item) => {
+          item.addEventListener("click", function (e) {
+            if (!e.target.closest(".action-btn") && !e.target.closest("form")) {
+              const viewId = this.getAttribute("data-view-id");
+              if (viewId) {
+                window.location.href = `/analysis/?view_id=${viewId}`;
+              }
+            }
+          });
+        });
 
-        // --- ERROR #4 CORRECCIÓN: Lógica del Botón Ver Plantilla Seleccionada ---
-        const viewTemplateBtnForm = document.getElementById('viewTemplateBtnForm');
-        const viewTemplateBtnFormMobile = document.getElementById('viewTemplateBtnFormMobile');
-        const plantillaSelect = document.getElementById('plantilla');
-        const plantillaSelectMobile = document.querySelector('.d-lg-none #plantilla');
-        
-        function mostrarPlantillaSeleccionada(selectElement) {
-            if (!selectElement) {
-                showToast('No se encontró el selector de plantilla', 'danger');
-                return;
+        document.querySelectorAll(".historial-item-mobile").forEach((item) => {
+          item.addEventListener("click", function (e) {
+            if (!e.target.closest(".action-btn") && !e.target.closest("form")) {
+              const viewId = this.getAttribute("data-view-id");
+              if (viewId) {
+                window.location.href = `/analysis/?view_id=${viewId}`;
+              }
             }
-            
-            const plantillaId = selectElement.value;
-            
-            if (!plantillaId) {
-                showToast('Por favor, selecciona una plantilla primero', 'warning');
-                return;
+          });
+        });
+
+        // --- Lógica del Modal de Borrado ---
+        var deleteModal = document.getElementById("deleteConfirmModal");
+        var confirmButton = document.getElementById("confirmDeleteButton");
+        var formToSubmit;
+
+        if (deleteModal && confirmButton) {
+          deleteModal.addEventListener("show.bs.modal", function (event) {
+            var button = event.relatedTarget;
+            if (button) {
+              var formId = button.getAttribute("data-form-id");
+              if (formId) {
+                formToSubmit = document.getElementById(formId);
+              }
             }
-            
-            // Redirigir a la vista de plantilla
-            window.location.href = `/ver_plantilla/${plantillaId}`;
-        }
-        
-        if (viewTemplateBtnForm && plantillaSelect) {
-            viewTemplateBtnForm.addEventListener('click', function(e) {
-                e.preventDefault();
-                mostrarPlantillaSeleccionada(plantillaSelect);
-            });
-        }
-        
-        if (viewTemplateBtnFormMobile && plantillaSelectMobile) {
-            viewTemplateBtnFormMobile.addEventListener('click', function(e) {
-                e.preventDefault();
-                mostrarPlantillaSeleccionada(plantillaSelectMobile);
-            });
+          });
+
+          confirmButton.addEventListener("click", function () {
+            if (formToSubmit) {
+              formToSubmit.submit();
+            }
+          });
+        } else {
+          console.warn(
+            "Modal de confirmación de eliminación no encontrado en el DOM"
+          );
         }
 
         // --- Lógica del Botón de Scroll ---
-        const scrollBtn = document.getElementById('scroll-toggle-btn');
-        const scrollIcon = document.getElementById('scroll-toggle-icon');
+        const scrollBtn = document.getElementById("scroll-toggle-btn");
+        const scrollIcon = document.getElementById("scroll-toggle-icon");
         if (scrollBtn && scrollIcon) {
-            function updateScrollButton() {
-                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
-                if (isAtBottom) {
-                    scrollIcon.classList.remove('bi-arrow-down');
-                    scrollIcon.classList.add('bi-arrow-up');
-                    scrollBtn.setAttribute('title', 'Ir al inicio');
-                } else {
-                    scrollIcon.classList.remove('bi-arrow-up');
-                    scrollIcon.classList.add('bi-arrow-down');
-                    scrollBtn.setAttribute('title', 'Ir al final');
-                }
+          function updateScrollButton() {
+            const isAtBottom =
+              window.scrollY + window.innerHeight >=
+              document.documentElement.scrollHeight - 100;
+            if (isAtBottom) {
+              scrollIcon.classList.remove("bi-arrow-down");
+              scrollIcon.classList.add("bi-arrow-up");
+              scrollBtn.setAttribute("title", "Ir al inicio");
+            } else {
+              scrollIcon.classList.remove("bi-arrow-up");
+              scrollIcon.classList.add("bi-arrow-down");
+              scrollBtn.setAttribute("title", "Ir al final");
             }
-            scrollBtn.addEventListener('click', function() {
-                const isAtBottom = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
-                if (isAtBottom) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-                else { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
-            });
-            window.addEventListener('scroll', updateScrollButton);
-            updateScrollButton();
-        }
-        
-        // --- Lógica del Modal de Requerimiento (AJUSTE 2) ---
-        const reqModal = document.getElementById('requerimientoModal');
-        if (reqModal) {
-            // (Toda la lógica del modal de Excel... sin cambios)
-            const reqModalForm = document.getElementById('form-re-analyze');
-            const mainTextarea = document.getElementById('main-req-textarea');
-            const tabsContainer = document.getElementById('excelTabsContainer');
-            const contentContainer = document.getElementById('excelTabsContentContainer');
-            const toggleContainer = document.getElementById('viewModeToggleContainer');
-            const toggle = document.getElementById('viewModeToggle');
-            const saveChangesBtn = document.getElementById('save-changes-btn');
-            const separator = "\n--- INICIO HOJA: ";
-            let isEditMode = false;
-            let hasUnsavedChanges = false;
-            reqModal.addEventListener('show.bs.modal', function() {
-                const fullText = mainTextarea.value;
-                tabsContainer.innerHTML = '';
-                contentContainer.innerHTML = '';
-                isEditMode = false; hasUnsavedChanges = false;
-                toggle.checked = false; saveChangesBtn.classList.remove('show');
-                if (fullText.includes(separator)) {
-                    toggleContainer.style.display = 'block';
-                    tabsContainer.classList.add('excel-active');
-                    const parts = fullText.split(separator);
-                    let sheetData = [];
-                    if (parts[0].trim() !== '') {
-                        sheetData.push({ name: 'Hoja 1 (Default)', content: parts[0] });
-                    }
-                    for (let i = 1; i < parts.length; i++) {
-                        const contentSplit = parts[i].split(' ---\n');
-                        const sheetName = contentSplit[0];
-                        const sheetContent = contentSplit.slice(1).join(' ---\n');
-                        sheetData.push({ name: sheetName, content: sheetContent });
-                    }
-                    buildExcelTabs(sheetData);
-                } else {
-                    toggleContainer.style.display = 'none';
-                    tabsContainer.classList.remove('excel-active');
-                    const pane = document.createElement('div');
-                    pane.className = 'tab-pane fade show active';
-                    pane.id = 'pane-req-simple';
-                    pane.setAttribute('role', 'tabpanel');
-                    mainTextarea.style.display = 'block';
-                    pane.appendChild(mainTextarea);
-                    contentContainer.appendChild(pane);
-                    const tab = document.createElement('li');
-                    tab.className = 'nav-item';
-                    tab.innerHTML = `<button class="nav-link active" id="tab-req-simple" data-bs-toggle="tab" data-bs-target="#pane-req-simple" type="button" role="tab">Requerimiento</button>`;
-                    tabsContainer.appendChild(tab);
-                }
-            });
-            function buildExcelTabs(sheetData) {
-                for(let i = 0; i < sheetData.length; i++) {
-                    const name = sheetData[i].name, content = sheetData[i].content;
-                    const id = 'sheet-' + i, isActive = (i === 0);
-                    const tab = document.createElement('li');
-                    tab.className = 'nav-item';
-                    tab.setAttribute('role', 'presentation');
-                    tab.innerHTML = `<button class="nav-link ${isActive ? 'active' : ''}" id="tab-${id}" data-bs-toggle="tab" data-bs-target="#pane-${id}" type="button" role="tab">${name}</button>`;
-                    tabsContainer.appendChild(tab);
-                    const pane = document.createElement('div');
-                    pane.className = `tab-pane fade ${isActive ? 'show active' : ''}`;
-                    pane.id = `pane-${id}`;
-                    pane.setAttribute('role', 'tabpanel');
-                    pane.setAttribute('data-sheet-name', name);
-                    pane.innerHTML = buildEditableGrid(content);
-                    contentContainer.appendChild(pane);
-                }
+          }
+          scrollBtn.addEventListener("click", function () {
+            const isAtBottom =
+              window.scrollY + window.innerHeight >=
+              document.documentElement.scrollHeight - 100;
+            if (isAtBottom) {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            } else {
+              window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: "smooth",
+              });
             }
-            function buildEditableGrid(content) {
-                let maxCols = 0;
-                const rows = content.split('\n');
-                const tableRows = [];
-                rows.forEach(rowStr => {
-                    if (rowStr.trim() === '') return;
-                    const cells = rowStr.split(' | ');
-                    tableRows.push(cells);
-                    if (cells.length > maxCols) maxCols = cells.length;
-                });
-                if (maxCols === 0) maxCols = 1;
-                let html = '<div class="grid-view"><table class="excel-grid-table"><thead><tr>';
-                for(let i = 0; i < maxCols; i++) {
-                    let colName = ''; let n = i;
-                    do {
-                        colName = String.fromCharCode(65 + (n % 26)) + colName;
-                        n = Math.floor(n / 26) - 1;
-                    } while (n >= 0);
-                    html += `<th>${colName}</th>`;
-                }
-                html += '</tr></thead><tbody>';
-                tableRows.forEach((cells, rowIdx) => {
-                    html += '<tr>';
-                    for(let colIdx = 0; colIdx < maxCols; colIdx++) {
-                        const cellData = cells[colIdx] || '';
-                        const escapedData = cellData.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        html += `<td class="cell-data" data-row="${rowIdx}" data-col="${colIdx}">${escapedData}</td>`;
-                    }
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
-                return html;
-            }
-            toggle.addEventListener('change', function() {
-                isEditMode = this.checked;
-                toggleEditMode(isEditMode);
-            });
-            function toggleEditMode(editMode) {
-                const allCells = reqModal.querySelectorAll('.excel-grid-table td.cell-data');
-                if (editMode) {
-                    allCells.forEach(cell => {
-                        cell.classList.add('editable-cell');
-                        cell.addEventListener('dblclick', handleCellDoubleClick);
-                    });
-                } else {
-                    const activeEditor = reqModal.querySelector('.cell-editor');
-                    if (activeEditor) saveCell(activeEditor);
-                    allCells.forEach(cell => {
-                        cell.classList.remove('editable-cell');
-                        cell.removeEventListener('dblclick', handleCellDoubleClick);
-                    });
-                    hasUnsavedChanges = false;
-                    saveChangesBtn.classList.remove('show');
-                }
-            }
-            function handleCellDoubleClick(e) {
-                if (!isEditMode) return;
-                const cell = e.target.closest('.cell-data');
-                if (cell.classList.contains('editing')) return;
-                const activeEditor = reqModal.querySelector('.cell-editor');
-                if (activeEditor) saveCell(activeEditor);
-                const originalContent = cell.textContent;
-                cell.classList.add('editing');
-                cell.setAttribute('data-original', originalContent);
-                const textarea = document.createElement('textarea');
-                textarea.className = 'cell-editor';
-                textarea.value = originalContent;
-                textarea.setAttribute('data-original', originalContent);
-                cell.textContent = '';
-                cell.appendChild(textarea);
-                textarea.focus();
-                textarea.addEventListener('blur', () => saveCell(textarea));
-                textarea.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveCell(textarea); }
-                    if (e.key === 'Escape') { 
-                        cell.classList.remove('editing');
-                        cell.removeAttribute('data-original');
-                        cell.textContent = originalContent; 
-                    }
-                });
-            }
-            function saveCell(textarea) {
-                const cell = textarea.parentElement;
-                if (!cell) return;
-                const newContent = textarea.value;
-                const originalContent = cell.getAttribute('data-original') || '';
-                cell.classList.remove('editing');
-                cell.removeAttribute('data-original');
-                cell.textContent = newContent;
-                if (newContent !== originalContent) {
-                    hasUnsavedChanges = true;
-                    saveChangesBtn.classList.add('show');
-                }
-            }
-            if (saveChangesBtn) {
-                saveChangesBtn.addEventListener('click', function() {
-                    const activeEditor = reqModal.querySelector('.cell-editor');
-                    if (activeEditor) saveCell(activeEditor);
-                    consolidateChanges();
-                    hasUnsavedChanges = false;
-                    saveChangesBtn.classList.remove('show');
-                    toggle.checked = false;
-                    toggleEditMode(false);
-                    showToast('Cambios guardados correctamente', 'success');
-                });
-            }
-            function consolidateChanges() {
-                if (!tabsContainer.classList.contains('excel-active')) return;
-                let newFullText = '';
-                const panes = contentContainer.querySelectorAll('.tab-pane');
-                panes.forEach((pane, idx) => {
-                    const sheetName = pane.getAttribute('data-sheet-name');
-                    const table = pane.querySelector('.excel-grid-table tbody');
-                    if (!table) return;
-                    const rows = table.querySelectorAll('tr');
-                    let sheetContent = '';
-                    rows.forEach(row => {
-                        const cells = row.querySelectorAll('td');
-                        const rowData = Array.from(cells).map(cell => cell.textContent.trim());
-                        if (rowData.some(val => val !== '')) {
-                            sheetContent += rowData.join(' | ') + '\n';
-                        }
-                    });
-                    if (idx === 0 && sheetName === 'Hoja 1 (Default)') {
-                        newFullText += sheetContent;
-                    } else {
-                        newFullText += `${separator}${sheetName} ---\n${sheetContent}`;
-                    }
-                });
-                mainTextarea.value = newFullText;
-            }
-            if (reqModalForm) {
-                reqModalForm.addEventListener('submit', function(e) {
-                    const activeEditor = reqModal.querySelector('.cell-editor');
-                    if (activeEditor) saveCell(activeEditor);
-                    if (tabsContainer.classList.contains('excel-active')) {
-                        consolidateChanges();
-                    }
-                    mainTextarea.style.display = 'block';
-                    mainTextarea.style.visibility = 'hidden';
-                    mainTextarea.style.height = '0';
-                });
-            }
-        } // Fin de if(reqModal)
-        
-        // --- ¡AJUSTE 7 (Req. 7): Lógica del Botón Copiar JSON! ---
-        const copyJsonBtn = document.getElementById('copyJsonBtn');
-        const jsonContent = document.getElementById('json-pre-content');
-        if (copyJsonBtn && jsonContent) {
-            copyJsonBtn.addEventListener('click', function() {
-                const textToCopy = jsonContent.textContent || jsonContent.innerText;
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    showToast('¡JSON copiado al portapapeles!', 'success');
-                }).catch(err => {
-                    console.error('Error al copiar JSON: ', err);
-                    showToast('Error al copiar. Revisa la consola.', 'danger');
-                });
-            });
+          });
+          window.addEventListener("scroll", updateScrollButton);
+          updateScrollButton();
         }
 
-        // --- ¡AJUSTE 2 (Req. 2): Lógica del Botón Copiar XML! ---
-        const copyXmlBtn = document.getElementById('copyXmlBtn');
-        const xmlContent = document.getElementById('xml-pre-content');
-        if (copyXmlBtn && xmlContent) {
-            copyXmlBtn.addEventListener('click', function() {
-                const textToCopy = xmlContent.textContent || xmlContent.innerText;
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    showToast('¡XML copiado al portapapeles!', 'success');
-                }).catch(err => {
-                    console.error('Error al copiar XML: ', err);
-                    showToast('Error al copiar. Revisa la consola.', 'danger');
-                });
+        // --- Lógica del Modal de Requerimiento ---
+        const reqModal = document.getElementById("requerimientoModal");
+        if (reqModal) {
+          const reqModalForm = document.getElementById("form-re-analyze");
+          const tabsContainer = document.getElementById("excelTabsContainer");
+          const contentContainer = document.getElementById(
+            "excelTabsContentContainer"
+          );
+          const toggleContainer = document.getElementById(
+            "viewModeToggleContainer"
+          );
+          const toggle = document.getElementById("viewModeToggle");
+          const saveChangesBtn = document.getElementById("save-changes-btn");
+          const separator = "\n--- INICIO HOJA: ";
+          let isEditMode = false;
+          let hasUnsavedChanges = false;
+
+          reqModal.addEventListener("show.bs.modal", function () {
+            const mainTextarea = document.getElementById("main-req-textarea");
+            if (!mainTextarea) {
+              console.error(
+                "Textarea de requerimiento no encontrado en el modal."
+              );
+              return;
+            }
+
+            const fullText = mainTextarea.value;
+            tabsContainer.innerHTML = "";
+            contentContainer.innerHTML = "";
+            isEditMode = false;
+            hasUnsavedChanges = false;
+            toggle.checked = false;
+            saveChangesBtn.classList.remove("show");
+            if (fullText.includes(separator)) {
+              toggleContainer.style.display = "block";
+              tabsContainer.classList.add("excel-active");
+              const parts = fullText.split(separator);
+              let sheetData = [];
+              if (parts[0].trim() !== "") {
+                sheetData.push({ name: "Hoja 1 (Default)", content: parts[0] });
+              }
+              for (let i = 1; i < parts.length; i++) {
+                const contentSplit = parts[i].split(" ---\n");
+                const sheetName = contentSplit[0];
+                const sheetContent = contentSplit.slice(1).join(" ---\n");
+                sheetData.push({ name: sheetName, content: sheetContent });
+              }
+              buildExcelTabs(sheetData);
+            } else {
+              toggleContainer.style.display = "none";
+              tabsContainer.classList.remove("excel-active");
+              const pane = document.createElement("div");
+              pane.className = "tab-pane fade show active";
+              pane.id = "pane-req-simple";
+              pane.setAttribute("role", "tabpanel");
+              mainTextarea.style.display = "block";
+              pane.appendChild(mainTextarea);
+              contentContainer.appendChild(pane);
+              const tab = document.createElement("li");
+              tab.className = "nav-item";
+              tab.innerHTML = `<button class="nav-link active" id="tab-req-simple" data-bs-toggle="tab" data-bs-target="#pane-req-simple" type="button" role="tab">Requerimiento</button>`;
+              tabsContainer.appendChild(tab);
+            }
+          });
+          function buildExcelTabs(sheetData) {
+            for (let i = 0; i < sheetData.length; i++) {
+              const name = sheetData[i].name,
+                content = sheetData[i].content;
+              const id = "sheet-" + i,
+                isActive = i === 0;
+              const tab = document.createElement("li");
+              tab.className = "nav-item";
+              tab.setAttribute("role", "presentation");
+              tab.innerHTML = `<button class="nav-link ${
+                isActive ? "active" : ""
+              }" id="tab-${id}" data-bs-toggle="tab" data-bs-target="#pane-${id}" type="button" role="tab">${name}</button>`;
+              tabsContainer.appendChild(tab);
+              const pane = document.createElement("div");
+              pane.className = `tab-pane fade ${isActive ? "show active" : ""}`;
+              pane.id = `pane-${id}`;
+              pane.setAttribute("role", "tabpanel");
+              pane.setAttribute("data-sheet-name", name);
+              pane.innerHTML = buildEditableGrid(content);
+              contentContainer.appendChild(pane);
+            }
+          }
+          function buildEditableGrid(content) {
+            let maxCols = 0;
+            const rows = content.split("\n");
+            const tableRows = [];
+            rows.forEach((rowStr) => {
+              if (rowStr.trim() === "") return;
+              const cells = rowStr.split(" | ");
+              tableRows.push(cells);
+              if (cells.length > maxCols) maxCols = cells.length;
             });
+            if (maxCols === 0) maxCols = 1;
+            let html =
+              '<div class="grid-view"><table class="excel-grid-table"><thead><tr>';
+            for (let i = 0; i < maxCols; i++) {
+              let colName = "";
+              let n = i;
+              do {
+                colName = String.fromCharCode(65 + (n % 26)) + colName;
+                n = Math.floor(n / 26) - 1;
+              } while (n >= 0);
+              html += `<th>${colName}</th>`;
+            }
+            html += "</tr></thead><tbody>";
+            tableRows.forEach((cells, rowIdx) => {
+              html += "<tr>";
+              for (let colIdx = 0; colIdx < maxCols; colIdx++) {
+                const cellData = cells[colIdx] || "";
+                const escapedData = cellData
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;");
+                html += `<td class="cell-data" data-row="${rowIdx}" data-col="${colIdx}">${escapedData}</td>`;
+              }
+              html += "</tr>";
+            });
+            html += "</tbody></table></div>";
+            return html;
+          }
+          toggle.addEventListener("change", function () {
+            isEditMode = this.checked;
+            toggleEditMode(isEditMode);
+          });
+          function toggleEditMode(editMode) {
+            const allCells = reqModal.querySelectorAll(
+              ".excel-grid-table td.cell-data"
+            );
+            if (editMode) {
+              allCells.forEach((cell) => {
+                cell.classList.add("editable-cell");
+                cell.addEventListener("dblclick", handleCellDoubleClick);
+              });
+            } else {
+              const activeEditor = reqModal.querySelector(".cell-editor");
+              if (activeEditor) saveCell(activeEditor);
+              allCells.forEach((cell) => {
+                cell.classList.remove("editable-cell");
+                cell.removeEventListener("dblclick", handleCellDoubleClick);
+              });
+              hasUnsavedChanges = false;
+              saveChangesBtn.classList.remove("show");
+            }
+          }
+          function handleCellDoubleClick(e) {
+            if (!isEditMode) return;
+            const cell = e.target.closest(".cell-data");
+            if (cell.classList.contains("editing")) return;
+            const activeEditor = reqModal.querySelector(".cell-editor");
+            if (activeEditor) saveCell(activeEditor);
+            const originalContent = cell.textContent;
+            cell.classList.add("editing");
+            cell.setAttribute("data-original", originalContent);
+            const textarea = document.createElement("textarea");
+            textarea.className = "cell-editor";
+            textarea.value = originalContent;
+            textarea.setAttribute("data-original", originalContent);
+            cell.textContent = "";
+            cell.appendChild(textarea);
+            textarea.focus();
+            textarea.addEventListener("blur", () => saveCell(textarea));
+            textarea.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                saveCell(textarea);
+              }
+              if (e.key === "Escape") {
+                cell.classList.remove("editing");
+                cell.removeAttribute("data-original");
+                cell.textContent = originalContent;
+              }
+            });
+          }
+          function saveCell(textarea) {
+            const cell = textarea.parentElement;
+            if (!cell) return;
+            const newContent = textarea.value;
+            const originalContent = cell.getAttribute("data-original") || "";
+            cell.classList.remove("editing");
+            cell.removeAttribute("data-original");
+            cell.textContent = newContent;
+            if (newContent !== originalContent) {
+              hasUnsavedChanges = true;
+              saveChangesBtn.classList.add("show");
+            }
+          }
+          if (saveChangesBtn) {
+            saveChangesBtn.addEventListener("click", function () {
+              const activeEditor = reqModal.querySelector(".cell-editor");
+              if (activeEditor) saveCell(activeEditor);
+              consolidateChanges();
+              hasUnsavedChanges = false;
+              saveChangesBtn.classList.remove("show");
+              toggle.checked = false;
+              toggleEditMode(false);
+              showToast("Cambios guardados correctamente", "success");
+            });
+          }
+          function consolidateChanges() {
+            if (!tabsContainer.classList.contains("excel-active")) return;
+            let newFullText = "";
+            const panes = contentContainer.querySelectorAll(".tab-pane");
+            const mainTextarea = document.getElementById("main-req-textarea");
+            panes.forEach((pane, idx) => {
+              const sheetName = pane.getAttribute("data-sheet-name");
+              const table = pane.querySelector(".excel-grid-table tbody");
+              if (!table) return;
+              const rows = table.querySelectorAll("tr");
+              let sheetContent = "";
+              rows.forEach((row) => {
+                const cells = row.querySelectorAll("td");
+                const rowData = Array.from(cells).map((cell) =>
+                  cell.textContent.trim()
+                );
+                if (rowData.some((val) => val !== "")) {
+                  sheetContent += rowData.join(" | ") + "\n";
+                }
+              });
+              if (idx === 0 && sheetName === "Hoja 1 (Default)") {
+                newFullText += sheetContent;
+              } else {
+                newFullText += `${separator}${sheetName} ---\n${sheetContent}`;
+              }
+            });
+            mainTextarea.value = newFullText;
+          }
+          if (reqModalForm) {
+            reqModalForm.addEventListener("submit", function (e) {
+              const activeEditor = reqModal.querySelector(".cell-editor");
+              if (activeEditor) saveCell(activeEditor);
+              if (tabsContainer.classList.contains("excel-active")) {
+                consolidateChanges();
+              }
+              const mainTextarea = document.getElementById("main-req-textarea");
+              mainTextarea.style.display = "block";
+              mainTextarea.style.visibility = "hidden";
+              mainTextarea.style.height = "0";
+            });
+          }
         }
-        
-    });
+
+        // --- Lógica del Botón Copiar JSON ---
+        const copyJsonBtn = document.getElementById("copyJsonBtn");
+        const jsonContent = document.getElementById("json-pre-content");
+        if (copyJsonBtn && jsonContent) {
+          copyJsonBtn.addEventListener("click", function () {
+            const textToCopy = jsonContent.textContent || jsonContent.innerText;
+            navigator.clipboard
+              .writeText(textToCopy)
+              .then(() => {
+                showToast("¡JSON copiado al portapapeles!", "success");
+              })
+              .catch((err) => {
+                console.error("Error al copiar JSON: ", err);
+                showToast("Error al copiar. Revisa la consola.", "danger");
+              });
+          });
+        }
+
+        // --- Lógica del Botón Copiar XML ---
+        const copyXmlBtn = document.getElementById("copyXmlBtn");
+        const xmlContent = document.getElementById("xml-pre-content");
+        if (copyXmlBtn && xmlContent) {
+          copyXmlBtn.addEventListener("click", function () {
+            const textToCopy = xmlContent.textContent || xmlContent.innerText;
+            navigator.clipboard
+              .writeText(textToCopy)
+              .then(() => {
+                showToast("¡XML copiado al portapapeles!", "success");
+              })
+              .catch((err) => {
+                console.error("Error al copiar XML: ", err);
+                showToast("Error al copiar. Revisa la consola.", "danger");
+              });
+          });
+        }
+      });
     </script>
 
     {% if analisis_obj %}
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", () => {
         const editBtn = document.getElementById("resultsEditToggle");
         const saveBtn = document.getElementById("save-results-btn");
         const table = document.getElementById("resultsTable");
-        
-        if (!editBtn || !saveBtn || !table) return; 
+
+        if (!editBtn || !saveBtn || !table) return;
 
         let editMode = false;
         let changesPending = false;
-        const saveUrl = "{{ url_for('analysis.update_results', view_id=analisis_obj.id) }}";
-        const originalData = {}; // Almacén para los valores originales
+        const saveUrl =
+          "{{ url_for('analysis.update_results', view_id=analisis_obj.id) }}";
+        const originalData = {};
 
         function autoResizeTextarea(el) {
-            el.style.height = 'auto';
-            el.style.height = (el.scrollHeight) + 'px';
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
         }
 
-        // --- 1. Lógica para Activar/Desactivar Edición ---
         editBtn.addEventListener("click", () => {
-            editMode = !editMode;
-            table.classList.toggle("edit-mode", editMode);
+          editMode = !editMode;
+          table.classList.toggle("edit-mode", editMode);
 
-            if (editMode) {
-                // --- MODO EDICIÓN ---
-                editBtn.innerHTML = `<i class="bi bi-x-circle me-1"></i> Cancelar edición`;
-                editBtn.classList.remove("btn-warning");
-                editBtn.classList.add("btn-secondary");
-                saveBtn.classList.remove("d-none");
-                
-                table.querySelectorAll("tbody td").forEach((cell, index) => {
-                    originalData[index] = cell.innerHTML; // Guardar HTML original
-                    
-                    let currentText = "";
-                    const fullText = cell.querySelector(".text-full pre");
-                    if (fullText) {
-                        currentText = fullText.textContent;
-                    } else {
-                        currentText = cell.textContent.trim();
-                    }
-                    
-                    const textarea = document.createElement('textarea');
-                    textarea.value = currentText;
-                    textarea.className = 'form-control';
-                    
-                    textarea.addEventListener("input", () => {
-                        if (!changesPending) {
-                            changesPending = true;
-                            saveBtn.classList.remove("btn-primary");
-                            saveBtn.classList.add("btn-danger");
-                            saveBtn.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i> Guardar (Cambios pendientes)`;
-                        }
-                        autoResizeTextarea(textarea);
-                    });
-                    
-                    cell.innerHTML = '';
-                    cell.appendChild(textarea);
-                    autoResizeTextarea(textarea);
-                });
+          if (editMode) {
+            editBtn.innerHTML = `<i class="bi bi-x-circle me-1"></i> Cancelar edición`;
+            editBtn.classList.remove("btn-warning");
+            editBtn.classList.add("btn-secondary");
+            saveBtn.classList.remove("d-none");
 
-            } else {
-                // --- ¡CORRECCIÓN ERROR #1: MODO CANCELAR SIEMPRE REVIERTE! ---
-                editBtn.innerHTML = `<i class="bi bi-pencil-square me-1"></i> Activar edición`;
-                editBtn.classList.add("btn-warning");
-                editBtn.classList.remove("btn-secondary");
-                saveBtn.classList.add("d-none");
+            table.querySelectorAll("tbody td").forEach((cell, index) => {
+              originalData[index] = cell.innerHTML;
 
-                // SIEMPRE revertir celdas al HTML original (tengan o no cambios)
-                table.querySelectorAll("tbody td").forEach((cell, index) => {
-                    if (originalData.hasOwnProperty(index)) {
-                        cell.innerHTML = originalData[index];
-                    } else {
-                        cell.innerHTML = "Error al revertir";
-                    }
-                });
-                
-                // Resetear estados
-                if (changesPending) {
-                    changesPending = false;
-                    saveBtn.classList.remove("btn-danger");
-                    saveBtn.classList.add("btn-primary");
-                    saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
-                    showToast("Cambios descartados", "info");
+              let currentText = "";
+              const fullText = cell.querySelector(".text-full pre");
+              if (fullText) {
+                currentText = fullText.textContent;
+              } else {
+                currentText = cell.textContent.trim();
+              }
+
+              const textarea = document.createElement("textarea");
+              textarea.value = currentText;
+              textarea.className = "form-control";
+
+              textarea.addEventListener("input", () => {
+                if (!changesPending) {
+                  changesPending = true;
+                  saveBtn.classList.remove("btn-primary");
+                  saveBtn.classList.add("btn-danger");
+                  saveBtn.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i> Guardar (Cambios pendientes)`;
                 }
+                autoResizeTextarea(textarea);
+              });
+
+              cell.innerHTML = "";
+              cell.appendChild(textarea);
+              autoResizeTextarea(textarea);
+            });
+          } else {
+            editBtn.innerHTML = `<i class="bi bi-pencil-square me-1"></i> Activar edición`;
+            editBtn.classList.add("btn-warning");
+            editBtn.classList.remove("btn-secondary");
+            saveBtn.classList.add("d-none");
+
+            if (changesPending) {
+              table.querySelectorAll("tbody td").forEach((cell, index) => {
+                if (originalData.hasOwnProperty(index)) {
+                  cell.innerHTML = originalData[index];
+                } else {
+                  cell.innerHTML = "Error al revertir";
+                }
+              });
+
+              changesPending = false;
+              saveBtn.classList.remove("btn-danger");
+              saveBtn.classList.add("btn-primary");
+              saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
+              showToast("Cambios descartados", "info");
             }
+          }
         });
 
-        // --- 2. Lógica para Guardar Cambios ---
         saveBtn.addEventListener("click", () => {
-            if (!changesPending) {
-                showToast("No hay cambios pendientes para guardar.", "info");
-                return;
-            }
-            
-            const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
-            const dataRows = [];
-            
-            table.querySelectorAll("tbody tr").forEach(row => {
-                const rowData = {};
-                row.querySelectorAll("td").forEach((cell, index) => {
-                    const header = headers[index];
-                    const textarea = cell.querySelector('textarea');
-                    if (textarea) {
-                        rowData[header] = textarea.value;
-                    }
-                });
-                dataRows.push(rowData);
+          if (!changesPending) {
+            showToast("No hay cambios pendientes para guardar.", "info");
+            return;
+          }
+
+          const headers = Array.from(table.querySelectorAll("thead th")).map(
+            (th) => th.textContent.trim()
+          );
+          const dataRows = [];
+
+          table.querySelectorAll("tbody tr").forEach((row) => {
+            const rowData = {};
+            row.querySelectorAll("td").forEach((cell, index) => {
+              const header = headers[index];
+              const textarea = cell.querySelector("textarea");
+              if (textarea) {
+                rowData[header] = textarea.value;
+              }
             });
-            
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+            dataRows.push(rowData);
+          });
 
-            fetch(saveUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataRows)
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
+
+          fetch(saveUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataRows),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                return response.json().then((err) => {
+                  throw new Error(err.message || "Error en el servidor");
+                });
+              }
+              return response.json();
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.message || 'Error en el servidor') });
+            .then((data) => {
+              if (data.status === "success") {
+                showToast(data.message, "success");
+                changesPending = false;
+
+                const casosCard = document.querySelector(
+                  ".fw-bold.mb-0.text-success"
+                );
+                if (casosCard) {
+                  casosCard.textContent = data.casos;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    showToast(data.message, 'success');
-                    changesPending = false;
-                    
-                    const casosCard = document.querySelector('.fw-bold.mb-0.text-success');
-                    if (casosCard) { casosCard.textContent = data.casos; }
-                    
-                    // Revertir la tabla al modo VISTA con el NUEVO contenido
-                    table.querySelectorAll("tbody tr").forEach((row, rowIndex) => {
-                        row.querySelectorAll("td").forEach((cell, colIndex) => {
-                            const newValue = dataRows[rowIndex][headers[colIndex]];
-                            
-                            const valor_str = String(newValue);
-                            const max_length = 120;
-                            let newHTML = '';
-                            const escapedValue = valor_str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-                            if (valor_str.length > max_length) {
-                                newHTML = `
+                table.querySelectorAll("tbody tr").forEach((row, rowIndex) => {
+                  row.querySelectorAll("td").forEach((cell, colIndex) => {
+                    const newValue = dataRows[rowIndex][headers[colIndex]];
+
+                    const valor_str = String(newValue);
+                    const max_length = 120;
+                    let newHTML = "";
+                    const escapedValue = valor_str
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;");
+
+                    if (valor_str.length > max_length) {
+                      newHTML = `
                                     <div class="text-container">
-                                        <div class="text-preview small">${escapedValue.substring(0, max_length)}...</div>
+                                        <div class="text-preview small">${escapedValue.substring(
+                                          0,
+                                          max_length
+                                        )}...</div>
                                         <div class="text-full small" style="display: none;"><pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word;">${escapedValue}</pre></div>
                                         <button class="btn btn-sm btn-outline-primary mt-1 btn-toggle-text w-100" type="button">Ver más</button>
                                     </div>
                                 `;
-                            } else {
-                                newHTML = `<span class="small">${escapedValue}</span>`;
-                            }
-                            cell.innerHTML = newHTML;
-                        });
-                    });
-                    
-                    // Salir del modo edición
-                    editBtn.click(); // Simula clic para revertir al estado "Activar Edición"
-                    
-                } else { throw new Error(data.message); }
+                    } else {
+                      newHTML = `<span class="small">${escapedValue}</span>`;
+                    }
+                    cell.innerHTML = newHTML;
+                  });
+                });
+
+                editBtn.click();
+              } else {
+                throw new Error(data.message);
+              }
             })
-            .catch(error => {
-                console.error('Error al guardar:', error);
-                showToast(`Error al guardar: ${error.message}`, 'danger');
+            .catch((error) => {
+              console.error("Error al guardar:", error);
+              showToast(`Error al guardar: ${error.message}`, "danger");
             })
             .finally(() => {
-                saveBtn.disabled = false;
-                saveBtn.classList.remove("btn-danger");
-                saveBtn.classList.add("btn-primary");
-                saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
+              saveBtn.disabled = false;
+              saveBtn.classList.remove("btn-danger");
+              saveBtn.classList.add("btn-primary");
+              saveBtn.innerHTML = `<i class="bi bi-save me-1"></i> Guardar cambios`;
             });
         });
 
-        // --- 4. Advertencia al salir ---
-        document.querySelectorAll("a[href*='generate_file'], form[action*='clear_analysis'] button").forEach(btn => {
+        document
+          .querySelectorAll(
+            "a[href*='generate_file'], form[action*='clear_analysis'] button"
+          )
+          .forEach((btn) => {
             btn.addEventListener("click", (e) => {
-                if (changesPending) {
-                    e.preventDefault();
-                    showToast("¡Atención! Hay cambios sin guardar. Guarda tus ediciones antes de descargar o salir.", "warning");
-                }
+              if (changesPending) {
+                e.preventDefault();
+                showToast(
+                  "¡Atención! Hay cambios sin guardar. Guarda tus ediciones antes de descargar o salir.",
+                  "warning"
+                );
+              }
             });
-        });
-    });
+          });
+      });
     </script>
     {% endif %}
 
-{% endblock %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔍 [DEBUG] Inicializando Ver Plantilla en Modal");
+
+        const viewTemplateBtns = document.querySelectorAll(
+          "#viewTemplateBtnForm, #viewTemplateBtnFormMobile"
+        );
+
+        if (viewTemplateBtns.length === 0) {
+          console.log("ℹ️ [INFO] Botones Ver Plantilla no encontrados");
+          return;
+        }
+
+        const verPlantillaModal = document.getElementById("verPlantillaModal");
+        const modalLoading = document.getElementById("plantillaModalLoading");
+        const modalContent = document.getElementById("plantillaModalContent");
+        const modalError = document.getElementById("plantillaModalError");
+
+        viewTemplateBtns.forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            const plantillaSelect = document.querySelector(
+              'select[name="plantilla"]'
+            );
+            if (!plantillaSelect) {
+              console.error("❌ Select de plantilla no encontrado");
+              return;
+            }
+
+            const plantillaId = plantillaSelect.value;
+            if (!plantillaId) {
+              e.stopPropagation();
+              alert("⚠️ Por favor, selecciona una plantilla primero");
+              return;
+            }
+
+            modalLoading.style.display = "block";
+            modalContent.style.display = "none";
+            modalError.style.display = "none";
+
+            fetch("/analysis/api/plantilla/" + plantillaId + "/info")
+              .then((response) => {
+                if (!response.ok) throw new Error("Error del servidor");
+                return response.json();
+              })
+              .then((data) => {
+                if (!data.success)
+                  throw new Error(data.error || "Error desconocido");
+
+                modalLoading.style.display = "none";
+
+                document.getElementById("plantillaNombre").textContent =
+                  data.plantilla.nombre;
+                document.getElementById("plantillaTipoArchivo").textContent =
+                  data.plantilla.tipo_archivo;
+                document.getElementById("plantillaSheetName").textContent =
+                  data.plantilla.sheet_name;
+                document.getElementById("plantillaHeaderRow").textContent =
+                  data.plantilla.header_row;
+
+                const mapasTableBody = document.getElementById(
+                  "plantillaMapasTbody"
+                );
+                const noMapasDiv = document.getElementById("plantillaNoMapas");
+
+                mapasTableBody.innerHTML = "";
+
+                if (data.mapas && data.mapas.length > 0) {
+                  noMapasDiv.style.display = "none";
+
+                  data.mapas.forEach((mapa, index) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <i class="bi bi-tag-fill text-primary me-2"></i>
+                                        <strong>${mapa.etiqueta}</strong>
+                                    </td>
+                                    <td><span class="badge bg-secondary">${
+                                      mapa.coordenada
+                                    }</span></td>
+                                `;
+                    mapasTableBody.appendChild(row);
+                  });
+                } else {
+                  noMapasDiv.style.display = "block";
+                }
+
+                modalContent.style.display = "block";
+              })
+              .catch((error) => {
+                console.error("❌ Error:", error);
+                modalLoading.style.display = "none";
+                document.getElementById(
+                  "plantillaModalErrorMessage"
+                ).textContent = error.message;
+                modalError.style.display = "block";
+              });
+          });
+        });
+
+        console.log("✅ Ver Plantilla configurado");
+      });
+
+      // ============================================================================
+      // 🆕 REQUERIMIENTO #5: Ver Historial de Cambios
+      // ============================================================================
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔍 [DEBUG] Inicializando Historial de Cambios");
+
+        let currentAnalisisId = null;
+        let currentPage = 1;
+        let currentLimit = 20;
+        let currentTipoFiltro = "";
+
+        const verHistorialBtn = document.getElementById("verHistorialBtn");
+        const historialModal = document.getElementById("historialCambiosModal");
+        const historialModalLoading = document.getElementById(
+          "historialModalLoading"
+        );
+        const historialModalContent = document.getElementById(
+          "historialModalContent"
+        );
+        const historialModalError = document.getElementById(
+          "historialModalError"
+        );
+        const historialCambiosTbody = document.getElementById(
+          "historialCambiosTbody"
+        );
+        const historialNoCambios =
+          document.getElementById("historialNoCambios");
+
+        if (!verHistorialBtn) {
+          console.log("ℹ️ Botón Ver Historial no encontrado");
+          return;
+        }
+
+        verHistorialBtn.addEventListener("click", function () {
+          currentAnalisisId = verHistorialBtn.getAttribute("data-analisis-id");
+          currentPage = 1;
+          currentTipoFiltro = "";
+          document.getElementById("historialFiltroTipo").value = "";
+
+          const modal = new bootstrap.Modal(historialModal);
+          modal.show();
+
+          cargarHistorial();
+        });
+
+        document
+          .getElementById("historialAplicarFiltro")
+          .addEventListener("click", function () {
+            currentTipoFiltro = document.getElementById(
+              "historialFiltroTipo"
+            ).value;
+            currentPage = 1;
+            cargarHistorial();
+          });
+
+        document
+          .getElementById("historialRefresh")
+          .addEventListener("click", function () {
+            cargarHistorial();
+          });
+
+        document
+          .getElementById("historialPaginaPrev")
+          .addEventListener("click", function (e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+              currentPage--;
+              cargarHistorial();
+            }
+          });
+
+        document
+          .getElementById("historialPaginaNext")
+          .addEventListener("click", function (e) {
+            e.preventDefault();
+            currentPage++;
+            cargarHistorial();
+          });
+
+        function cargarHistorial() {
+          historialModalLoading.style.display = "block";
+          historialModalContent.style.display = "none";
+          historialModalError.style.display = "none";
+
+          const offset = (currentPage - 1) * currentLimit;
+          let url =
+            "/analysis/api/historial/" +
+            currentAnalisisId +
+            "?limit=" +
+            currentLimit +
+            "&offset=" +
+            offset;
+
+          if (currentTipoFiltro) {
+            url += "&tipo=" + encodeURIComponent(currentTipoFiltro);
+          }
+
+          fetch(url)
+            .then((response) => {
+              if (!response.ok) throw new Error("Error del servidor");
+              return response.json();
+            })
+            .then((data) => {
+              if (!data.success)
+                throw new Error(data.error || "Error desconocido");
+
+              historialModalLoading.style.display = "none";
+
+              document.getElementById("historialAnalisisNombre").textContent =
+                data.analisis.nombre;
+              document.getElementById("historialAnalisisFecha").textContent =
+                new Date(data.analisis.timestamp).toLocaleString("es-CO");
+              document.getElementById("historialAnalisisCasos").textContent =
+                data.analisis.casos_generados;
+              document.getElementById("historialTotalCambios").textContent =
+                data.total_cambios;
+
+              historialCambiosTbody.innerHTML = "";
+
+              if (data.cambios && data.cambios.length > 0) {
+                historialNoCambios.style.display = "none";
+
+                data.cambios.forEach((cambio, index) => {
+                  const row = document.createElement("tr");
+                  const badgeClass = "bg-" + cambio.tipo_badge;
+
+                  row.innerHTML = `
+                                <td>${offset + index + 1}</td>
+                                <td>
+                                    <small>
+                                        <strong>${cambio.fecha}</strong><br>
+                                        <span class="text-muted">${
+                                          cambio.fecha_relativa
+                                        }</span>
+                                    </small>
+                                </td>
+                                <td><small>${cambio.usuario}</small></td>
+                                <td><span class="badge ${badgeClass}">${
+                    cambio.tipo_cambio
+                  }</span></td>
+                                <td>
+                                    <small class="text-muted">
+                                        ${
+                                          cambio.tiene_json_backup
+                                            ? '<i class="bi bi-file-earmark-code me-1"></i>' +
+                                              formatBytes(cambio.tamano_json)
+                                            : '<i class="bi bi-dash-circle"></i>Sin backup'
+                                        }
+                                    </small>
+                                </td>
+                                <td>
+                                    ${
+                                      cambio.tiene_json_backup
+                                        ? '<button type="button" class="btn btn-sm btn-outline-info ver-json-btn" data-historial-id="' +
+                                          cambio.id +
+                                          '"><i class="bi bi-eye"></i></button>'
+                                        : "-"
+                                    }
+                                </td>
+                            `;
+
+                  historialCambiosTbody.appendChild(row);
+                });
+
+                document.querySelectorAll(".ver-json-btn").forEach((btn) => {
+                  btn.addEventListener("click", function () {
+                    verJsonCompleto(this.getAttribute("data-historial-id"));
+                  });
+                });
+
+                if (data.paginacion.total_paginas > 1) {
+                  document.getElementById("historialPaginacion").style.display =
+                    "block";
+                  document.getElementById("historialPaginaActual").textContent =
+                    data.paginacion.pagina_actual;
+                  document.getElementById("historialPaginaTotal").textContent =
+                    data.paginacion.total_paginas;
+
+                  document
+                    .getElementById("historialPaginaPrev")
+                    .classList.toggle("disabled", currentPage === 1);
+                  document
+                    .getElementById("historialPaginaNext")
+                    .classList.toggle("disabled", !data.paginacion.tiene_mas);
+                } else {
+                  document.getElementById("historialPaginacion").style.display =
+                    "none";
+                }
+              } else {
+                historialNoCambios.style.display = "block";
+              }
+
+              historialModalContent.style.display = "block";
+            })
+            .catch((error) => {
+              console.error("❌ Error:", error);
+              historialModalLoading.style.display = "none";
+              document.getElementById(
+                "historialModalErrorMessage"
+              ).textContent = error.message;
+              historialModalError.style.display = "block";
+            });
+        }
+
+        function verJsonCompleto(historialId) {
+          const jsonModal = new bootstrap.Modal(
+            document.getElementById("jsonBackupModal")
+          );
+          jsonModal.show();
+
+          document.getElementById("jsonBackupContent").innerHTML =
+            '<div class="text-center"><div class="spinner-border"></div></div>';
+
+          fetch("/analysis/api/historial/" + historialId + "/json")
+            .then((response) => {
+              if (!response.ok) throw new Error("Error al cargar JSON");
+              return response.json();
+            })
+            .then((data) => {
+              if (!data.success) throw new Error(data.error || "Error");
+
+              document.getElementById("jsonBackupFecha").textContent =
+                data.fecha;
+              document.getElementById("jsonBackupContent").textContent =
+                JSON.stringify(data.json_backup, null, 2);
+            })
+            .catch((error) => {
+              document.getElementById("jsonBackupContent").textContent =
+                "Error: " + error.message;
+            });
+        }
+
+        function formatBytes(bytes) {
+          if (bytes === 0) return "0 Bytes";
+          const k = 1024;
+          const sizes = ["Bytes", "KB", "MB"];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return (
+            Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+          );
+        }
+
+        console.log("✅ Historial de Cambios configurado");
+      });
+    </script>
+
+    <style>
+      /* ========================================
+    MEJORA DE VISIBILIDAD DE MODALES (GLOBAL)
+    ========================================
+    */
+
+      .modal-body {
+        font-size: 1rem;
+      }
+
+      .modal-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+
+      .modal-header .bi {
+        font-size: 1.5rem;
+      }
+
+      .modal-body h6 .bi,
+      .modal-body h5 .bi,
+      .modal-body .alert .bi {
+        font-size: 1.3rem !important;
+      }
+
+      .modal-body .table {
+        font-size: 0.95rem;
+      }
+
+      .modal-body .table th,
+      .modal-body .table td {
+        padding: 0.75rem 0.5rem;
+      }
+
+      .modal-body small {
+        font-size: 0.9rem !important;
+      }
+
+      #verPlantillaModal .card-subtitle {
+        font-size: 1.1rem !important;
+        font-weight: 600;
+      }
+
+      #verPlantillaModal .bi[style*="font-size: 1.2rem;"] {
+        font-size: 1.5rem !important;
+      }
+
+      .modal-body strong {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--bs-dark);
+      }
+
+      .modal-footer .btn {
+        padding: 0.5rem 1.25rem;
+        font-size: 1rem;
+      }
+    </style>
+
+    {% endblock %}
+  </div>
+</div>
